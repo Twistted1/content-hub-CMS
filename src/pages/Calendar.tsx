@@ -455,82 +455,236 @@ function AgendaView({ events, onClickEvent }: any) {
 
 /* ── event modal ─────────────────────────────────────────── */
 
+const SELECT_CLS = "w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/60 transition-colors appearance-none cursor-pointer";
+const INPUT_CLS  = "w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary/60 transition-colors";
+const LABEL_CLS  = "block text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1.5";
+
 function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }: any) {
-  const [title, setTitle] = useState(event?.title || "");
-  const [date, setDate] = useState(event?.date || (defaultDate ? fmtKey(defaultDate) : fmtKey(new Date())));
-  const [startTime, setStartTime] = useState(event?.startTime || "09:00");
-  const [category, setCategory] = useState(event?.category || "content");
-  const [platform, setPlatform] = useState(event?.platform || "none");
+  const [title,       setTitle]       = useState(event?.title       || "");
+  const [date,        setDate]        = useState(event?.date        || (defaultDate ? fmtKey(defaultDate) : fmtKey(new Date())));
+  const [startTime,   setStartTime]   = useState(event?.startTime   || "09:00");
+  const [category,    setCategory]    = useState(event?.category    || "content");
+  const [platform,    setPlatform]    = useState(event?.platform    || "none");
   const [description, setDescription] = useState(event?.description || "");
-  const [imageUrl, setImageUrl] = useState(event?.imageUrl || "");
+  const [imageUrl,    setImageUrl]    = useState(event?.imageUrl    || "");
+  const [contentType, setContentType] = useState(event?.contentType || "post");
+  const [status,      setStatus]      = useState(event?.status      || "draft");
+  const [hashtags,    setHashtags]    = useState(event?.hashtags    || "");
+  const [caption,     setCaption]     = useState(event?.caption     || "");
+
+  const isEditing = !!event;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-[#111827] border border-white/10 rounded-2xl shadow-2xl p-6 space-y-4">
-        <h2 className="text-lg font-black text-white">{event ? "Edit Event" : "New Event"}</h2>
-        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Event title..." className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50" />
-        <div className="flex gap-3">
-          <input type="date" title="Date" aria-label="Date" value={date} onChange={e => setDate(e.target.value)} className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
-          <input type="time" title="Time" aria-label="Time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-32 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white" />
-        </div>
-        <div className="flex gap-3">
-          <select title="Category" aria-label="Category" value={category} onChange={e => setCategory(e.target.value)} className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white">
-            <option value="content">Content</option>
-            <option value="meeting">Meeting</option>
-            <option value="publish">Publish</option>
-            <option value="deadline">Deadline</option>
-            <option value="personal">Personal</option>
-          </select>
-          <select title="Platform" aria-label="Platform" value={platform} onChange={e => setPlatform(e.target.value)} className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white">
-            <option value="none">No platform</option>
-            {Object.keys(PLAT).map(k => <option key={k} value={k}>{PLAT[k].label}</option>)}
-          </select>
-        </div>
-        
-        {!imageUrl ? (
-          <label className="flex flex-col items-center justify-center w-full h-20 bg-white/[0.02] border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:bg-white/5 transition-colors">
-            <span className="text-xs text-gray-500">📷 Attach media</span>
-            <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setImageUrl(URL.createObjectURL(f)); }} />
-          </label>
-        ) : (
-          <div className="relative w-full h-32 rounded-xl overflow-hidden border border-white/10 group">
-            <img src={imageUrl} alt="" className="w-full h-full object-cover" />
-            <button onClick={() => setImageUrl("")} className="absolute top-2 right-2 bg-black/60 hover:bg-red-500/80 p-1.5 rounded-lg text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
-          </div>
-        )}
+      <div className="relative w-full max-w-2xl bg-card border border-border rounded-2xl shadow-2xl flex flex-col max-h-[92vh]">
 
-        <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Notes..." className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50 resize-none" />
-
-        {event?.status === "awaiting_review" && (
-          <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-xl animate-pulse">⚠️</span>
-              <div>
-                <p className="text-sm font-bold text-orange-400">Needs Approval</p>
-                <p className="text-[10px] text-orange-300/60">AI-generated content</p>
-              </div>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <CalendarDays className="w-4 h-4 text-primary" />
             </div>
+            <div>
+              <h2 className="text-base font-black text-foreground tracking-tight">
+                {isEditing ? "Edit Content" : "Schedule Content"}
+              </h2>
+              <p className="text-[10px] text-muted-foreground font-medium">
+                {isEditing ? "Update your scheduled content" : "Plan and schedule a new piece of content"}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-lg">✕</button>
+        </div>
+
+        {/* Body — scrollable */}
+        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+
+          {/* Title */}
+          <div>
+            <label className={LABEL_CLS}>Content Title *</label>
+            <input
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="e.g. 5 tips for growing on Instagram in 2025…"
+              className={INPUT_CLS}
+            />
+          </div>
+
+          {/* Caption / Main body */}
+          <div>
+            <label className={LABEL_CLS}>Caption / Content Body</label>
+            <textarea
+              value={caption}
+              onChange={e => setCaption(e.target.value)}
+              rows={4}
+              placeholder="Write your post caption, article intro, or video script hook here…"
+              className={`${INPUT_CLS} resize-none leading-relaxed`}
+            />
+          </div>
+
+          {/* Hashtags */}
+          <div>
+            <label className={LABEL_CLS}>Hashtags</label>
+            <input
+              value={hashtags}
+              onChange={e => setHashtags(e.target.value)}
+              placeholder="#contentmarketing #socialmedia #growthhacking"
+              className={INPUT_CLS}
+            />
+          </div>
+
+          {/* Row: Date + Time */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={LABEL_CLS}>Scheduled Date</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                className={INPUT_CLS} style={{ colorScheme: "dark" }} />
+            </div>
+            <div>
+              <label className={LABEL_CLS}>Scheduled Time</label>
+              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
+                className={INPUT_CLS} style={{ colorScheme: "dark" }} />
+            </div>
+          </div>
+
+          {/* Row: Platform + Content Type */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="relative">
+              <label className={LABEL_CLS}>Platform</label>
+              <select value={platform} onChange={e => setPlatform(e.target.value)} className={SELECT_CLS}
+                style={{ backgroundImage: "none" }}>
+                <option value="none" style={{ background: "hsl(222 47% 6%)", color: "hsl(213 31% 91%)" }}>No Platform</option>
+                {Object.keys(PLAT).map(k => (
+                  <option key={k} value={k} style={{ background: "hsl(222 47% 6%)", color: "hsl(213 31% 91%)" }}>
+                    {PLAT[k].label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="relative">
+              <label className={LABEL_CLS}>Content Type</label>
+              <select value={contentType} onChange={e => setContentType(e.target.value)} className={SELECT_CLS}
+                style={{ backgroundImage: "none" }}>
+                {[["post","Feed Post"],["reel","Reel / Short"],["story","Story"],["article","Article / Blog"],["video","Long-form Video"],["podcast","Podcast Episode"],["newsletter","Newsletter"],["thread","Thread / Carousel"]].map(([v,l]) => (
+                  <option key={v} value={v} style={{ background: "hsl(222 47% 6%)", color: "hsl(213 31% 91%)" }}>{l}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Row: Category + Status */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="relative">
+              <label className={LABEL_CLS}>Category</label>
+              <select value={category} onChange={e => setCategory(e.target.value)} className={SELECT_CLS}
+                style={{ backgroundImage: "none" }}>
+                {[["content","Content"],["publish","Publish"],["meeting","Meeting"],["deadline","Deadline"],["research","Research"],["personal","Personal"]].map(([v,l]) => (
+                  <option key={v} value={v} style={{ background: "hsl(222 47% 6%)", color: "hsl(213 31% 91%)" }}>{l}</option>
+                ))}
+              </select>
+            </div>
+            <div className="relative">
+              <label className={LABEL_CLS}>Publish Status</label>
+              <select value={status} onChange={e => setStatus(e.target.value)} className={SELECT_CLS}
+                style={{ backgroundImage: "none" }}>
+                {[["draft","Draft"],["scheduled","Scheduled"],["published","Published"],["awaiting_review","Awaiting Review"]].map(([v,l]) => (
+                  <option key={v} value={v} style={{ background: "hsl(222 47% 6%)", color: "hsl(213 31% 91%)" }}>{l}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className={LABEL_CLS}>Internal Notes</label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={2}
+              placeholder="Private notes, reminders, or brief for this post…"
+              className={`${INPUT_CLS} resize-none`}
+            />
+          </div>
+
+          {/* Media */}
+          <div>
+            <label className={LABEL_CLS}>Media / Cover Image</label>
+            {!imageUrl ? (
+              <label className="flex flex-col items-center justify-center w-full h-24 bg-muted/20 border-2 border-dashed border-border hover:border-primary/40 rounded-xl cursor-pointer hover:bg-muted/30 transition-all group">
+                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">📷</span>
+                <span className="text-[11px] font-bold text-muted-foreground">Click to attach image</span>
+                <span className="text-[10px] text-muted-foreground/50">PNG, JPG, GIF, WebP</span>
+                <input type="file" accept="image/*" className="hidden" onChange={e => {
+                  const f = e.target.files?.[0];
+                  if (f) setImageUrl(URL.createObjectURL(f));
+                }} />
+              </label>
+            ) : (
+              <div className="relative w-full h-36 rounded-xl overflow-hidden border border-border group">
+                <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button onClick={() => setImageUrl("")}
+                    className="px-3 py-1.5 bg-destructive text-destructive-foreground text-xs font-black rounded-lg">
+                    Remove
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Needs approval banner */}
+          {event?.status === "awaiting_review" && (
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">⚠️</span>
+                <div>
+                  <p className="text-sm font-bold text-amber-400">Needs Approval</p>
+                  <p className="text-[10px] text-amber-300/60">AI-generated content awaiting review</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { if (onApprove) onApprove(event.id); onClose(); }}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-black rounded-xl transition-colors"
+              >
+                🚀 Approve
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-border shrink-0">
+          <div>
+            {isEditing && onDelete && (
+              <button
+                onClick={() => { onDelete(event.originalId || event.id); onClose(); }}
+                className="px-4 py-2 text-xs font-black text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
+              >
+                Delete
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={onClose} className="px-4 py-2 text-xs font-black text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors">
+              Cancel
+            </button>
             <button
-              onClick={() => { if (onApprove) onApprove(event.id); onClose(); }}
-              className="px-5 py-2 bg-gradient-to-r from-orange-500 to-amber-600 text-white text-xs font-black rounded-xl hover:scale-105 transition-transform"
+              onClick={() => {
+                onSave({
+                  id: event?.id || `evt-${Date.now()}`,
+                  title, date, startTime, category, platform,
+                  description, imageUrl, status, contentType,
+                  hashtags, caption,
+                });
+                onClose();
+              }}
+              disabled={!title.trim()}
+              className="px-6 py-2 bg-primary hover:opacity-90 disabled:opacity-40 text-primary-foreground text-xs font-black rounded-xl transition-all"
             >
-              🚀 Approve
+              {isEditing ? "Save Changes" : "Schedule Content"}
             </button>
           </div>
-        )}
-
-        <div className="flex justify-end gap-2 pt-2">
-          {event && onDelete && (
-            <button onClick={() => { onDelete(event.originalId || event.id); onClose(); }} className="px-4 py-2 text-xs font-bold text-red-400 hover:text-red-300 transition-colors">Delete</button>
-          )}
-          <button onClick={onClose} className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-300 transition-colors">Cancel</button>
-          <button
-            onClick={() => { onSave({ id: event?.id || `evt-${Date.now()}`, title, date, startTime, category, platform, description, imageUrl, status: event?.status }); onClose(); }}
-            className="px-6 py-2 bg-primary text-primary-foreground text-xs font-black rounded-xl hover:bg-primary/90 transition-colors"
-          >
-            Save
-          </button>
         </div>
       </div>
     </div>
