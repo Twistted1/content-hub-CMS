@@ -290,7 +290,7 @@ export default function Notes() {
               <DialogHeader>
                 <DialogTitle>Create New Note</DialogTitle>
               </DialogHeader>
-                <div className="space-y-4 pt-4">
+              <div className="space-y-4 pt-4 max-h-[70vh] overflow-y-auto pr-1">
                   <div className="space-y-2">
                     <Label>Title</Label>
                     <Input
@@ -301,12 +301,12 @@ export default function Notes() {
                   </div>
                   <div className="space-y-2">
                     <Label>Content (Rich Text)</Label>
-                    <div className="border rounded-md overflow-hidden bg-background min-h-[250px]">
+                    <div className="border border-border rounded-lg overflow-hidden bg-muted/20">
                       <RichTextEditor 
                         content={newNote.content}
                         onChange={(content) => setNewNote({ ...newNote, content })}
                         placeholder="Start typing your note here..."
-                        className="min-h-[250px]"
+                        className="min-h-[160px]"
                       />
                     </div>
                   </div>
@@ -510,7 +510,7 @@ export default function Notes() {
               <DialogTitle>Edit Note</DialogTitle>
             </DialogHeader>
             {editingNote && (
-              <div className="space-y-4 pt-4">
+              <div className="space-y-4 pt-4 max-h-[70vh] overflow-y-auto pr-1">
                 <div className="space-y-2">
                    <Label>Title</Label>
                   <Input
@@ -521,12 +521,12 @@ export default function Notes() {
                 </div>
                 <div className="space-y-2">
                   <Label>Content (Rich Text)</Label>
-                  <div className="border rounded-md overflow-hidden bg-background min-h-[250px]">
+                  <div className="border border-border rounded-lg overflow-hidden bg-muted/20">
                     <RichTextEditor 
                       content={editingNote.content}
                       onChange={(content) => setEditingNote({ ...editingNote, content })}
                       placeholder="Edit your note..."
-                      className="min-h-[250px]"
+                      className="min-h-[160px]"
                     />
                   </div>
                 </div>

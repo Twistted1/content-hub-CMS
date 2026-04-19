@@ -173,6 +173,15 @@ All colors MUST be HSL.
   /* Tiptap / Prosemirror Styling */
   .ProseMirror {
     outline: none !important;
+    color: hsl(var(--foreground));
+    background: transparent;
+    min-height: 160px;
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+  .ProseMirror p {
+    margin-bottom: 0.5rem;
   }
   .ProseMirror p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
@@ -180,15 +189,21 @@ All colors MUST be HSL.
     color: hsl(var(--muted-foreground));
     pointer-events: none;
     height: 0;
+    font-style: italic;
+    opacity: 0.6;
   }
-  .ProseMirror h1 { @apply text-2xl font-black tracking-tighter mb-4 mt-2; }
-  .ProseMirror h2 { @apply text-xl font-bold tracking-tight mb-3 mt-2; }
+  .ProseMirror h1 { @apply text-2xl font-black tracking-tighter mb-4 mt-2 text-foreground; }
+  .ProseMirror h2 { @apply text-xl font-bold tracking-tight mb-3 mt-2 text-foreground; }
   .ProseMirror ul { @apply list-disc ml-6 mb-4; }
   .ProseMirror ol { @apply list-decimal ml-6 mb-4; }
-  .ProseMirror blockquote { @apply border-l-4 border-primary/30 pl-4 italic my-4; }
-  .ProseMirror code { @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono; }
-  .ProseMirror pre { @apply bg-muted p-4 rounded-lg font-mono text-sm my-4 overflow-x-auto; }
+  .ProseMirror blockquote { @apply border-l-4 border-primary/30 pl-4 italic my-4 text-muted-foreground; }
+  .ProseMirror code { @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground; }
+  .ProseMirror pre { @apply bg-muted p-4 rounded-lg font-mono text-sm my-4 overflow-x-auto text-foreground; }
   .ProseMirror img { @apply max-w-full h-auto rounded-lg my-4; }
+  .ProseMirror a { @apply text-primary underline; }
+  /* Remove prose plugin's default light-mode colors that clash with dark theme */
+  .ProseMirror.prose { color: hsl(var(--foreground)) !important; }
+  .ProseMirror.prose h1, .ProseMirror.prose h2, .ProseMirror.prose h3 { color: hsl(var(--foreground)) !important; }
 
   .progress-bar-fill {
     @apply h-full bg-gradient-to-r from-[#6366f1] to-[#a855f7] transition-all duration-1000;
