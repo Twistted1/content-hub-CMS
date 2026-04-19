@@ -23,6 +23,9 @@ const routeTitles: Record<string, string> = {
   "/users": "Users",
   "/import": "Import Data",
   "/settings": "Settings",
+  "/pipeline": "Content Pipeline",
+  "/models": "Content Models",
+  "/workflow": "Workflow",
 };
 
 const formatTime = () =>
@@ -50,10 +53,7 @@ export function Header() {
         <span className="text-muted-foreground">|</span>
         <div className="flex flex-col">
           <h2 className="text-xl font-black text-foreground tracking-tighter uppercase leading-none">{title}</h2>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-[10px] font-bold text-primary leading-none uppercase">MyFlow</span>
-            <span className="text-[10px] text-muted-foreground leading-none uppercase">Smart Calendar</span>
-          </div>
+          <span className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none mt-0.5">Content Hub</span>
         </div>
       </div>
 

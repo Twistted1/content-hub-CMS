@@ -17,7 +17,7 @@ import {
   Rocket,
   Star
 } from 'lucide-react';
-import { NoveeMascot } from '@/components/mascot/NoveeMascot';
+
 import { Footer } from '@/components/layout/Footer';
 
 const features = [
@@ -392,8 +392,6 @@ export default function Landing() {
       {/* Footer */}
       <Footer />
 
-      {/* Novee AI Mascot */}
-      <NoveeMascot />
     </div>
   );
 }
