@@ -24,7 +24,7 @@ import { AutomationCard } from "@/components/automation/AutomationCard";
 import { AutomationDialog } from "@/components/automation/AutomationDialog";
 import { AutomationHistoryDialog } from "@/components/automation/AutomationHistoryDialog";
 import { useAutomations, Automation, TriggerType, AutomationStatus } from "@/hooks/useAutomations";
-import { triggerOptions, getQuickStats } from "@/components/automation/automationData";
+import { triggerOptions, getQuickStats, workflowPresets } from "@/components/automation/automationData";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useUJT } from "@/hooks/useUJT";
