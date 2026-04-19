@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Camera, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,7 +55,9 @@ export function ProfileSettings() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Load profile from Supabase on mount
   useEffect(() => {
@@ -120,6 +122,52 @@ export function ProfileSettings() {
     setIsSaving(false);
   };
 
+  const handleAvatarUpload = async (file: File) => {
+    if (!user) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+    setIsUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(path);
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`; // cache-bust
+      await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
+      setFormData(prev => ({ ...prev, avatarUrl: publicUrl }));
+      toast.success("Profile picture updated!");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to upload avatar");
+    } finally {
+      setIsUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!user) return;
+    await supabase
+      .from("profiles")
+      .update({ avatar_url: null, updated_at: new Date().toISOString() })
+      .eq("user_id", user.id);
+    setFormData(prev => ({ ...prev, avatarUrl: "" }));
+    toast.success("Profile picture removed");
+  };
+
   const getInitials = () => {
     const name = formData.displayName || user?.email || "?";
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -143,6 +191,18 @@ export function ProfileSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center gap-6">
+          {/* Hidden file input */}
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            aria-label="Upload profile picture"
+            onChange={e => {
+              const file = e.target.files?.[0];
+              if (file) handleAvatarUpload(file);
+            }}
+          />
           <div className="relative">
             <Avatar className="h-24 w-24 border-4 border-primary/20">
               <AvatarImage src={formData.avatarUrl} />
@@ -153,17 +213,36 @@ export function ProfileSettings() {
             <Button
               size="icon"
               className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
-              onClick={() => toast.info("Avatar upload coming soon")}
+              disabled={isUploadingAvatar}
+              onClick={() => avatarInputRef.current?.click()}
             >
-              <Camera className="h-4 w-4" />
+              {isUploadingAvatar
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Camera className="h-4 w-4" />}
             </Button>
           </div>
           <div className="space-y-2">
-            <Button variant="outline" onClick={() => toast.info("Avatar upload coming soon")}>
-              Upload new picture
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                disabled={isUploadingAvatar}
+                onClick={() => avatarInputRef.current?.click()}
+              >
+                {isUploadingAvatar ? "Uploading…" : "Upload new picture"}
+              </Button>
+              {formData.avatarUrl && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={handleRemoveAvatar}
+                >
+                  Remove
+                </Button>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Recommended: Square image, at least 200x200px
+              JPG, PNG, GIF or WebP · Max 5MB · Min 200×200px
             </p>
           </div>
         </CardContent>
