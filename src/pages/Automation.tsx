@@ -18,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, Share2, Mail, Bell, Plus, Search, Filter, ChevronDown, Trash2, Play, Pause, Twitter, Instagram, Facebook, Rocket, Sparkles, Wand2, Terminal, Loader2, CheckCircle2 } from "lucide-react";
+import { Settings, Share2, Mail, Bell, Plus, Search, Filter, ChevronDown, Trash2, Play, Pause, Twitter, Instagram, Facebook, Rocket, Sparkles, Wand2, Terminal, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { AutomationCard } from "@/components/automation/AutomationCard";
 import { AutomationDialog } from "@/components/automation/AutomationDialog";
