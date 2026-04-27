@@ -10,7 +10,7 @@ const routeTitles: Record<string, string> = {
   "/dashboard": "Overview",
   "/automation": "Automation",
   "/platforms": "Platforms",
-  "/calendar": "Content Calendar",
+  "/calendar": "Calendar",
   "/articles": "Articles",
   "/projects": "Projects",
   "/strategies": "Strategies",

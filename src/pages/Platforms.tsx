@@ -188,71 +188,64 @@ export default function Platforms() {
   return (
     <DashboardLayout>
       <TooltipProvider>
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-8 animate-fade-in">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
             <div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20">
-                  <Globe className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-black tracking-tighter text-foreground">Platforms</h1>
-                  <p className="text-muted-foreground">Manage your connected social media accounts</p>
-                </div>
-              </div>
+              <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Platforms</h1>
+              <p className="text-sm text-muted-foreground font-medium max-w-xl opacity-60">
+                Centralized neural-link for all connected social nodes. Monitor reach and orchestrate global transmissions.
+              </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3">
               <Button
                 variant="outline"
-                className="gap-2"
+                className="bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.08] text-white font-black uppercase text-[10px] tracking-widest px-6 py-6 rounded-2xl transition-all"
                 onClick={handleSync}
                 disabled={syncing}
               >
-                <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-                {syncing ? "Syncing..." : "Sync All"}
+                <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+                {syncing ? "SYNCING..." : "SYNC ALL"}
               </Button>
-              <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={() => setIsAddPlatformOpen(true)}>
-                <Plus className="h-4 w-4" />
-                Add Platform
+              <Button className="bg-primary hover:bg-primary/90 text-white font-black uppercase text-[10px] tracking-widest px-8 py-6 rounded-2xl shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={() => setIsAddPlatformOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                ADD PLATFORM
               </Button>
             </div>
           </div>
 
           {/* Overview Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             {[
-              { icon: Users, label: "Total Followers", value: totalStats.totalFollowers, change: `+${totalStats.weeklyGrowth}%`, positive: true },
-              { icon: Eye, label: "Total Views", value: totalStats.totalViews, change: "+12.4%", positive: true },
-              { icon: Heart, label: "Avg Engagement", value: totalStats.avgEngagement, change: "+0.3%", positive: true },
-              { icon: Share2, label: "Total Shares", value: totalStats.totalShares, change: "+8.2%", positive: true },
-              { icon: CheckCircle2, label: "Connected", value: `${totalStats.connectedPlatforms}/8`, subtext: "platforms" },
-              { icon: BarChart3, label: "Total Posts", value: totalStats.totalPosts.toLocaleString(), subtext: "all platforms" },
-              { icon: Calendar, label: "Scheduled", value: totalStats.scheduledPosts.toString(), subtext: "pending posts" },
-              { icon: TrendingUp, label: "Growth Rate", value: `+${totalStats.weeklyGrowth}%`, subtext: "weekly avg", highlight: true },
+              { icon: Users, label: "Reach", value: totalStats.totalFollowers, change: `+${totalStats.weeklyGrowth}%`, positive: true, color: "text-primary" },
+              { icon: Eye, label: "Impact", value: totalStats.totalViews, change: "+12.4%", positive: true, color: "text-blue-400" },
+              { icon: Heart, label: "Pulse", value: totalStats.avgEngagement, change: "+0.3%", positive: true, color: "text-pink-400" },
+              { icon: Share2, label: "Velocity", value: totalStats.totalShares, change: "+8.2%", positive: true, color: "text-amber-400" },
+              { icon: CheckCircle2, label: "Nodes", value: `${totalStats.connectedPlatforms}/8`, subtext: "active", color: "text-emerald-400" },
+              { icon: BarChart3, label: "Transmissions", value: totalStats.totalPosts.toLocaleString(), subtext: "all", color: "text-purple-400" },
+              { icon: Calendar, label: "Queue", value: totalStats.scheduledPosts.toString(), subtext: "pending", color: "text-indigo-400" },
+              { icon: TrendingUp, label: "Momentum", value: `+${totalStats.weeklyGrowth}%`, subtext: "avg", highlight: true, color: "text-primary" },
             ].map((stat, index) => (
-              <Card
+              <div
                 key={index}
-                className={`bg-card border-border transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 ${
-                  stat.highlight ? "border-primary/20 bg-gradient-to-br from-primary/5 to-transparent" : ""
+                className={`glass-card p-4 flex flex-col gap-2 relative overflow-hidden group transition-all duration-500 hover:border-primary/40 ${
+                  stat.highlight ? "border-primary/30 shadow-[0_0_20px_-10px_rgba(155,135,245,0.3)]" : ""
                 }`}
               >
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <stat.icon className={`h-3.5 w-3.5 ${stat.highlight ? "text-primary" : "text-muted-foreground"}`} />
-                    <span className="text-[10px] text-muted-foreground truncate">{stat.label}</span>
+                <div className="flex items-center justify-between mb-1">
+                  <stat.icon className={`h-3.5 w-3.5 ${stat.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
+                  <span className="text-[9px] font-black uppercase tracking-[0.1em] text-muted-foreground/50">{stat.label}</span>
+                </div>
+                <div className="text-xl font-black text-white tracking-tighter group-hover:text-primary transition-colors">{stat.value}</div>
+                {stat.change ? (
+                  <div className={`text-[9px] font-black flex items-center gap-1 ${stat.positive ? "text-emerald-400" : "text-rose-400"}`}>
+                    {stat.positive ? <ArrowUpRight className="h-2 w-2" /> : <ArrowDownRight className="h-2 w-2" />}
+                    {stat.change}
                   </div>
-                  <p className={`text-lg font-bold ${stat.highlight ? "text-primary" : "text-foreground"}`}>{stat.value}</p>
-                  {stat.change ? (
-                    <p className={`text-[10px] flex items-center gap-0.5 ${stat.positive ? "text-emerald-500" : "text-red-500"}`}>
-                      {stat.positive ? <ArrowUpRight className="h-2.5 w-2.5" /> : <ArrowDownRight className="h-2.5 w-2.5" />}
-                      {stat.change} this week
-                    </p>
-                  ) : (
-                    <p className="text-[10px] text-muted-foreground">{stat.subtext}</p>
-                  )}
-                </CardContent>
-              </Card>
+                ) : (
+                  <div className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-widest">{stat.subtext}</div>
+                )}
+              </div>
             ))}
           </div>
 

@@ -1,5 +1,6 @@
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
+import { DashboardFooter } from "./DashboardFooter";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -8,11 +9,14 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, hideHeader = false }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex bg-background selection:bg-primary/30">
       <Sidebar />
-      <div className="ml-64">
+      <div className="flex-1 flex flex-col pl-72 transition-all duration-500">
         {!hideHeader && <Header />}
-        <main className={hideHeader ? "h-screen" : "p-6"}>{children}</main>
+        <main className={`flex-1 ${hideHeader ? "h-screen" : "p-6"}`}>
+          {children}
+        </main>
+        <DashboardFooter />
       </div>
     </div>
   );

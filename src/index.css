@@ -1,212 +1,143 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    /* Premium Dark Dashboard Palette — default theme */
-    --background: 222 47% 4%;
-    --foreground: 213 31% 91%;
+    --background: 230 25% 4%;
+    --foreground: 0 0% 98%;
 
-    --card: 222 47% 6%;
-    --card-foreground: 213 31% 91%;
+    --card: 230 25% 6%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222 47% 5%;
-    --popover-foreground: 213 31% 91%;
+    --popover: 230 25% 4%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 250 89% 65%; /* Vibrant Indigo */
+    --primary: 263.4 85% 60%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 222 47% 10%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 230 20% 12%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 222 47% 12%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 230 20% 12%;
+    --muted-foreground: 230 10% 60%;
 
-    --accent: 250 89% 65%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 263.4 50% 20%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 250 89% 65%;
+    --border: 230 20% 15%;
+    --input: 230 20% 15%;
+    --ring: 263.4 85% 60%;
 
     --radius: 1rem;
-
-    --sidebar-background: 222 47% 4%;
-    --sidebar-foreground: 215 20% 65%;
-    --sidebar-primary: 250 89% 65%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 222 47% 10%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 250 89% 65%;
-
-    --chart-1: 174 83% 45%;
-    --chart-2: 260 67% 60%;
-    --chart-3: 35 92% 55%;
-    --chart-4: 199 89% 48%;
-    --chart-5: 340 82% 52%;
-
-    /* Platform colors */
-    --youtube: 0 100% 50%;
-    --tiktok: 349 100% 49%;
-    --twitter: 220 10% 20%;
-    --instagram: 330 70% 55%;
-    --facebook: 221 44% 41%;
-    --linkedin: 201 100% 35%;
-    --website: 174 83% 45%;
-    --podcast: 270 60% 55%;
-
-    /* Success/Warning */
-    --success: 142 76% 45%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 0%;
-
-    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-    --font-serif: 'Lora', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
-    --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
-    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
-    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.3), 0 4px 6px -4px hsl(0 0% 0% / 0.3);
-  }
-
-  /* ── Light Mode ───────────────────────────────────────────── */
-  .light {
-    --background: 210 40% 98%;
-    --foreground: 222 47% 10%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 10%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 10%;
-
-    --primary: 250 89% 55%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 93%;
-    --secondary-foreground: 222 47% 10%;
-
-    --muted: 210 40% 93%;
-    --muted-foreground: 215 20% 40%;
-
-    --accent: 250 89% 55%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214 31% 85%;
-    --input: 214 31% 85%;
-    --ring: 250 89% 55%;
-
-    --sidebar-background: 222 47% 10%;
-    --sidebar-foreground: 215 20% 75%;
-    --sidebar-primary: 250 89% 65%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 222 47% 18%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 20%;
-    --sidebar-ring: 250 89% 65%;
-
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.08);
-    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.08), 0 2px 4px -2px hsl(0 0% 0% / 0.05);
-    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.08), 0 4px 6px -4px hsl(0 0% 0% / 0.05);
+    
+    /* Premium Gradients */
+    --grad-primary: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%);
+    --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+    --grad-dark: linear-gradient(180deg, rgba(10, 12, 26, 0.8) 0%, rgba(10, 12, 26, 1) 100%);
   }
 }
-
 
 @layer base {
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    background-image: 
+      radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.07) 0%, transparent 40%),
+      radial-gradient(circle at 100% 100%, rgba(217, 70, 239, 0.05) 0%, transparent 40%);
+    background-attachment: fixed;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
   }
 }
 
 @layer utilities {
-  .platform-text {
-    color: var(--platform-color, hsl(var(--primary)));
-  }
-  .platform-bg {
-    background-color: var(--platform-color, hsl(var(--primary)));
-  }
-  .platform-border {
-    border-color: var(--platform-color, hsl(var(--primary)));
-  }
-  .platform-bg-light {
-    background-color: hsla(var(--platform-color-raw, var(--primary)), 0.1);
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
   }
 
-  /* Specific platform classes for cleaner usage if needed */
-  .text-youtube { color: hsl(var(--youtube)); }
-  .bg-youtube { background-color: hsl(var(--youtube)); }
-  .text-tiktok { color: hsl(var(--tiktok)); }
-  .bg-tiktok { background-color: hsl(var(--tiktok)); }
-  .text-twitter { color: hsl(var(--twitter)); }
-  .bg-twitter { background-color: hsl(var(--twitter)); }
-  .text-instagram { color: hsl(var(--instagram)); }
-  .bg-instagram { background-color: hsl(var(--instagram)); }
-  .text-facebook { color: hsl(var(--facebook)); }
-  .bg-facebook { background-color: hsl(var(--facebook)); }
-  .text-linkedin { color: hsl(var(--linkedin)); }
-  .bg-linkedin { background-color: hsl(var(--linkedin)); }
-  .text-website { color: hsl(var(--website)); }
-  .bg-website { background-color: hsl(var(--website)); }
-  .text-podcast { color: hsl(var(--podcast)); }
-  .bg-podcast { background-color: hsl(var(--podcast)); }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
 
-  /* Tiptap / Prosemirror Styling */
-  .ProseMirror {
-    outline: none !important;
-    color: hsl(var(--foreground));
-    background: transparent;
-    min-height: 160px;
-    padding: 0.75rem;
-    font-size: 0.875rem;
-    line-height: 1.6;
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full;
   }
-  .ProseMirror p {
-    margin-bottom: 0.5rem;
-  }
-  .ProseMirror p.is-editor-empty:first-child::before {
-    content: attr(data-placeholder);
-    float: left;
-    color: hsl(var(--muted-foreground));
-    pointer-events: none;
-    height: 0;
-    font-style: italic;
-    opacity: 0.6;
-  }
-  .ProseMirror h1 { @apply text-2xl font-black tracking-tighter mb-4 mt-2 text-foreground; }
-  .ProseMirror h2 { @apply text-xl font-bold tracking-tight mb-3 mt-2 text-foreground; }
-  .ProseMirror ul { @apply list-disc ml-6 mb-4; }
-  .ProseMirror ol { @apply list-decimal ml-6 mb-4; }
-  .ProseMirror blockquote { @apply border-l-4 border-primary/30 pl-4 italic my-4 text-muted-foreground; }
-  .ProseMirror code { @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground; }
-  .ProseMirror pre { @apply bg-muted p-4 rounded-lg font-mono text-sm my-4 overflow-x-auto text-foreground; }
-  .ProseMirror img { @apply max-w-full h-auto rounded-lg my-4; }
-  .ProseMirror a { @apply text-primary underline; }
-  /* Remove prose plugin's default light-mode colors that clash with dark theme */
-  .ProseMirror.prose { color: hsl(var(--foreground)) !important; }
-  .ProseMirror.prose h1, .ProseMirror.prose h2, .ProseMirror.prose h3 { color: hsl(var(--foreground)) !important; }
 
-  .progress-bar-fill {
-    @apply h-full bg-gradient-to-r from-[#6366f1] to-[#a855f7] transition-all duration-1000;
-    width: var(--progress, 0%);
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-white/20;
+  }
+
+  /* Glass Effects */
+  .glass {
+    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.08];
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+  
+  .glass-card {
+    @apply bg-gradient-to-b from-white/[0.06] to-transparent backdrop-blur-xl border border-white/[0.1];
+  }
+
+  .glass-hover {
+    @apply transition-all duration-500 hover:bg-white/[0.08] hover:border-white/[0.2] hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-0.5;
+  }
+
+  .premium-shadow {
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Animations */
+  .animate-slow {
+    animation-duration: 3s;
+  }
+}
+
+@layer components {
+  .calendar-day-circle {
+    @apply w-8 h-8 flex items-center justify-center rounded-xl transition-all text-xs font-semibold;
+  }
+  
+  .calendar-day-circle:hover {
+    @apply bg-white/10 text-white;
+  }
+
+  .calendar-day-active {
+    @apply bg-primary text-white shadow-lg shadow-primary/30 font-bold scale-110;
+  }
+
+  .event-bar {
+    @apply h-7 flex items-center px-2.5 text-[10px] font-bold uppercase tracking-tight truncate rounded-lg border-l-2 transition-all hover:brightness-110 hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .page-container {
+    @apply max-w-[1400px] mx-auto px-6 md:px-10 py-10;
+  }
+
+  .head-neon {
+    @apply font-black tracking-tight uppercase;
+    background: var(--grad-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.4));
+  }
+
+  .input-dark-scheme {
+    color-scheme: dark;
+  }
+
+  .select-no-arrow {
+    background-image: none;
+    -webkit-appearance: none;
+    appearance: none;
   }
 }

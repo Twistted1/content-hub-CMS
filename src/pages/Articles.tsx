@@ -183,105 +183,116 @@ export default function Articles() {
       <DashboardLayout>
         <div className="space-y-6 h-full flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
             <div>
-              <h1 className="text-xl font-black tracking-tighter text-foreground">Articles</h1>
-              <p className="text-muted-foreground">
-                Write, edit, and publish long-form content for your website
+              <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Articles</h1>
+              <p className="text-sm text-muted-foreground font-medium max-w-xl opacity-60">
+                Compose high-impact, long-form content. Orchestrate your brand's narrative across Novus Exchange with precision.
               </p>
             </div>
-            <Button onClick={handleCreateArticle} className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Article
+            <Button onClick={handleCreateArticle} className="bg-primary hover:bg-primary/90 text-white font-black uppercase text-[11px] tracking-[0.2em] gap-3 px-8 py-7 rounded-2xl shadow-2xl shadow-primary/30 active:scale-95 transition-all">
+              <Plus className="h-5 w-5" />
+              NEW ARTICLE
             </Button>
           </div>
 
           {/* Filters */}
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10">
+            <div className="relative flex-1 w-full max-w-xl group">
+              <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-[20px] opacity-0 group-focus-within:opacity-100 transition-opacity" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 group-focus-within:text-primary transition-colors" />
               <Input
-                placeholder="Search articles..."
-                className="pl-9"
+                placeholder="Search global archives..."
+                className="pl-12 bg-white/[0.03] border-white/[0.08] rounded-2xl py-6 text-sm placeholder:text-muted-foreground/40 focus:border-primary/40 focus:bg-white/[0.05] transition-all relative z-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Status" />
+              <SelectTrigger className="w-full sm:w-[220px] bg-white/[0.03] border-white/[0.08] rounded-2xl py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-white transition-all">
+                <SelectValue placeholder="STATUS FILTER" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
+              <SelectContent className="bg-background/95 backdrop-blur-xl border-white/[0.08] rounded-2xl">
+                <SelectItem value="all" className="text-[10px] font-black uppercase tracking-widest py-3">ALL TRANSMISSIONS</SelectItem>
+                <SelectItem value="draft" className="text-[10px] font-black uppercase tracking-widest py-3 text-amber-400">DRAFTS</SelectItem>
+                <SelectItem value="scheduled" className="text-[10px] font-black uppercase tracking-widest py-3 text-blue-400">SCHEDULED</SelectItem>
+                <SelectItem value="published" className="text-[10px] font-black uppercase tracking-widest py-3 text-emerald-400">PUBLISHED</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Articles List */}
           {articles.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-12 bg-muted/20">
-              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium">No articles found</h3>
-              <p className="text-muted-foreground mb-6 text-center max-w-sm">
-                Start writing your first article to publish on Novus Exchange.
+            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-white/[0.08] rounded-[2.5rem] p-24 bg-white/[0.02] animate-in fade-in zoom-in-95 duration-500">
+              <div className="w-24 h-24 rounded-[2rem] bg-white/[0.03] flex items-center justify-center mb-8 border border-white/[0.08]">
+                <FileText className="h-10 w-10 text-muted-foreground/30" />
+              </div>
+              <h3 className="text-2xl font-black text-white tracking-tight uppercase mb-4">No content found</h3>
+              <p className="text-muted-foreground mb-10 text-center max-w-sm font-medium opacity-60">
+                Your archive is currently empty. Initialize your first long-form strategy to begin the sequence.
               </p>
-              <Button onClick={handleCreateArticle}>Create Article</Button>
+              <Button onClick={handleCreateArticle} className="bg-primary px-10 py-7 rounded-2xl font-black uppercase tracking-widest">Create Sequence</Button>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
               {articles.map((article) => (
-                <Card key={article.id} className="group hover:shadow-md transition-all cursor-pointer border-border" onClick={() => handleEditArticle(article)}>
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start gap-2">
-                      <Badge variant="outline" className={cn("capitalize", getStatusColor(article.status))}>
-                        {article.status}
-                      </Badge>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditArticle(article); }}>
-                            <Edit className="h-4 w-4 mr-2" /> Edit
+                <div 
+                  key={article.id} 
+                  className="glass-card p-6 group cursor-pointer hover:border-primary/40 transition-all duration-500 flex flex-col h-full relative overflow-hidden"
+                  onClick={() => handleEditArticle(article)}
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[50px] rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-all" />
+                  
+                  <div className="flex justify-between items-center mb-6 relative z-10">
+                    <Badge variant="outline" className={cn("text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-lg border-white/[0.08]", getStatusColor(article.status))}>
+                      {article.status}
+                    </Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-white/[0.05] text-muted-foreground hover:text-white transition-all">
+                          <MoreHorizontal className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-background/95 backdrop-blur-xl border-white/[0.08] rounded-2xl p-2 min-w-[180px]">
+                        <DropdownMenuItem className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest gap-3" onClick={(e) => { e.stopPropagation(); handleEditArticle(article); }}>
+                          <Edit className="h-4 w-4" /> Edit Sequence
+                        </DropdownMenuItem>
+                        {article.status !== "published" && (
+                          <DropdownMenuItem className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest gap-3 text-primary" onClick={(e) => { e.stopPropagation(); handlePublish(article.id); }}>
+                            <Send className="h-4 w-4" /> Deploy Now
                           </DropdownMenuItem>
-                          {article.status !== "published" && (
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handlePublish(article.id); }}>
-                              <Send className="h-4 w-4 mr-2" /> Publish
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(article.id); }}>
-                            <Trash2 className="h-4 w-4 mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    <CardTitle className="line-clamp-2 leading-tight text-lg">
+                        )}
+                        <DropdownMenuItem className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest gap-3 text-rose-400" onClick={(e) => { e.stopPropagation(); handleDelete(article.id); }}>
+                          <Trash2 className="h-4 w-4" /> Purge Record
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  
+                  <div className="relative z-10 flex-1">
+                    <h3 className="text-xl font-black text-white leading-tight tracking-tight mb-4 group-hover:text-primary transition-colors line-clamp-2 uppercase">
                       {article.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-sm text-muted-foreground line-clamp-3 mb-4 h-[60px]">
+                    </h3>
+                    <div className="text-sm text-muted-foreground/60 line-clamp-3 mb-8 font-medium leading-relaxed">
                       <div dangerouslySetInnerHTML={{ __html: article.content || "No content" }} />
                     </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto pt-4 border-t">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
+                  </div>
+                  
+                  <div className="flex items-center justify-between mt-auto pt-6 border-t border-white/[0.05] relative z-10">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                      <Clock className="h-3 w-3 text-muted-foreground/40" />
+                      <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">
                         {format(new Date(article.updatedAt), "MMM d, yyyy")}
-                      </div>
-                      {article.status === "published" && (
-                        <div className="flex items-center gap-1 text-green-600">
-                          <Globe className="h-3 w-3" />
-                          Live
-                        </div>
-                      )}
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
+                    {article.status === "published" && (
+                      <div className="flex items-center gap-2 text-emerald-400">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Live Node</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           )}

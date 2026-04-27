@@ -85,12 +85,14 @@ export interface Post {
   userId: string;
   title: string;
   content: string | null;
+  excerpt: string | null;
   status: PostStatus;
   type: PostType;
   scheduledAt: string | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  category: string | null;
   platforms?: PostPlatform[];
   media?: Media[];
 }
@@ -188,6 +190,7 @@ export interface UJTItem {
     tags?: string[];
     isPinned?: boolean;
     color?: string;
+    category?: string;
   };
   imageUrl?: string;
 }

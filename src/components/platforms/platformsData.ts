@@ -291,13 +291,14 @@ export const overallPerformance = [
 ];
 
 export const platformColors: Record<string, string> = {
-  youtube: "hsl(var(--youtube))",
-  tiktok: "hsl(var(--tiktok))",
-  instagram: "hsl(var(--instagram))",
-  facebook: "hsl(var(--facebook))",
-  linkedin: "hsl(var(--linkedin))",
-  twitter: "hsl(var(--twitter))",
-  website: "hsl(var(--website))",
-  novusexchange: "hsl(var(--website))",
-  podcast: "hsl(var(--podcast))", 
+  youtube: "#EF4444",
+  tiktok: "#06B6D4",
+  instagram: "#E1306C",
+  facebook: "#1877F2",
+  linkedin: "#0A66C2",
+  twitter: "#F8FAFC",
+  website: "#14B8A6",
+  novusexchange: "#14B8A6",
+  podcast: "#F97316",
+  rumble: "#22C55E",
 };

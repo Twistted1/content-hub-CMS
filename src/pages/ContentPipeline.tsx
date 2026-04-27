@@ -111,59 +111,60 @@ export default function ContentPipeline() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-xl font-black tracking-tighter text-foreground">Content Pipeline</h1>
-          <p className="text-muted-foreground">
-            Automated content creation: idea → image → schedule → publish
+        <div className="mb-8">
+          <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Content Pipeline</h1>
+          <p className="text-sm text-muted-foreground font-medium max-w-xl opacity-60">
+            Advanced neural-orchestration. From initial conceptualization to global multi-platform publication.
           </p>
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Runs</CardTitle>
-              <Zap className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pipelineRuns.length}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-500">{completedRuns}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Running</CardTitle>
-              <Loader2 className="h-4 w-4 text-primary animate-spin" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">{runningRuns}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Webhooks</CardTitle>
-              <Webhook className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{webhooks.filter(w => w.isActive).length}</div>
-              <p className="text-xs text-muted-foreground">Active endpoints</p>
-            </CardContent>
-          </Card>
+        <div className="grid gap-6 md:grid-cols-4 mb-8">
+          <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-primary/40 transition-all duration-500">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-primary/10 transition-all" />
+            <div className="flex items-center justify-between relative z-10">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Total Operations</span>
+              <Zap className="h-5 w-5 text-primary" />
+            </div>
+            <div className="text-4xl font-black text-white tracking-tighter relative z-10">{pipelineRuns.length}</div>
+          </div>
+          
+          <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-emerald-500/40 transition-all duration-500">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-emerald-500/10 transition-all" />
+            <div className="flex items-center justify-between relative z-10">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Success Rate</span>
+              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+            </div>
+            <div className="text-4xl font-black text-emerald-500 tracking-tighter relative z-10">{completedRuns}</div>
+          </div>
+
+          <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-amber-500/40 transition-all duration-500">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-amber-500/10 transition-all" />
+            <div className="flex items-center justify-between relative z-10">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Active Nodes</span>
+              <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />
+            </div>
+            <div className="text-4xl font-black text-amber-500 tracking-tighter relative z-10">{runningRuns}</div>
+          </div>
+
+          <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-blue-500/40 transition-all duration-500">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-blue-500/10 transition-all" />
+            <div className="flex items-center justify-between relative z-10">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Integrations</span>
+              <Webhook className="h-5 w-5 text-blue-500" />
+            </div>
+            <div className="flex items-baseline gap-2 relative z-10">
+              <div className="text-4xl font-black text-white tracking-tighter">{webhooks.filter(w => w.isActive).length}</div>
+              <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">Active</span>
+            </div>
+          </div>
         </div>
 
-        <Tabs defaultValue="create" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="create">Create Pipeline</TabsTrigger>
-            <TabsTrigger value="history">Run History</TabsTrigger>
-            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+        <Tabs defaultValue="create" className="space-y-6">
+          <TabsList className="bg-white/[0.03] border border-white/[0.08] p-1.5 rounded-2xl h-auto">
+            <TabsTrigger value="create" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Command</TabsTrigger>
+            <TabsTrigger value="history" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Archives</TabsTrigger>
+            <TabsTrigger value="webhooks" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Endpoints</TabsTrigger>
           </TabsList>
 
           {/* CREATE PIPELINE TAB */}

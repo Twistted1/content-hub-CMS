@@ -16,8 +16,9 @@ export function useUJT() {
   const { addProject } = useProjects();
   const { addStrategy } = useStrategies();
 
-  const processUJT = async (template: UniversalTemplate) => {
-    if (!user) {
+  const processUJT = async (template: UniversalTemplate, targetUserId?: string) => {
+    const activeUser = targetUserId || user?.id;
+    if (!activeUser) {
       toast.error("You must be logged in to import content");
       return;
     }
@@ -46,12 +47,15 @@ export function useUJT() {
               post: {
                 title: item.data?.title || "Untitled Post",
                 content: item.data?.content || "",
+                excerpt: item.data?.excerpt || item.data?.content?.substring(0, 160) || "",
                 type: item.type === "ARTICLE" ? "article" : (item.data?.type || "text"),
                 status: (item.metadata?.status || (scheduledAt ? "scheduled" : "draft")) as any,
                 scheduled_at: scheduledAt,
+                category: item.metadata?.category || "General",
                 cover_image_url: item.data?.img || item.data?.image || item.imageUrl || ""
               },
               platforms: item.metadata?.platforms || [platform],
+              overrideUserId: activeUser,
             });
             break;
           }

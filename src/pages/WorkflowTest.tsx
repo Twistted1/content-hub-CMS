@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { Twitter, Instagram, Calendar, Filter, Hash, Type, BarChart, FileJson, UploadCloud, Send } from 'lucide-react';
 import { usePosts } from '@/hooks/usePosts';
 import { toast } from 'sonner';
-import defaultData from '../data/workflow-content.json';
 
 type Platform = 'twitter' | 'instagram';
 type DayFilter = 'All' | 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
@@ -164,13 +163,6 @@ const WorkflowTest = () => {
             className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition"
           >
             Import JSON Strategy
-          </button>
-          
-          <button 
-            onClick={() => setWorkflowData(defaultData)}
-            className="w-full mt-2 py-2 border border-primary text-primary font-semibold rounded-lg hover:bg-primary/10 transition"
-          >
-            [Dev] Auto-Load Generated Data
           </button>
         </div>
       ) : (

@@ -172,8 +172,8 @@ export default function GanttChart() {
                       {days.map((day) => (
                         <div
                           key={day}
-                          className="flex items-center justify-center border-r border-border text-sm text-muted-foreground"
-                          style={{ width: cellWidth }}
+                          className="flex items-center justify-center border-r border-border text-sm text-muted-foreground dynamic-fill-bar"
+                          ref={(el) => { if (el) el.style.width = `${cellWidth}px`; }}
                         >
                           {day}
                         </div>
@@ -185,29 +185,30 @@ export default function GanttChart() {
                       {filteredTasks.map((task) => (
                         <div
                           key={task.id}
-                          className="relative h-[57px] hover:bg-muted/30 transition-colors"
-                          style={{ width: days.length * cellWidth }}
+                          className="relative h-[57px] hover:bg-muted/30 transition-colors dynamic-fill-bar"
+                          ref={(el) => { if (el) el.style.width = `${days.length * cellWidth}px`; }}
                         >
-                          {/* Grid Lines */}
-                          <div className="absolute inset-0 flex">
-                            {days.map((day) => (
-                              <div key={day} className="border-r border-border/50" style={{ width: cellWidth }} />
-                            ))}
-                          </div>
+                            <div className="absolute inset-0 flex">
+                              {days.map((day) => (
+                                <div key={day} className="border-r border-border/50 dynamic-fill-bar" ref={(el) => { if (el) el.style.width = `${cellWidth}px`; }} />
+                              ))}
+                            </div>
 
                           {/* Task Bar */}
                           {(task.startDate != null && task.duration) && (
                             <div
-                              className="absolute top-3 h-8 rounded-md flex items-center overflow-hidden cursor-pointer group"
-                              style={{
-                                left: task.startDate * cellWidth + 4,
-                                width: Math.max(task.duration * cellWidth - 8, 20),
+                              className="absolute top-3 h-8 rounded-md flex items-center overflow-hidden cursor-pointer group dynamic-width-bar dynamic-left-pos"
+                              ref={(el) => {
+                                if (el) {
+                                  el.style.left = `${task.startDate * cellWidth + 4}px`;
+                                  el.style.width = `${Math.max(task.duration * cellWidth - 8, 20)}px`;
+                                }
                               }}
                             >
                               <div className={`absolute inset-0 ${getStatusColor(task.status)} opacity-20`} />
                               <div
-                                className={`absolute inset-y-0 left-0 ${getStatusColor(task.status)}`}
-                                style={{ width: `${task.progress}%` }}
+                                className={`absolute inset-y-0 left-0 ${getStatusColor(task.status)} dynamic-fill-bar`}
+                                ref={(el) => { if (el) el.style.width = `${task.progress}%`; }}
                               />
                               <div className={`absolute inset-0 border-2 rounded-md ${getStatusColor(task.status).replace('bg-', 'border-')}`} />
                               <span className="relative z-10 px-2 text-xs font-medium truncate text-foreground">

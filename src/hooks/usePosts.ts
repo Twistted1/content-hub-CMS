@@ -15,12 +15,14 @@ const mapPost = (row: PostRow): Post => ({
   userId: row.user_id,
   title: row.title,
   content: row.content,
+  excerpt: row.excerpt,
   status: row.status,
   type: row.type,
   scheduledAt: row.scheduled_at,
   publishedAt: row.published_at,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  category: row.category,
 });
 
 const mapMedia = (row: MediaRow): Media => ({
@@ -41,20 +43,37 @@ export function usePosts() {
   const postsQuery = useQuery({
     queryKey: ["posts", user?.id],
     queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from("posts")
         .select(`
           *,
           post_platforms (*),
           media (*)
-        `)
-        .order("created_at", { ascending: false });
+        `);
+      
+      // If NOT admin, we would filter by user_id, 
+      // but for this CMS we want a Global Master Calendar for all admins.
+      // We will order by scheduled_at to ensure a consistent timeline.
+      const { data, error } = await query.order("scheduled_at", { ascending: true });
 
       if (error) throw error;
-      return data.map((row) => ({
+      
+      // Frontend De-duplication: Only show one post per time slot per platform
+      const uniqueData = data.reduce((acc: any[], current: any) => {
+        const platform = current.post_platforms?.[0]?.platform || 'none';
+        const key = `${current.scheduled_at}_${platform}_${current.title}`;
+        if (!acc.find(item => {
+          const itemPlatform = item.post_platforms?.[0]?.platform || 'none';
+          return `${item.scheduled_at}_${itemPlatform}_${item.title}` === key;
+        })) {
+          acc.push(current);
+        }
+        return acc;
+      }, []);
+
+      return uniqueData.map((row) => ({
         ...mapPost(row),
-        platforms: row.post_platforms?.map((p: any) => ({
+        platforms: (row.post_platforms as any[])?.map((p: any) => ({
           id: p.id,
           postId: p.post_id,
           platform: p.platform,
@@ -73,15 +92,18 @@ export function usePosts() {
     mutationFn: async ({
       post,
       platforms,
+      overrideUserId,
     }: {
       post: Omit<PostInsertType, "user_id">;
       platforms?: PlatformType[];
+      overrideUserId?: string;
     }) => {
-      if (!user) throw new Error("Not authenticated");
+      const activeUserId = overrideUserId || user?.id;
+      if (!activeUserId) throw new Error("Not authenticated");
 
       const { data: postData, error: postError } = await supabase
         .from("posts")
-        .insert({ ...post, user_id: user.id })
+        .insert({ ...post, user_id: activeUserId })
         .select()
         .single();
 
@@ -113,7 +135,7 @@ export function usePosts() {
   });
 
   const updatePost = useMutation({
-    mutationFn: async ({ id, ...updates }: any & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: Partial<PostUpdateType> & { id: string }) => {
       const { data, error } = await supabase
         .from("posts")
         .update(updates)

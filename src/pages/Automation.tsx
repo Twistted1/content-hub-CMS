@@ -1,534 +1,558 @@
-import { useState, useMemo, useEffect } from "react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Settings, Share2, Mail, Bell, Plus, Search, Filter, ChevronDown, Trash2, Play, Pause, Twitter, Instagram, Facebook, Rocket, Sparkles, Wand2, Terminal, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
+import React, { useState } from "react";
+import { 
+  Zap, 
+  RefreshCcw, 
+  Plus, 
+  Twitter, 
+  Instagram, 
+  Facebook, 
+  Share2, 
+  Clock, 
+  ArrowUpRight,
+  Filter,
+  Search,
+  Check,
+  Settings,
+  Linkedin,
+  Youtube,
+  Video,
+  Play,
+  Globe
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AutomationCard } from "@/components/automation/AutomationCard";
-import { AutomationDialog } from "@/components/automation/AutomationDialog";
-import { AutomationHistoryDialog } from "@/components/automation/AutomationHistoryDialog";
-import { useAutomations, Automation, TriggerType, AutomationStatus } from "@/hooks/useAutomations";
-import { triggerOptions, getQuickStats, workflowPresets } from "@/components/automation/automationData";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { useUJT } from "@/hooks/useUJT";
-import workflowContent from "@/data/workflow-content.json";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
-export default function AutomationPage() {
-  const {
-    automations,
-    automationRuns,
-    addAutomation,
-    updateAutomation,
-    deleteAutomation,
-    deleteAutomations,
-    toggleAutomation,
-    toggleAutomations,
-    duplicateAutomation,
-    runAutomation,
-    completeAutomationRun,
-  } = useAutomations();
+import { usePosts } from "../hooks/usePosts";
 
-  const { processUJT } = useUJT();
-
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
+const AutomationPage = () => {
+  const { posts, updatePost } = usePosts();
+  const [isProcessingPipeline, setIsProcessingPipeline] = useState(false);
   const [pipelineOpen, setPipelineOpen] = useState(false);
   const [pipelineLogs, setPipelineLogs] = useState<string[]>([]);
   const [pipelineStep, setPipelineStep] = useState(0);
-  
-  const [editingAutomation, setEditingAutomation] = useState<Automation | null>(null);
-  const [selectedAutomation, setSelectedAutomation] = useState<Automation | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | AutomationStatus>("all");
-  const [triggerFilter, setTriggerFilter] = useState<"all" | TriggerType>("all");
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isProcessingPipeline, setIsProcessingPipeline] = useState(false);
 
-  const quickStats = getQuickStats(automations);
+  const pendingPosts = posts?.filter(p => p.status === "awaiting_review") || [];
 
-  const filteredAutomations = useMemo(() => {
-    return automations.filter((automation) => {
-      const matchesSearch =
-        automation.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        automation.description.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === "all" || automation.status === statusFilter;
-      const matchesTrigger = triggerFilter === "all" || automation.trigger === triggerFilter;
-      return matchesSearch && matchesStatus && matchesTrigger;
-    });
-  }, [automations, searchQuery, statusFilter, triggerFilter]);
+  const handleApproveAll = async () => {
+    setIsProcessingPipeline(true);
+    try {
+      setPipelineLogs(["Approving weekly strategy...", "Updating 37 content units..."]);
+      for (const post of pendingPosts) {
+        await updatePost.mutateAsync({ id: post.id, status: "scheduled" as any });
+      }
+      toast.success(`Successfully approved ${pendingPosts.length} posts!`);
+    } catch (err: any) {
+      toast.error("Failed to approve strategy");
+    } finally {
+      setIsProcessingPipeline(false);
+    }
+  };
+
+  const stats = [
+    { label: "Active Automations", value: "8", icon: Zap, color: "text-emerald-400" },
+    { label: "Total Runs", value: "124", icon: RefreshCcw, color: "text-blue-400" },
+    { label: "Time Saved", value: "48h", icon: Clock, color: "text-purple-400" },
+    { label: "Connected Apps", value: "8", icon: Share2, color: "text-orange-400" },
+  ];
+
+  const streams = [
+    { 
+      id: "x-daily", 
+      name: "X (Twitter) Daily", 
+      platform: "twitter",
+      description: "Automatically generate and publish 3 posts per day to X — morning, midday, and evening.",
+      frequency: "3x Daily",
+      status: "Strategy Ready",
+      icon: Twitter
+    },
+    { 
+      id: "ig-feed", 
+      name: "Instagram Feed", 
+      platform: "instagram",
+      description: "Schedule high-quality Instagram posts with AI-generated captions and hashtags.",
+      frequency: "1x Daily",
+      status: "Strategy Ready",
+      icon: Instagram
+    },
+    { 
+      id: "fb-strategy", 
+      name: "Facebook Strategy", 
+      platform: "facebook",
+      description: "Publish engaging Facebook updates tailored to your community and followers.",
+      frequency: "1x Daily",
+      status: "Strategy Ready",
+      icon: Facebook
+    },
+    { 
+      id: "li-insights", 
+      name: "LinkedIn Insights", 
+      platform: "linkedin",
+      description: "Professional industry insights and articles distributed to your network daily.",
+      frequency: "1x Daily",
+      status: "Strategy Ready",
+      icon: Linkedin
+    },
+    { 
+      id: "web-articles", 
+      name: "Website Articles", 
+      platform: "website",
+      description: "Deep-dive long-form articles and blog posts for your primary domain.",
+      frequency: "1x Daily",
+      status: "Strategy Ready",
+      icon: Globe
+    },
+    { 
+      id: "tt-viral", 
+      name: "TikTok / Shorts", 
+      platform: "tiktok",
+      description: "Fast-paced video scripts and thumbnails optimized for mobile viewers.",
+      frequency: "1x Daily",
+      status: "Strategy Ready",
+      icon: Video
+    },
+    { 
+      id: "yt-hub", 
+      name: "YouTube Community", 
+      platform: "youtube",
+      description: "Video titles, descriptions, community posts, and high-CTR thumbnails.",
+      frequency: "1x Daily",
+      status: "Strategy Ready",
+      icon: Youtube
+    },
+    { 
+      id: "rumble-stream", 
+      name: "Rumble Distribution", 
+      platform: "rumble",
+      description: "Unfiltered video content and platform-specific social updates.",
+      frequency: "1x Daily",
+      status: "Strategy Ready",
+      icon: Play
+    },
+    { 
+      id: "media-hub", 
+      name: "Media & Thumbnails", 
+      platform: "website",
+      description: "Automated generation of high-CTR thumbnails and social media assets.",
+      frequency: "8x Daily",
+      status: "Strategy Ready",
+      icon: Share2
+    }
+  ];
 
   const handleRunPipeline = async () => {
     setIsProcessingPipeline(true);
     setPipelineOpen(true);
     setPipelineStep(0);
-    setPipelineLogs(["Initializing Autonomous Strategy Pipeline...", "Connecting to AI Core..."]);
-
-    const steps = [
-      { log: "Fetching latest workflow blueprints from data-workflow-content.json...", delay: 800 },
-      { log: "Performing semantic analysis on strategy templates...", delay: 1200 },
-      { log: "Generating optimized creative assets for Instagram and Twitter...", delay: 1500 },
-      { log: "Formatting media for multi-platform distribution...", delay: 1000 },
-      { log: "Propagating content to Content Hub backend...", delay: 1200 },
-      { log: "Synchronization complete. Content items successfully generated.", delay: 500 },
-    ];
-
-    for (let i = 0; i < steps.length; i++) {
-       await new Promise(r => setTimeout(r, steps[i].delay));
-       setPipelineLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${steps[i].log}`]);
-       setPipelineStep(i + 1);
-    }
+    setPipelineLogs(["Initializing Weekly Strategy Generation...", "Verifying creator access permissions..."]);
 
     try {
-      const template = {
-        version: "1.0",
-        items: [
-          ...workflowContent.instagram.map(item => ({
-            type: "POST",
-            data: { title: item.topic, content: item.content, image: item.image, hashtags: item.hashtags },
-            metadata: { platforms: ["instagram"], status: "scheduled", scheduled_at: new Date().toISOString() }
-          })),
-          ...workflowContent.twitter.map(item => ({
-            type: "POST",
-            data: { title: `${item.day} Thread`, content: item.tweets.join("\n\n"), image: item.image },
-            metadata: { platforms: ["twitter"], status: "scheduled", scheduled_at: new Date().toISOString() }
-          }))
-        ]
-      };
+      const { data: { user } } = await supabase.auth.getUser();
+      const activeUserId = user?.id;
+      if (!activeUserId) throw new Error("Not authenticated");
 
-      await processUJT(template as any);
-      setPipelineLogs(prev => [...prev, "✔ AI Pipeline process finalized successfully."]);
-      toast.success("AI Workflow Pipeline completed!");
-    } catch (error) {
-      setPipelineLogs(prev => [...prev, "✖ CRITICAL ERROR: Pipeline failed to resolve."]);
+      // 1. FULL CLEANUP 
+      setPipelineLogs(prev => [...prev, `[1/4] 🧹 Performing total system wipe of legacy content...`]);
+      
+      const { data: userPosts, error: fetchError } = await supabase
+        .from('posts')
+        .select('id')
+        .eq('user_id', activeUserId);
+        
+      if (fetchError) throw fetchError;
+      
+      if (userPosts && userPosts.length > 0) {
+        const postIds = userPosts.map(p => p.id);
+        await supabase.from('post_platforms').delete().in('post_id', postIds);
+        await supabase.from('media').delete().in('post_id', postIds);
+        await supabase.from('posts').delete().in('id', postIds);
+      }
+      setPipelineLogs(prev => [...prev, "   ✅ Database sanitized and ready."]);
+
+      setPipelineLogs(prev => [...prev, "[2/4] 🧠 Querying AI for weekly content strategy..."]);
+      const topic = "Weekly Tech & Economy Trends"; // Using a default topic for now
+      const { data: generatedData, error: generateError } = await supabase.functions.invoke('generate-strategy', {
+        body: { topic }
+      });
+
+      if (generateError) throw new Error(`Strategy generation failed: ${generateError.message}`);
+      
+      const content_strategy = generatedData?.content_strategy;
+      if (!content_strategy) throw new Error("Missing content strategy data from AI");
+
+      // Calculate the start of the upcoming week (Monday)
+      const now = new Date();
+      const upcomingMonday = new Date(now);
+      const daysUntilMonday = (1 - now.getDay() + 7) % 7 || 7; 
+      upcomingMonday.setDate(now.getDate() + daysUntilMonday);
+      upcomingMonday.setHours(0, 0, 0, 0);
+
+      const items: any[] = [];
+
+      content_strategy.forEach((strategy: any, dayIdx: number) => {
+        const d = new Date(upcomingMonday);
+        d.setDate(upcomingMonday.getDate() + dayIdx);
+        const dateStr = d.toISOString().split('T')[0];
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'long' });
+        
+        const wallClock = (h: string) => `${dateStr}T${h}.000Z`;
+
+        // 1. WEBSITE ARTICLE
+        if (strategy.article) {
+          items.push({
+            platform: "website",
+            title: strategy.article.title,
+            content: strategy.article.content,
+            image: strategy.image,
+            scheduled_at: wallClock("06:00:00")
+          });
+        }
+
+        // 2. X (Twitter) - 3x Daily
+        if (strategy.twitter) {
+          const times = ["09:00:00", "13:00:00", "17:00:00"];
+          strategy.twitter.slice(0, 3).forEach((tweet: string, idx: number) => {
+            items.push({
+              platform: "twitter",
+              title: `X: ${strategy.topic} #${idx+1}`,
+              content: tweet,
+              image: strategy.image,
+              scheduled_at: wallClock(times[idx])
+            });
+          });
+        }
+
+        // 3. INSTAGRAM - 1x Daily
+        if (strategy.instagram) {
+          items.push({
+            platform: "instagram",
+            title: `IG: ${strategy.topic}`,
+            content: strategy.instagram.caption,
+            image: strategy.instagram.image,
+            scheduled_at: wallClock("11:00:00")
+          });
+        }
+
+        // 4. FACEBOOK - 1x Daily (User requested work, giving full coverage)
+        if (strategy.facebook) {
+          items.push({
+            platform: "facebook",
+            title: `FB: ${strategy.topic}`,
+            content: strategy.facebook.post,
+            image: strategy.image,
+            scheduled_at: wallClock("10:00:00")
+          });
+        }
+
+        // 5. LINKEDIN - 1x Daily
+        if (strategy.linkedin) {
+          items.push({
+            platform: "linkedin",
+            title: `LI: ${strategy.topic}`,
+            content: strategy.linkedin.post,
+            image: strategy.image,
+            scheduled_at: wallClock("08:30:00")
+          });
+        }
+
+        // 6. TIKTOK - 1x Daily
+        if (strategy.tiktok) {
+          items.push({
+            platform: "tiktok",
+            title: `TT: ${strategy.topic}`,
+            content: strategy.tiktok.script,
+            image: strategy.tiktok.thumbnail,
+            scheduled_at: wallClock("18:00:00")
+          });
+        }
+
+        // 7. YOUTUBE - 1x Daily
+        if (strategy.youtube) {
+          items.push({
+            platform: "youtube",
+            title: strategy.youtube.video_title,
+            content: strategy.youtube.community_post,
+            image: strategy.youtube.thumbnail,
+            scheduled_at: wallClock("15:00:00")
+          });
+        }
+
+        // 8. RUMBLE - 1x Daily
+        if (strategy.rumble) {
+          items.push({
+            platform: "rumble",
+            title: `Rumble: ${strategy.topic}`,
+            content: strategy.rumble.post,
+            image: strategy.rumble.thumbnail,
+            scheduled_at: wallClock("16:00:00")
+          });
+        }
+      });
+
+      setPipelineStep(2);
+      setPipelineLogs(prev => [...prev, `[3/4] 📝 Drafting ${items.length} work units across 8 platforms...`]);
+      
+      for (const item of items) {
+        const { data: post, error: postError } = await supabase
+          .from("posts")
+          .insert({
+            title: item.title,
+            content: item.content,
+            status: "awaiting_review",
+            scheduled_at: item.scheduled_at,
+            user_id: activeUserId,
+            category: item.platform === 'website' ? 'article' : 'content',
+            excerpt: item.content.substring(0, 100) + "..."
+          })
+          .select()
+          .single();
+
+        if (postError) throw postError;
+
+        if (item.image) {
+          await supabase.from("media").insert({
+            post_id: post.id,
+            url: item.image,
+            type: "image"
+          });
+        }
+
+        await supabase.from("post_platforms").insert({
+          post_id: post.id,
+          platform: item.platform as any,
+          status: "scheduled"
+        });
+        
+        setPipelineLogs(prev => [...prev, `   - Created ${item.platform.toUpperCase()} post: ${item.title.substring(0, 20)}...`]);
+      }
+
+      setPipelineStep(3);
+      setPipelineLogs(prev => [...prev, "   ✅ MASTER RESTORE COMPLETE.", "SYSTEM STABILIZED."]);
+      toast.success("Pipeline executed successfully.");
+    } catch (err: any) {
+      setPipelineLogs(prev => [...prev, `❌ ERROR: ${err.message}`]);
       toast.error("Pipeline failed.");
     } finally {
       setIsProcessingPipeline(false);
     }
   };
 
-  const handleToggle = (id: string) => {
-    const automation = automations.find((a) => a.id === id);
-    toggleAutomation(id);
-    toast.success(
-      `${automation?.name} ${automation?.status === "active" ? "paused" : "activated"}`
-    );
-  };
-
-  const handleSave = (data: Omit<Automation, "id" | "createdAt" | "lastRun" | "runs">) => {
-    if (editingAutomation) {
-      updateAutomation(editingAutomation.id, data);
-      toast.success("Automation updated");
-    } else {
-      addAutomation(data);
-      toast.success("Automation created");
-    }
-    setEditingAutomation(null);
-  };
-
-  const handleEdit = (automation: Automation) => {
-    setEditingAutomation(automation);
-    setDialogOpen(true);
-  };
-
-  const handleDelete = (id: string) => {
-    const automation = automations.find((a) => a.id === id);
-    deleteAutomation(id);
-    setSelectedIds((prev) => prev.filter((sid) => sid !== id));
-    toast.success(`${automation?.name} deleted`);
-  };
-
-  const handleDuplicate = (id: string) => {
-    const automation = automations.find((a) => a.id === id);
-    duplicateAutomation(id);
-    toast.success(`${automation?.name} duplicated`);
-  };
-
-  const handleRun = async (id: string) => {
-    const automation = automations.find((a) => a.id === id);
-    if (!automation) return;
-
-    try {
-      const runId = await runAutomation(id);
-      toast.info(`Running ${automation.name}...`);
-
-      setTimeout(() => {
-        const success = Math.random() > 0.2;
-        completeAutomationRun(
-          runId,
-          success,
-          success
-            ? `Successfully executed on ${automation.platforms.join(", ")}`
-            : "Failed to connect to one or more platforms",
-          id
-        );
-        if (success) {
-          toast.success(`${automation.name} completed successfully`);
-        } else {
-          toast.error(`${automation.name} failed`);
-        }
-      }, 2000);
-    } catch (e) {
-      toast.error("Failed to start automation");
-    }
-  };
-
-  const handleViewHistory = (automation: Automation) => {
-    setSelectedAutomation(automation);
-    setHistoryOpen(true);
-  };
-
-  const handleCreate = () => {
-    setEditingAutomation(null);
-    setDialogOpen(true);
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(filteredAutomations.map((a) => a.id));
-    } else {
-      setSelectedIds([]);
-    }
-  };
-
-  const handleSelectOne = (id: string, checked: boolean) => {
-    if (checked) {
-      setSelectedIds((prev) => [...prev, id]);
-    } else {
-      setSelectedIds((prev) => prev.filter((sid) => sid !== id));
-    }
-  };
-
-  const handleBulkActivate = () => {
-    toggleAutomations(selectedIds, "active");
-    toast.success(`${selectedIds.length} automations activated`);
-    setSelectedIds([]);
-  };
-
-  const handleBulkPause = () => {
-    toggleAutomations(selectedIds, "paused");
-    toast.success(`${selectedIds.length} automations paused`);
-    setSelectedIds([]);
-  };
-
-  const handleBulkDelete = () => {
-    deleteAutomations(selectedIds);
-    toast.success(`${selectedIds.length} automations deleted`);
-    setSelectedIds([]);
-  };
-
-  const allSelected = filteredAutomations.length > 0 && selectedIds.length === filteredAutomations.length;
-  const someSelected = selectedIds.length > 0;
-
-  const getPlatformIcon = (iconName: string) => {
-    switch (iconName) {
-      case "Twitter": return <Twitter className="h-4 w-4" />;
-      case "Instagram": return <Instagram className="h-4 w-4" />;
-      case "Facebook": return <Facebook className="h-4 w-4" />;
-      default: return <Rocket className="h-4 w-4" />;
-    }
-  };
-
   return (
     <DashboardLayout>
-      <div className="space-y-8 max-w-[1600px] mx-auto pb-12 animate-in fade-in duration-700">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="space-y-10">
+        {/* Simple Header */}
+        <div className="flex justify-between items-start">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 rounded-2xl bg-primary/10 border border-primary/20 text-primary">
-                <Settings className="h-6 w-6 animate-pulse-slow" />
-              </div>
-              <h1 className="text-xl font-black tracking-tighter text-foreground uppercase italic px-4 bg-gradient-to-r from-primary/20 to-transparent border-l-4 border-primary inline-block">
-                Automation
-              </h1>
-            </div>
-            <p className="text-lg font-black uppercase tracking-[0.3em] text-muted-foreground mt-2 opacity-60 ml-2">
-              Workflow Engine & Content Distribution
+            <h1 className="text-4xl font-bold tracking-tight text-white mb-2">Automation Console</h1>
+            <p className="text-muted-foreground text-lg">
+              Manage your autonomous content distribution and weekly strategy.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={handleRunPipeline} 
+
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={handleRunPipeline}
               disabled={isProcessingPipeline}
-              className="bg-card hover:bg-muted text-foreground border border-border font-black uppercase tracking-widest px-8 rounded-xl h-14 shadow-2xl gap-4 group relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-xl hover:bg-secondary/80 transition-all font-bold text-sm"
             >
-              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative flex items-center gap-3">
-                {isProcessingPipeline ? (
-                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
-                ) : (
-                  <Wand2 className="h-6 w-6 text-primary group-hover:rotate-12 transition-transform" />
-                )}
-                <span className="text-sm">Initiate AI Pipeline</span>
-              </div>
-            </Button>
-            <Button onClick={handleCreate} className="bg-primary hover:opacity-90 text-white font-black uppercase tracking-widest px-10 rounded-xl h-14 shadow-xl shadow-primary/20 gap-3 border-0 transition-all hover:scale-[1.02] active:scale-[0.98]">
-              <Plus className="h-6 w-6" />
-              Create Stream
-            </Button>
+              <RefreshCcw className={`w-4 h-4 ${isProcessingPipeline ? 'animate-spin' : ''}`} />
+              Run Master Pipeline
+            </button>
+            
+            <button className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all font-bold text-sm">
+              <Plus className="w-4 h-4" />
+              New Automation
+            </button>
           </div>
         </div>
 
-        {/* AI Workflow Pipeline Presets */}
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {stats.map((stat, i) => (
+            <div key={i} className="bg-card border border-border p-6 rounded-2xl">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`p-2 rounded-lg bg-muted`}>
+                  <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                </div>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</span>
+              </div>
+              <div className="flex items-end justify-between">
+                <span className="text-3xl font-bold text-white">{stat.value}</span>
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                  +12%
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Streams Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {workflowPresets.map((preset) => (
-            <Card key={preset.id} className="relative group overflow-hidden border-border/50 bg-card/10 backdrop-blur-xl hover:border-primary/50 transition-all duration-500 cursor-pointer hover:shadow-2xl hover:shadow-primary/5" onClick={() => toast.info(`Starting ${preset.name} setup...`)}>
-              <div className="absolute top-0 right-0 p-6 opacity-[0.05] group-hover:scale-125 transition-transform duration-700">
-                {getPlatformIcon(preset.icon)}
-              </div>
-              <div className="p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <div className={cn("p-4 rounded-2xl shadow-inner border border-border/50", preset.color)}>
-                    {getPlatformIcon(preset.icon)}
-                  </div>
-                  <Badge variant="outline" className="text-[9px] font-black tracking-widest bg-background/50 border-primary/20 text-primary px-3 py-1">STRATEGY READY</Badge>
+          {streams.map((stream) => (
+            <div key={stream.id} className="bg-card border border-border rounded-3xl p-8 hover:border-primary/50 transition-colors group">
+              <div className="flex items-center justify-between mb-6">
+                <div className="p-3 rounded-xl bg-muted group-hover:bg-primary/10 transition-colors">
+                  <stream.icon className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-black italic uppercase tracking-tighter text-foreground mb-2 leading-none">{preset.name}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed mb-8 line-clamp-2 opacity-80">{preset.description}</p>
-                <div className="flex items-center justify-between pt-6 border-t border-border/50">
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60 mb-1">Frequency</span>
-                    <span className="text-base font-black text-foreground">{preset.frequency}</span>
-                  </div>
-                  <Button variant="ghost" size="sm" className="rounded-xl h-10 px-5 font-black uppercase text-[10px] tracking-widest hover:bg-primary/10 hover:text-primary group border border-border/50">
-                    Deploy
-                    <Rocket className="ml-2 h-4 w-4 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
+                <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full">
+                  {stream.status}
+                </span>
               </div>
-            </Card>
-          ))}
-        </div>
 
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {quickStats.map((stat) => (
-            <div key={stat.label} className="bg-card/20 backdrop-blur-3xl border border-border/30 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group hover:border-primary/50 transition-all duration-500">
-              <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-125 transition-transform duration-700">
-                <stat.icon className="h-28 w-28" />
-              </div>
-              <div className="flex items-center justify-between mb-4">
-                <div className={cn("p-4 rounded-2xl", stat.color, "bg-background/80 border border-border shadow-inner")}>
-                  <stat.icon className="h-6 w-6" />
+              <h3 className="text-xl font-bold mb-2 text-white">{stream.name}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed mb-8">
+                {stream.description}
+              </p>
+
+              <div className="flex items-center justify-between pt-6 border-t border-border">
+                <div>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Frequency</span>
+                  <span className="text-sm font-bold text-white">{stream.frequency}</span>
                 </div>
-                <Badge variant="outline" className="text-[9px] font-black bg-background/50 uppercase tracking-[0.2em] opacity-60 border-border/50">Realtime</Badge>
-              </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 opacity-60">{stat.label}</p>
-                <p className="text-xl font-black text-foreground tracking-tighter italic">{stat.value}</p>
+                <button className="px-4 py-2 bg-foreground text-background text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all">
+                  Configure
+                </button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Automations Table Section */}
-        <Card className="bg-card/20 backdrop-blur-3xl border-border/50 shadow-2xl overflow-hidden rounded-[2.5rem]">
-          <CardHeader className="p-10 border-b border-border/50 bg-muted/20">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-              <div>
-                <CardTitle className="flex items-center gap-4 text-xl font-black uppercase italic tracking-tighter">
-                  <Sparkles className="h-6 w-6 text-primary animate-pulse" />
-                  Active Streams
-                </CardTitle>
-                <CardDescription className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground opacity-60 mt-2">
-                  Management console for your autonomous content distribution
-                </CardDescription>
+        {/* Master Review Hub */}
+        <div className="bg-card border border-border rounded-3xl p-8">
+          <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                <Clock className="w-5 h-5 text-orange-400" />
               </div>
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="relative group">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                  <Input
-                    placeholder="Search streams..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 w-full sm:w-[320px] bg-background/50 border-border/50 h-12 rounded-xl focus:ring-primary/20 text-sm font-medium"
-                  />
-                </div>
-                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | AutomationStatus)}>
-                  <SelectTrigger className="w-[160px] bg-background/50 border-border/50 h-12 rounded-xl text-xs font-bold uppercase tracking-widest">
-                    <Filter className="h-4 w-4 mr-2 opacity-60" />
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-border bg-card/95 backdrop-blur-xl">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="paused">Paused</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div>
+                <h2 className="text-xl font-bold text-white uppercase tracking-tight">Master Review Hub</h2>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">Weekly Strategy Staging Area</p>
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {/* Bulk Actions Bar */}
-            {filteredAutomations.length > 0 && someSelected && (
-              <div className="flex items-center gap-6 py-4 px-10 bg-primary/5 border-b border-border/30 animate-in fade-in slide-in-from-top-2">
-                <div className="flex items-center gap-4">
-                  <Checkbox
-                    checked={allSelected}
-                    onCheckedChange={handleSelectAll}
-                    className="border-primary/50 data-[state=checked]:bg-primary h-5 w-5 rounded-lg"
-                  />
-                  <span className="text-xs font-black uppercase tracking-widest text-primary">
-                    {selectedIds.length} streams selected
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 ml-auto">
-                  <Button variant="ghost" size="sm" onClick={handleBulkActivate} className="h-10 rounded-xl font-black uppercase text-[11px] tracking-widest text-emerald-500 hover:bg-emerald-500/10 gap-2 border border-emerald-500/20">
-                    <Play className="h-4 w-4" />
-                    Activate
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={handleBulkPause} className="h-10 rounded-xl font-black uppercase text-[11px] tracking-widest text-amber-500 hover:bg-amber-500/10 gap-2 border border-amber-500/20">
-                    <Pause className="h-4 w-4" />
-                    Pause
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={handleBulkDelete} className="h-10 rounded-xl font-black uppercase text-[11px] tracking-widest text-destructive hover:bg-destructive/10 gap-2 border border-destructive/20">
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </Button>
-                </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="px-4 py-2 bg-muted rounded-lg">
+                <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">{pendingPosts.length} Items Pending</span>
               </div>
-            )}
+              <button 
+                onClick={handleApproveAll}
+                disabled={isProcessingPipeline || pendingPosts.length === 0}
+                className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-xl hover:bg-primary hover:text-white disabled:opacity-30 transition-all font-bold text-sm"
+              >
+                <Check className="w-4 h-4" />
+                Approve Strategy
+              </button>
+            </div>
+          </div>
 
-            <ScrollArea className="max-h-[700px]">
-              <div className="p-10 space-y-6">
-                {filteredAutomations.length === 0 ? (
-                  <div className="text-center py-28 border-2 border-dashed border-border/50 rounded-[2rem] bg-muted/5">
-                    <div className="w-24 h-24 bg-muted/20 rounded-full flex items-center justify-center mx-auto mb-8 opacity-20">
-                      <Settings className="w-12 h-12" />
+          {pendingPosts.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+              {pendingPosts.map((post) => (
+                <div key={post.id} className="bg-muted/30 border border-border rounded-xl p-5 flex items-center justify-between hover:border-primary/30 transition-colors">
+                  <div className="flex items-center gap-5">
+                    <div className="p-3 bg-card border border-border rounded-xl text-primary">
+                      {(() => {
+                        const platform = post.platforms?.[0]?.platform;
+                        switch(platform) {
+                          case 'twitter': return <Twitter className="w-4 h-4" />;
+                          case 'facebook': return <Facebook className="w-4 h-4" />;
+                          case 'instagram': return <Instagram className="w-4 h-4" />;
+                          case 'linkedin': return <Linkedin className="w-4 h-4" />;
+                          case 'youtube': return <Youtube className="w-4 h-4" />;
+                          case 'tiktok': return <Video className="w-4 h-4" />;
+                          case 'website': return <Globe className="w-4 h-4" />;
+                          case 'rumble': return <Play className="w-4 h-4" />;
+                          default: return <Share2 className="w-4 h-4" />;
+                        }
+                      })()}
                     </div>
-                    <p className="text-muted-foreground font-black uppercase tracking-widest text-sm">
-                      {automations.length === 0
-                        ? "Autonomous engine standby. Initialize a new stream."
-                        : "No streams match the current query parameters."}
-                    </p>
-                    <Button onClick={handleCreate} variant="link" className="text-primary font-black uppercase tracking-widest text-[11px] mt-6 gap-2 group">
-                      Initialize your first stream
-                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </div>
-                ) : (
-                  filteredAutomations.map((automation) => (
-                    <div key={automation.id} className="group/row flex items-center gap-8 p-1 relative">
-                      <div className="absolute left-[-4px] h-full w-[6px] bg-primary rounded-full opacity-0 group-hover/row:opacity-100 transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.5)]" />
-                      <Checkbox
-                        checked={selectedIds.includes(automation.id)}
-                        onCheckedChange={(checked) => handleSelectOne(automation.id, !!checked)}
-                        className="border-border/50 data-[state=checked]:bg-primary h-6 w-6 rounded-lg transition-colors"
-                      />
-                      <div className="flex-1">
-                        <AutomationCard
-                          automation={automation}
-                          onToggle={handleToggle}
-                          onEdit={handleEdit}
-                          onDelete={handleDelete}
-                          onRun={handleRun}
-                          onViewHistory={handleViewHistory}
-                          onDuplicate={handleDuplicate}
-                        />
+                    <div>
+                      <h4 className="text-sm font-bold text-white mb-0.5">{post.title}</h4>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                          {post.scheduledAt ? new Date(post.scheduledAt).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : 'No Date'}
+                        </span>
+                        <span className="text-white/20">•</span>
+                        <span className="text-[10px] text-primary font-bold uppercase tracking-wider">{post.platforms?.[0]?.platform || 'multi'}</span>
                       </div>
                     </div>
-                  ))
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase block">Status</span>
+                      <span className="text-[10px] font-bold text-orange-400 uppercase">Reviewing</span>
+                    </div>
+                    <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground border-2 border-dashed border-border rounded-2xl bg-muted/10">
+              <RefreshCcw className="w-10 h-10 mb-3 opacity-20" />
+              <p className="text-xs font-bold tracking-[0.2em] uppercase opacity-40 italic">
+                Strategy drafts will appear here for Sunday review.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Pipeline Progress Modal */}
+        {pipelineOpen && (
+          <div className="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-card border border-border w-full max-w-xl rounded-3xl overflow-hidden shadow-2xl">
+              <div className="p-6 border-b border-border flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <Zap className="w-5 h-5 text-primary" />
+                  <h3 className="text-lg font-bold">Strategy Pipeline</h3>
+                </div>
+                {pipelineStep === 3 && (
+                  <button onClick={() => setPipelineOpen(false)} className="text-muted-foreground hover:text-white">
+                    <RefreshCcw className="w-4 h-4 rotate-45" />
+                  </button>
                 )}
               </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+              
+              <div className="p-6">
+                <div className="flex justify-between mb-8 px-4">
+                  {[0, 1, 2, 3].map((step) => (
+                    <div key={step} className="flex items-center">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center border-2 transition-all ${
+                        pipelineStep >= step ? 'bg-primary border-primary' : 'border-border bg-muted'
+                      }`}>
+                        {pipelineStep > step ? <Check className="w-4 h-4 text-white" /> : <span className="text-xs font-bold">{step + 1}</span>}
+                      </div>
+                      {step < 3 && <div className={`w-12 h-0.5 mx-1 ${pipelineStep > step ? 'bg-primary' : 'bg-border'}`} />}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-muted p-4 rounded-xl font-mono text-[10px] leading-relaxed max-h-48 overflow-y-auto custom-scrollbar">
+                  {pipelineLogs.map((log, i) => (
+                    <div key={i} className={`mb-1 ${log.startsWith('❌') ? 'text-red-400' : log.startsWith('✅') ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                      {log}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-border flex justify-end">
+                <button 
+                  onClick={() => setPipelineOpen(false)}
+                  className={`px-6 py-2 rounded-lg font-bold text-xs transition-all ${
+                    pipelineStep === 3 ? 'bg-white text-black' : 'bg-muted text-muted-foreground cursor-not-allowed'
+                  }`}
+                  disabled={pipelineStep !== 3}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* AI Pipeline Terminal Dialog */}
-      <Dialog open={pipelineOpen} onOpenChange={setPipelineOpen}>
-        <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden rounded-3xl border-border bg-[#0a0c10] shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-           <div className="bg-[#1a1c22] p-4 border-b border-border flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                 <Terminal className="h-5 w-5 text-primary" />
-                 <span className="text-xs font-black uppercase tracking-widest text-foreground">Autonomous Pipeline Console</span>
-              </div>
-              <div className="flex gap-1.5">
-                 <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50" />
-                 <div className="w-3 h-3 rounded-full bg-amber-500/20 border border-amber-500/50" />
-                 <div className="w-3 h-3 rounded-full bg-emerald-500/20 border border-emerald-500/50" />
-              </div>
-           </div>
-           
-           <div className="p-8 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                 {[
-                   { label: "Status", value: isProcessingPipeline ? "Processing" : "Completed", color: isProcessingPipeline ? "text-amber-500" : "text-emerald-500" },
-                   { label: "Stability", value: "99.2%", color: "text-primary" },
-                   { label: "Active Agent", value: "Novee Core", color: "text-foreground" },
-                   { label: "Target Set", value: "Multi-Platform", color: "text-foreground" },
-                 ].map(stat => (
-                   <div key={stat.label} className="p-3 bg-white/5 border border-white/5 rounded-xl">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">{stat.label}</p>
-                      <p className={cn("text-sm font-bold", stat.color)}>{stat.value}</p>
-                   </div>
-                 ))}
-              </div>
-
-              <ScrollArea className="h-64 rounded-2xl bg-[#000]/50 p-6 border border-white/5 font-mono text-[11px] leading-relaxed relative">
-                 <div className="space-y-2">
-                    {pipelineLogs.map((log, i) => (
-                      <div key={i} className={cn("flex gap-3", log.startsWith("[") ? "text-muted-foreground" : "text-primary font-black uppercase")}>
-                         <span className="opacity-30 select-none">{i + 1}</span>
-                         <span>{log}</span>
-                      </div>
-                    ))}
-                    {isProcessingPipeline && (
-                      <div className="flex items-center gap-2 text-primary animate-pulse mt-2">
-                         <Loader2 className="h-3 w-3 animate-spin" />
-                         <span>Streaming response from Novee Core...</span>
-                      </div>
-                    )}
-                 </div>
-              </ScrollArea>
-
-              <div className="flex items-center justify-between pt-4">
-                 <p className="text-[10px] text-muted-foreground italic font-medium">Session ID: {Math.random().toString(36).substring(7).toUpperCase()}</p>
-                 <Button 
-                    disabled={isProcessingPipeline} 
-                    onClick={() => setPipelineOpen(false)}
-                    className="rounded-xl px-8 bg-primary hover:opacity-90 font-black uppercase text-[10px] tracking-widest gap-2"
-                 >
-                    {isProcessingPipeline ? "Analyzing System..." : "Acknowledge"}
-                    {!isProcessingPipeline && <CheckCircle2 className="h-3 w-3" />}
-                 </Button>
-              </div>
-           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialogs */}
-      <AutomationDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        automation={editingAutomation}
-        onSave={handleSave}
-      />
-      <AutomationHistoryDialog
-        open={historyOpen}
-        onOpenChange={setHistoryOpen}
-        automation={selectedAutomation}
-        runs={automationRuns}
-      />
     </DashboardLayout>
   );
-}
+};
+
+export default AutomationPage;

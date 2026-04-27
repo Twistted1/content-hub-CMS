@@ -9,7 +9,9 @@ import { UserDropdown } from "@/components/header/UserDropdown";
 import {
   ChevronLeft, ChevronRight, Plus, Search, Bell, CalendarDays, Send, AlarmClock,
   Clapperboard, Briefcase, Users as UsersIcon, Sprout, Diamond, Youtube, Music2, Twitter, Instagram, Facebook, Linkedin, Globe, Video,
+  ChevronDown
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 /* ── helpers ────────────────────────────────────────────── */
 
@@ -47,23 +49,23 @@ const DAYS_SHORT = ["S","M","T","W","T","F","S"];
 type CatKey = "content" | "publish" | "meeting" | "deadline" | "personal" | "awaiting_review";
 
 const CAT: Record<CatKey, { color: string; bg: string; border: string; label: string; Icon: any; iconBg: string; iconColor: string }> = {
-  content:  { color: "text-violet-300",  bg: "bg-violet-500/25",  border: "border-violet-500/40", label: "Content",   Icon: Clapperboard, iconBg: "bg-violet-500/20",  iconColor: "text-violet-400" },
-  publish:  { color: "text-amber-300",   bg: "bg-amber-500/25",   border: "border-amber-500/40", label: "Publish",   Icon: Briefcase,    iconBg: "bg-amber-500/20",   iconColor: "text-amber-400" },
-  meeting:  { color: "text-blue-300",    bg: "bg-blue-500/30",    border: "border-blue-500/40",  label: "Meetings",  Icon: UsersIcon,    iconBg: "bg-blue-500/20",    iconColor: "text-blue-400" },
-  deadline: { color: "text-red-300",     bg: "bg-red-500/25",     border: "border-red-500/40",   label: "Deadlines", Icon: AlarmClock,   iconBg: "bg-red-500/20",     iconColor: "text-red-400" },
-  personal: { color: "text-emerald-300", bg: "bg-emerald-500/25", border: "border-emerald-500/40", label: "Personal", Icon: Sprout,      iconBg: "bg-emerald-500/20", iconColor: "text-emerald-400" },
-  awaiting_review: { color: "text-orange-300", bg: "bg-orange-500/25", border: "border-orange-500/40", label: "Needs Review", Icon: AlarmClock, iconBg: "bg-orange-500/20", iconColor: "text-orange-400" },
+  content:  { color: "text-primary",      bg: "bg-primary/10",    border: "border-primary/20",   label: "Content",   Icon: Clapperboard, iconBg: "bg-primary/10",    iconColor: "text-primary" },
+  publish:  { color: "text-amber-300",   bg: "bg-amber-500/10",  border: "border-amber-500/20", label: "Publish",   Icon: Briefcase,    iconBg: "bg-amber-500/10",   iconColor: "text-amber-400" },
+  meeting:  { color: "text-blue-300",    bg: "bg-blue-500/10",   border: "border-blue-500/20",  label: "Meetings",  Icon: UsersIcon,    iconBg: "bg-blue-500/10",    iconColor: "text-blue-400" },
+  deadline: { color: "text-red-300",     bg: "bg-red-500/10",    border: "border-red-500/20",   label: "Deadlines", Icon: AlarmClock,   iconBg: "bg-red-500/10",     iconColor: "text-red-400" },
+  personal: { color: "text-emerald-300", bg: "bg-emerald-500/10", border: "border-emerald-500/20", label: "Personal", Icon: Sprout,      iconBg: "bg-emerald-500/10", iconColor: "text-emerald-400" },
+  awaiting_review: { color: "text-orange-300", bg: "bg-orange-500/10", border: "border-orange-500/20", label: "Needs Review", Icon: AlarmClock, iconBg: "bg-orange-500/10", iconColor: "text-orange-400" },
 };
 
 const PLAT: Record<string, { bar: string; badge: string; badgeText: string; label: string; Icon: any }> = {
-  youtube:   { bar: "bg-red-600/30",     badge: "bg-red-600",    badgeText: "text-white", label: "YouTube",   Icon: Youtube },
-  tiktok:    { bar: "bg-zinc-600/40",    badge: "bg-black",      badgeText: "text-white", label: "TikTok",    Icon: Music2 },
-  instagram: { bar: "bg-pink-600/30",    badge: "bg-gradient-to-br from-purple-600 to-pink-500", badgeText: "text-white", label: "Instagram", Icon: Instagram },
-  twitter:   { bar: "bg-sky-600/30",     badge: "bg-sky-500",    badgeText: "text-white", label: "Twitter/X", Icon: Twitter },
-  facebook:  { bar: "bg-blue-700/30",    badge: "bg-blue-600",   badgeText: "text-white", label: "Facebook",  Icon: Facebook },
-  linkedin:  { bar: "bg-blue-800/30",    badge: "bg-blue-700",   badgeText: "text-white", label: "LinkedIn",  Icon: Linkedin },
-  website:   { bar: "bg-emerald-600/30", badge: "bg-emerald-600",badgeText: "text-white", label: "Website",   Icon: Globe },
-  rumble:    { bar: "bg-green-600/30",   badge: "bg-green-500",  badgeText: "text-white", label: "Rumble",    Icon: Video },
+  youtube:   { bar: "bg-red-600/10 border-red-600/20",     badge: "bg-red-600 shadow-lg shadow-red-600/20",    badgeText: "text-white", label: "YouTube",   Icon: Youtube },
+  tiktok:    { bar: "bg-zinc-600/10 border-zinc-600/20",    badge: "bg-black shadow-lg shadow-white/10",      badgeText: "text-white", label: "TikTok",    Icon: Music2 },
+  instagram: { bar: "bg-pink-600/10 border-pink-600/20",    badge: "bg-gradient-to-br from-purple-600 to-pink-500 shadow-lg shadow-pink-500/20", badgeText: "text-white", label: "Instagram", Icon: Instagram },
+  twitter:   { bar: "bg-sky-600/10 border-sky-600/20",     badge: "bg-sky-500 shadow-lg shadow-sky-500/20",    badgeText: "text-white", label: "Twitter/X", Icon: Twitter },
+  facebook:  { bar: "bg-blue-700/10 border-blue-700/20",    badge: "bg-blue-600 shadow-lg shadow-blue-600/20",   badgeText: "text-white", label: "Facebook",  Icon: Facebook },
+  linkedin:  { bar: "bg-blue-800/10 border-blue-800/20",    badge: "bg-blue-700 shadow-lg shadow-blue-700/20",   badgeText: "text-white", label: "LinkedIn",  Icon: Linkedin },
+  website:   { bar: "bg-emerald-600/10 border-emerald-600/20", badge: "bg-emerald-600 shadow-lg shadow-emerald-600/20",badgeText: "text-white", label: "Website",   Icon: Globe },
+  rumble:    { bar: "bg-green-600/10 border-green-600/20",   badge: "bg-green-500 shadow-lg shadow-green-600/20",  badgeText: "text-white", label: "Rumble",    Icon: Video },
 };
 
 function getBarColor(evt: CalEvent) {
@@ -92,6 +94,7 @@ interface CalEvent {
   completed: boolean;
   allDay: boolean;
   imageUrl?: string;
+  caption: string;
 }
 
 function getEventsForDay(events: CalEvent[], day: Date) {
@@ -118,16 +121,16 @@ const FILTERS: { value: string; label: string; cat?: CatKey }[] = [
 function MiniCal({ current, selected, events, onSelect, onNav }: { current: Date; selected: Date; events: CalEvent[]; onSelect: (d: Date) => void; onNav: (dir: number) => void }) {
   const days = getDaysInMonth(current.getFullYear(), current.getMonth());
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3 px-1">
-        <button onClick={() => onNav(-1)} className="w-6 h-6 rounded-md text-gray-500 hover:text-gray-200 hover:bg-white/10 flex items-center justify-center text-sm">‹</button>
-        <span className="text-xs font-bold text-gray-300 tracking-wide">{MONTHS[current.getMonth()].slice(0,3).toUpperCase()} {current.getFullYear()}</span>
-        <button onClick={() => onNav(1)} className="w-6 h-6 rounded-md text-gray-500 hover:text-gray-200 hover:bg-white/10 flex items-center justify-center text-sm">›</button>
+    <div className="glass-card rounded-2xl p-4 mb-6">
+      <div className="flex items-center justify-between mb-5 px-1">
+        <button onClick={() => onNav(-1)} aria-label="Previous Month" className="w-8 h-8 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">‹</button>
+        <span className="text-xs font-black text-white tracking-[0.2em] uppercase">{MONTHS[current.getMonth()].slice(0,3)} {current.getFullYear()}</span>
+        <button onClick={() => onNav(1)} aria-label="Next Month" className="w-8 h-8 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">›</button>
       </div>
-      <div className="grid grid-cols-7 mb-1">
-        {DAYS_SHORT.map((d, i) => <div key={i} className="text-center text-[10px] text-gray-600 font-bold py-1">{d}</div>)}
+      <div className="grid grid-cols-7 mb-2">
+        {DAYS_SHORT.map((d, i) => <div key={i} className="text-center text-[10px] text-muted-foreground font-black py-1">{d}</div>)}
       </div>
-      <div className="grid grid-cols-7 gap-0.5">
+      <div className="grid grid-cols-7 gap-1">
         {days.map((day, i) => {
           const sel = isSame(day, selected);
           const today = isToday(day);
@@ -137,11 +140,11 @@ function MiniCal({ current, selected, events, onSelect, onNav }: { current: Date
             <button
               key={i}
               onClick={() => onSelect(new Date(day))}
-              className={`relative flex items-center justify-center w-7 h-7 mx-auto rounded-md text-xs font-semibold transition-all
-                ${today ? "bg-white text-black font-black" : sel ? "bg-white/15 text-white" : inMonth ? "text-gray-400 hover:bg-white/8 hover:text-gray-200" : "text-gray-700"}`}
+              className={`relative flex items-center justify-center w-8 h-8 mx-auto rounded-xl text-xs font-bold transition-all
+                ${today ? "bg-primary text-white shadow-lg shadow-primary/30" : sel ? "bg-white/20 text-white" : inMonth ? "text-muted-foreground hover:bg-white/5 hover:text-white" : "text-white/10"}`}
             >
               {day.getDate()}
-              {hasEvt && !today && <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-violet-400" />}
+              {hasEvt && !today && <span className="absolute bottom-1 w-1 h-1 rounded-full bg-primary/60" />}
             </button>
           );
         })}
@@ -161,9 +164,9 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
       <MiniCal current={miniMonth} selected={selectedDate} events={events} onSelect={onSelectDate} onNav={onNavMonth} />
 
       {/* Filter by type */}
-      <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-3">
-        <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 px-1">Filter by Type</h3>
-        <div className="space-y-1">
+      <div className="glass-card rounded-2xl p-4">
+        <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] mb-4 px-1">Filter Stream</h3>
+        <div className="space-y-1.5">
           {FILTERS.map(f => {
             const active = filter === f.value;
             const count = f.value === "all" ? events.length : events.filter((e: CalEvent) => e.category === f.value).length;
@@ -172,16 +175,16 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
               <button
                 key={f.value}
                 onClick={() => onFilter(f.value)}
-                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold transition-all
-                  ${active ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-gray-200"}`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all group
+                  ${active ? "bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5" : "text-muted-foreground hover:bg-white/[0.03] hover:text-white"}`}
               >
-                <span className="flex items-center gap-2.5">
-                  <span className={`w-6 h-6 flex items-center justify-center rounded-md ${cat ? cat.iconBg : "bg-white/10"}`}>
-                    {cat ? <cat.Icon className={`w-3.5 h-3.5 ${cat.iconColor}`} /> : <Diamond className="w-3.5 h-3.5 text-violet-400" />}
+                <span className="flex items-center gap-3">
+                  <span className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${cat ? cat.iconBg : "bg-white/[0.05]"} ${active ? "scale-110" : "group-hover:scale-105"}`}>
+                    {cat ? <cat.Icon className={`w-4 h-4 ${cat.iconColor}`} /> : <Diamond className="w-4 h-4 text-primary" />}
                   </span>
                   {f.label}
                 </span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-md font-black ${active ? "bg-white/15 text-gray-200" : "bg-white/5 text-gray-500"}`}>
+                <span className={`text-[10px] px-2.5 py-1 rounded-lg font-black transition-all ${active ? "bg-primary/20 text-primary" : "bg-white/[0.05] text-muted-foreground"}`}>
                   {count}
                 </span>
               </button>
@@ -191,18 +194,26 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
       </div>
 
       {/* Today's agenda */}
-      <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-3">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Today's Agenda</h3>
-          <span className="text-[10px] text-gray-600 font-bold">{done}/{todayEvents.length} done</span>
+      <div className="glass-card rounded-2xl p-4">
+        <div className="flex items-center justify-between mb-4 px-1">
+          <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em]">Live Queue</h3>
+          <span className="text-[10px] text-muted-foreground font-bold">{done}/{todayEvents.length} READY</span>
         </div>
         {todayEvents.length > 0 && (
-          <div className="h-1 bg-white/5 rounded-full overflow-hidden mb-3">
-            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${todayEvents.length > 0 ? (done / todayEvents.length) * 100 : 0}%` }} />
+          <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden mb-5">
+            <div
+              className="h-full bg-gradient-to-r from-primary to-blue-500 rounded-full transition-all duration-1000 ease-out"
+              style={{ width: `${todayEvents.length > 0 ? (done / todayEvents.length) * 100 : 0}%` }}
+            />
           </div>
         )}
-        <div className="space-y-2">
-          {todayEvents.length === 0 && <p className="text-xs text-center py-6 text-gray-600">No events today 🎉</p>}
+        <div className="space-y-3">
+          {todayEvents.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <Sprout className="w-10 h-10 text-white/[0.05] mb-3" />
+              <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-40 italic">Nothing queued</p>
+            </div>
+          )}
           {todayEvents.map((evt: CalEvent) => {
             const p = PLAT[evt.platform];
             const cat = CAT[evt.category as CatKey] || CAT.content;
@@ -210,24 +221,26 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
               <div
                 key={evt.id}
                 onClick={() => onClickEvent(evt)}
-                className={`relative rounded-xl overflow-hidden cursor-pointer group transition-all hover:scale-[1.02] active:scale-[0.98] ${cat.bg} border ${cat.border}`}
+                className={`relative rounded-2xl overflow-hidden cursor-pointer group transition-all hover:translate-x-1 glass-hover border border-white/[0.05] ${cat.bg.replace('/10', '/5')}`}
               >
-                <div className="px-3.5 py-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 ${evt.completed ? "bg-primary border-primary" : "border-white/40"}`} />
-                    <p className={`text-xs font-bold truncate ${evt.completed ? "line-through text-gray-500" : "text-white"}`}>{evt.title}</p>
+                <div className="px-4 py-3.5">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-4 h-4 rounded-full border-2 shrink-0 transition-all ${evt.completed ? "bg-primary border-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" : "border-white/20"}`} />
+                    <p className={`text-xs font-bold truncate tracking-tight ${evt.completed ? "line-through text-muted-foreground/60" : "text-white"}`}>{evt.title}</p>
                   </div>
-                  {evt.startTime && (
-                    <p className="text-[10px] text-white/60 ml-5 mb-1.5 font-medium">
-                      {fmt12(evt.startTime)}{evt.endTime ? ` – ${fmt12(evt.endTime)}` : ""}
-                    </p>
-                  )}
-                  {p && (
-                    <span className={`inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-md font-black uppercase tracking-tight ml-5 ${p.badge} ${p.badgeText}`}>
-                      <p.Icon className="w-2.5 h-2.5" />
-                      {p.label}
-                    </span>
-                  )}
+                  <div className="flex items-center justify-between ml-7">
+                    {evt.startTime && (
+                      <p className="text-[10px] text-muted-foreground font-black">
+                        {fmt12(evt.startTime)}
+                      </p>
+                    )}
+                    {p && (
+                      <span className={`inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-lg font-black uppercase tracking-widest ${p.badge} ${p.badgeText}`}>
+                        <p.Icon className="w-2.5 h-2.5" />
+                        {p.label}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -246,11 +259,11 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar">
-      <div className="grid grid-cols-7 text-center text-[10px] font-black text-gray-500 uppercase tracking-widest py-3 border-b border-white/5 sticky top-0 bg-[#0a0d1a] z-10">
+    <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-white/[0.01] rounded-[2.5rem] border border-white/[0.05] overflow-hidden">
+      <div className="grid grid-cols-7 text-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] py-5 border-b border-white/[0.05] sticky top-0 bg-background/80 backdrop-blur-3xl z-10">
         {DAYS.map(d => <div key={d}>{d}</div>)}
       </div>
-      <div className="flex-1 grid grid-cols-7 border-l border-white/[0.03]">
+      <div className="flex-1 grid grid-cols-7">
         {days.map((day, i) => {
           const dayEvts = getEventsForDay(events, day).filter((e: CalEvent) => categoryFilter === "all" || e.category === categoryFilter);
           const inMonth = day.getMonth() === current.getMonth();
@@ -271,19 +284,19 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                 setDraggingId(null);
                 if (id && onDropEvent) onDropEvent(id, new Date(day));
               }}
-              className={`min-h-[130px] p-2 border-r border-b border-white/[0.03] cursor-pointer transition-colors group
-                ${!inMonth ? "opacity-30" : ""}
-                ${isDropTarget ? "bg-primary/15 ring-2 ring-inset ring-primary/60" : today ? "bg-primary/[0.03]" : "hover:bg-white/[0.02]"}`}
+              className={`min-h-[160px] p-4 border-r border-b border-white/[0.03] cursor-pointer transition-all group relative
+                ${!inMonth ? "opacity-10 pointer-events-none" : ""}
+                ${isDropTarget ? "bg-primary/10 ring-2 ring-inset ring-primary/40 shadow-[inset_0_0_50px_rgba(var(--primary),0.1)]" : today ? "bg-primary/[0.02]" : "hover:bg-white/[0.015]"}`}
             >
-              <div className="mb-1.5">
-                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black
-                  ${today ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30" : inMonth ? "text-gray-400 group-hover:text-gray-200" : "text-gray-700"}`}>
+              <div className="flex justify-between items-start mb-4">
+                <span className={`inline-flex items-center justify-center w-8 h-8 rounded-xl text-xs font-black transition-all
+                  ${today ? "bg-primary text-white shadow-xl shadow-primary/40 scale-110" : inMonth ? "text-muted-foreground group-hover:text-white group-hover:scale-105" : "text-white/5"}`}>
                   {day.getDate()}
                 </span>
+                {dayEvts.length > 0 && <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />}
               </div>
-              <div className="space-y-1">
-                {dayEvts.slice(0, 3).map((evt: CalEvent) => {
-                  const barColor = getBarColor(evt);
+              <div className="space-y-1.5">
+                {dayEvts.slice(0, 4).map((evt: CalEvent) => {
                   const p = PLAT[evt.platform];
                   const isReview = evt.status === "awaiting_review";
                   const isDragging = draggingId === evt.id;
@@ -299,16 +312,21 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                       }}
                       onDragEnd={() => { setDraggingId(null); setDragOverKey(null); }}
                       onClick={(e) => { e.stopPropagation(); onClickEvent(evt); }}
-                      title="Drag to reschedule"
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold truncate cursor-grab active:cursor-grabbing transition-all hover:brightness-125 ${barColor} ${isReview ? "animate-pulse ring-1 ring-orange-500/40" : ""} ${isDragging ? "opacity-40 scale-95" : ""}`}
+                      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[10px] font-black truncate cursor-grab active:cursor-grabbing transition-all hover:scale-[1.03] group/evt relative
+                        ${p ? p.bar : "bg-white/[0.05] border border-white/[0.05]"} 
+                        ${isReview ? "animate-pulse ring-1 ring-orange-500/40" : ""} 
+                        ${isDragging ? "opacity-20 scale-90" : "hover:brightness-125 shadow-sm"}`}
                     >
-                      {evt.startTime && <span className="text-white/50 font-semibold shrink-0">{fmtHour(evt.startTime)}</span>}
-                      {p && <p.Icon className="w-3 h-3 text-white/70 shrink-0" />}
-                      <span className="text-white/90 truncate">{evt.title}</span>
+                      {p ? <p.Icon className="w-3 h-3 text-white/80 shrink-0" /> : <div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />}
+                      <span className="text-white/90 truncate tracking-tight">{evt.title}</span>
                     </div>
                   );
                 })}
-                {dayEvts.length > 3 && <div className="text-[9px] text-gray-600 font-bold pl-2">+{dayEvts.length - 3} more</div>}
+                {dayEvts.length > 4 && (
+                  <div className="text-[9px] text-muted-foreground font-black px-2 pt-1 uppercase tracking-widest opacity-60">
+                    + {dayEvts.length - 4} More
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -537,37 +555,33 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
           {/* Row: Date + Time */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={LABEL_CLS}>Scheduled Date</label>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                className={INPUT_CLS} style={{ colorScheme: "dark" }} />
+              <label className={LABEL_CLS} htmlFor="modal-date">Scheduled Date</label>
+              <input id="modal-date" type="date" title="Scheduled Date" aria-label="Scheduled Date" value={date} onChange={e => setDate(e.target.value)}
+                className={`${INPUT_CLS} input-dark-scheme`} />
             </div>
             <div>
-              <label className={LABEL_CLS}>Scheduled Time</label>
-              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
-                className={INPUT_CLS} style={{ colorScheme: "dark" }} />
+              <label className={LABEL_CLS} htmlFor="modal-time">Scheduled Time</label>
+              <input id="modal-time" type="time" title="Scheduled Time" aria-label="Scheduled Time" value={startTime} onChange={e => setStartTime(e.target.value)}
+                className={`${INPUT_CLS} input-dark-scheme`} />
             </div>
           </div>
 
           {/* Row: Platform + Content Type */}
           <div className="grid grid-cols-2 gap-4">
             <div className="relative">
-              <label className={LABEL_CLS}>Platform</label>
-              <select value={platform} onChange={e => setPlatform(e.target.value)} className={SELECT_CLS}
-                style={{ backgroundImage: "none" }}>
-                <option value="none" style={{ background: "hsl(222 47% 6%)", color: "hsl(213 31% 91%)" }}>No Platform</option>
+              <label className={LABEL_CLS} htmlFor="modal-platform">Platform</label>
+              <select id="modal-platform" title="Platform" aria-label="Platform" value={platform} onChange={e => setPlatform(e.target.value)} className={`${SELECT_CLS} select-no-arrow`}>
+                <option value="none">No Platform</option>
                 {Object.keys(PLAT).map(k => (
-                  <option key={k} value={k} style={{ background: "hsl(222 47% 6%)", color: "hsl(213 31% 91%)" }}>
-                    {PLAT[k].label}
-                  </option>
+                  <option key={k} value={k}>{PLAT[k].label}</option>
                 ))}
               </select>
             </div>
             <div className="relative">
-              <label className={LABEL_CLS}>Content Type</label>
-              <select value={contentType} onChange={e => setContentType(e.target.value)} className={SELECT_CLS}
-                style={{ backgroundImage: "none" }}>
+              <label className={LABEL_CLS} htmlFor="modal-content-type">Content Type</label>
+              <select id="modal-content-type" title="Content Type" aria-label="Content Type" value={contentType} onChange={e => setContentType(e.target.value)} className={`${SELECT_CLS} select-no-arrow`}>
                 {[["post","Feed Post"],["reel","Reel / Short"],["story","Story"],["article","Article / Blog"],["video","Long-form Video"],["podcast","Podcast Episode"],["newsletter","Newsletter"],["thread","Thread / Carousel"]].map(([v,l]) => (
-                  <option key={v} value={v} style={{ background: "hsl(222 47% 6%)", color: "hsl(213 31% 91%)" }}>{l}</option>
+                  <option key={v} value={v}>{l}</option>
                 ))}
               </select>
             </div>
@@ -576,20 +590,18 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
           {/* Row: Category + Status */}
           <div className="grid grid-cols-2 gap-4">
             <div className="relative">
-              <label className={LABEL_CLS}>Category</label>
-              <select value={category} onChange={e => setCategory(e.target.value)} className={SELECT_CLS}
-                style={{ backgroundImage: "none" }}>
+              <label className={LABEL_CLS} htmlFor="modal-category">Category</label>
+              <select id="modal-category" title="Category" aria-label="Category" value={category} onChange={e => setCategory(e.target.value)} className={`${SELECT_CLS} select-no-arrow`}>
                 {[["content","Content"],["publish","Publish"],["meeting","Meeting"],["deadline","Deadline"],["research","Research"],["personal","Personal"]].map(([v,l]) => (
-                  <option key={v} value={v} style={{ background: "hsl(222 47% 6%)", color: "hsl(213 31% 91%)" }}>{l}</option>
+                  <option key={v} value={v}>{l}</option>
                 ))}
               </select>
             </div>
             <div className="relative">
-              <label className={LABEL_CLS}>Publish Status</label>
-              <select value={status} onChange={e => setStatus(e.target.value)} className={SELECT_CLS}
-                style={{ backgroundImage: "none" }}>
+              <label className={LABEL_CLS} htmlFor="modal-status">Publish Status</label>
+              <select id="modal-status" title="Publish Status" aria-label="Publish Status" value={status} onChange={e => setStatus(e.target.value)} className={`${SELECT_CLS} select-no-arrow`}>
                 {[["draft","Draft"],["scheduled","Scheduled"],["published","Published"],["awaiting_review","Awaiting Review"]].map(([v,l]) => (
-                  <option key={v} value={v} style={{ background: "hsl(222 47% 6%)", color: "hsl(213 31% 91%)" }}>{l}</option>
+                  <option key={v} value={v}>{l}</option>
                 ))}
               </select>
             </div>
@@ -717,14 +729,16 @@ export default function ContentCalendar() {
       id: post.id,
       originalId: post.id,
       title: post.title,
-      description: post.content || "",
+      description: post.excerpt || "",
+      caption: post.content || "",
       date,
       startTime,
-      category: post.status === "published" ? "publish" : post.status === "awaiting_review" ? "awaiting_review" : "content",
+      category: (post.category?.toLowerCase() || (post.status === "scheduled" ? "content" : post.status === "published" ? "publish" : post.status === "awaiting_review" ? "awaiting_review" : "content")),
       status: post.status,
       platform: post.platforms?.[0]?.platform?.toLowerCase() || "none",
       completed: post.status === "published",
       allDay: !post.scheduledAt,
+      imageUrl: post.cover_image_url || "",
     };
   });
 
@@ -751,10 +765,28 @@ export default function ContentCalendar() {
     const scheduledAt = event.startTime ? `${event.date}T${event.startTime}:00` : `${event.date}T09:00:00`;
     const isUpdating = !event.id.startsWith("evt-");
     if (isUpdating) {
-      updatePost.mutate({ id: event.id, title: event.title, content: event.description, status: event.status || "scheduled", type: "text" });
+      updatePost.mutate({ 
+        id: event.id, 
+        title: event.title, 
+        content: event.caption, 
+        excerpt: event.description,
+        status: event.status || "scheduled", 
+        type: event.contentType || "text" 
+      });
       if (event.status !== "awaiting_review") schedulePost.mutate({ id: event.id, scheduledAt });
     } else {
-      addPost.mutate({ post: { title: event.title, content: event.description || "", type: "text", status: "scheduled", scheduled_at: scheduledAt }, platforms: [] });
+      addPost.mutate({ 
+        post: { 
+          title: event.title, 
+          content: event.caption || "", 
+          excerpt: event.description || "",
+          type: event.contentType || "text", 
+          status: "scheduled", 
+          scheduled_at: scheduledAt,
+          cover_image_url: event.imageUrl || ""
+        }, 
+        platforms: [event.platform] 
+      });
     }
   };
   const handleDeleteEvent = (id: string) => deletePost.mutate(id);
@@ -795,51 +827,61 @@ export default function ContentCalendar() {
   return (
     <DashboardLayout hideHeader>
       <DragDropImport onImport={(data) => { if (data.version === "1.0") processUJT(data); }} entityName="UJT">
-        <div className="h-screen w-full bg-background text-foreground flex flex-col overflow-hidden">
+        <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col min-w-0">
 
           {/* Header */}
-          <header className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b border-border bg-card">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setSidebarOpen(p => !p)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-sm transition-colors">
+          <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 relative z-20">
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setSidebarOpen(p => !p)} 
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-muted-foreground transition-all mr-2"
+              >
                 {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </button>
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-                <CalendarDays className="w-5 h-5" />
-              </div>
-              <div>
-                <h1 className="text-xl font-black text-foreground leading-none tracking-tight uppercase">Content Calendar</h1>
-                <p className="text-[10px] text-primary font-bold uppercase tracking-wider mt-0.5">CONTENT HUB</p>
+
+              <Button variant="ghost" className="hidden sm:flex items-center gap-2 text-muted-foreground hover:text-foreground p-0 h-auto">
+                <span className="text-[10px] uppercase tracking-wide font-bold">Workspace</span>
+                <span className="font-bold text-foreground text-sm">My Workspace</span>
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+              
+              <span className="text-muted-foreground/30 hidden sm:block">|</span>
+              
+              <div className="flex flex-col">
+                <h1 className="text-xl font-black text-foreground tracking-tighter uppercase leading-none">Calendar</h1>
+                <span className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none mt-0.5">Content Hub</span>
               </div>
             </div>
 
             <div className="flex-1 max-w-md mx-8 relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400 w-3.5 h-3.5" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 w-3.5 h-3.5" />
               <input
                 aria-label="Search"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search events, tasks, content..."
-                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-primary/40 transition-colors"
+                placeholder="Search strategy..."
+                className="w-full bg-white/[0.02] border border-white/[0.05] rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-all"
               />
-              {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white text-xs">✕</button>}
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="hidden lg:flex items-center gap-2 mr-3">
-                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-bold text-emerald-400"><CalendarDays className="w-3 h-3" /> {todayCount} today</span>
-                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] font-bold text-amber-400"><Send className="w-3 h-3" /> {publishCount} posts</span>
-                {deadlineCount > 0 && <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-[11px] font-bold text-red-400"><AlarmClock className="w-3 h-3" /> {deadlineCount} deadlines</span>}
+            <div className="flex items-center gap-4">
+              <div className="hidden lg:flex items-center gap-2">
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 uppercase tracking-widest"><CalendarDays className="w-3 h-3" /> {todayCount}</span>
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary/10 border border-primary/20 text-[9px] font-black text-primary uppercase tracking-widest"><Send className="w-3 h-3" /> {publishCount}</span>
               </div>
+              
               <NotificationsDropdown />
+              <div className="w-[1px] h-4 bg-white/10 mx-1" />
               <UserDropdown />
             </div>
           </header>
-
-          {/* Body */}
+          
           <div className="flex-1 flex overflow-hidden">
             {/* Sidebar */}
             {sidebarOpen && (
-              <div className="w-[260px] bg-card border-r border-border p-4 shrink-0">
+              <div className="w-[340px] bg-background/20 backdrop-blur-2xl border-r border-white/[0.05] p-8 shrink-0 overflow-y-auto custom-scrollbar relative z-10">
                 <CalSidebar
                   events={filtered}
                   miniMonth={miniMonth}
@@ -855,40 +897,46 @@ export default function ContentCalendar() {
             )}
 
             {/* Main grid area */}
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
               {/* Toolbar */}
-              <div className="flex-shrink-0 flex items-center justify-between px-6 py-3 border-b border-border bg-card">
-                <div className="flex items-center gap-3">
-                  <div className="flex bg-white/[0.03] rounded-xl p-1 border border-white/[0.06]">
-                    <button onClick={() => navigate(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-gray-400 text-sm">‹</button>
+              <div className="flex-shrink-0 flex items-center justify-between px-8 py-4 border-b border-white/[0.05] bg-background/20 backdrop-blur-xl">
+                <div className="flex items-center gap-5">
+                  <div className="flex bg-white/[0.03] rounded-2xl p-1.5 border border-white/[0.08] backdrop-blur-md">
+                    <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/5 text-muted-foreground hover:text-white transition-all group">
+                      <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                    </button>
                     <button
                       onClick={() => { setCurrent(new Date()); setSelectedDate(new Date()); }}
-                      className={`px-4 py-1 rounded-lg text-[10px] font-black tracking-wide transition-all ${isToday(current) ? "bg-primary text-primary-foreground" : "text-gray-500 hover:text-gray-200"}`}
+                      className={`px-6 py-1 rounded-xl text-[10px] font-black tracking-[0.1em] uppercase transition-all ${isToday(current) ? "bg-primary text-white shadow-lg shadow-primary/30" : "text-muted-foreground hover:text-white"}`}
                     >
                       Today
                     </button>
-                    <button onClick={() => navigate(1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-gray-400 text-sm">›</button>
+                    <button onClick={() => navigate(1)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/5 text-muted-foreground hover:text-white transition-all group">
+                      <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                    </button>
                   </div>
-                  <h2 className="text-base font-black text-white tracking-tight">{headerLabel}</h2>
+                  <h2 className="text-lg font-black text-white tracking-tight head-neon">{headerLabel}</h2>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="flex bg-white/[0.03] border border-white/[0.06] rounded-xl p-1">
+                <div className="flex items-center gap-4">
+                  <div className="flex bg-white/[0.03] border border-white/[0.08] rounded-2xl p-1.5 backdrop-blur-md">
                     {(["month", "week", "day", "agenda"] as const).map(m => (
                       <button
                         key={m}
                         onClick={() => setViewMode(m)}
-                        className={`px-4 py-1.5 rounded-lg text-[10px] font-bold tracking-wide transition-all ${viewMode === m ? "bg-primary text-primary-foreground" : "text-gray-500 hover:text-gray-200"}`}
+                        className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === m ? "bg-white/10 text-white shadow-xl shadow-white/5" : "text-muted-foreground hover:text-white hover:bg-white/[0.02]"}`}
                       >
-                        {m.charAt(0).toUpperCase() + m.slice(1)}
+                        {m}
                       </button>
                     ))}
                   </div>
                   <button
                     onClick={() => { setEditingEvent(null); setDefaultDate(undefined); setModalOpen(true); }}
-                    className="ml-2 w-8 h-8 flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+                    title="Add new event"
+                    aria-label="Add new event"
+                    className="w-11 h-11 flex items-center justify-center rounded-[1.25rem] bg-primary text-white hover:brightness-110 transition-all shadow-2xl shadow-primary/40 active:scale-95 group"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
                   </button>
                 </div>
               </div>
@@ -902,8 +950,9 @@ export default function ContentCalendar() {
               </div>
             </div>
           </div>
+        </div>
 
-          {modalOpen && (
+        {modalOpen && (
             <EventModal
               event={editingEvent}
               defaultDate={defaultDate}

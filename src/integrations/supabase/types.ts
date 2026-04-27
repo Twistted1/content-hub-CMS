@@ -836,6 +836,7 @@ export type Database = {
         | "linkedin"
         | "website"
         | "podcast"
+        | "rumble"
       post_status:
         | "draft"
         | "scheduled"
@@ -1001,6 +1002,7 @@ export const Constants = {
         "linkedin",
         "website",
         "podcast",
+        "rumble",
       ],
       post_status: [
         "draft",

@@ -118,15 +118,20 @@ function StatCard({ title, value, badge, sub, trendUp, color }: {
   sub?: string; trendUp?: boolean; color?: string;
 }) {
   return (
-    <div className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-3 hover:border-primary/30 transition-colors">
-      <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest bg-muted/30 border-border/50 text-muted-foreground w-fit">{badge}</Badge>
+    <div className="glass-card p-6 flex flex-col gap-4 hover:border-primary/40 transition-all duration-300 group">
+      <div className="flex items-center justify-between">
+        <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.15em] bg-white/[0.03] border-white/[0.08] text-muted-foreground/60 py-1 px-3 rounded-xl">{badge}</Badge>
+        <div className={cn("w-2 h-2 rounded-full animate-pulse shadow-[0_0_8px]", trendUp ? "bg-emerald-400 shadow-emerald-400/50" : "bg-rose-400 shadow-rose-400/50")} />
+      </div>
       <div>
-        <p className={cn("text-3xl font-black tracking-tight", color ?? "text-foreground")}>{value}</p>
-        <p className="text-[10px] text-muted-foreground font-medium mt-0.5">{title}</p>
+        <p className={cn("text-4xl font-black tracking-tighter mb-1", color ?? "text-white")}>{value}</p>
+        <p className="text-[11px] text-muted-foreground font-black uppercase tracking-widest opacity-60">{title}</p>
       </div>
       {sub && (
-        <div className={cn("flex items-center gap-1 text-[10px] font-bold", trendUp ? "text-emerald-400" : "text-rose-400")}>
-          {trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+        <div className={cn("flex items-center gap-2 text-[10px] font-black uppercase tracking-wider", trendUp ? "text-emerald-400" : "text-rose-400")}>
+          <div className={cn("p-1 rounded-lg", trendUp ? "bg-emerald-500/10" : "bg-rose-500/10")}>
+            {trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+          </div>
           <span>{sub}</span>
         </div>
       )}
@@ -219,27 +224,48 @@ const Index = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-5 pb-10 animate-in fade-in duration-500">
+      <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
         {/* ── Greeting Banner ─────────────────────────────────────────── */}
-        <div className="bg-gradient-to-r from-primary/10 via-card to-card border border-border rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">{dayLabel}</p>
-            <h1 className="text-xl font-black tracking-tighter text-foreground">
-              {greeting}, {userName.charAt(0).toUpperCase() + userName.slice(1)} 👋
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              <span className="text-foreground font-bold">{todayQueue.length} posts</span> scheduled today ·{" "}
-              <span className="text-primary font-bold">{stats.scheduledPosts} items</span> ready to publish
-            </p>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <Button onClick={() => navigate("/calendar")} className="bg-primary hover:opacity-90 text-white font-black uppercase text-[10px] tracking-widest gap-2 rounded-xl">
-              <Plus className="w-4 h-4" /> Create Content
-            </Button>
-            <Button onClick={() => navigate("/pipeline")} variant="outline" className="border-border font-black uppercase text-[10px] tracking-widest gap-2 rounded-xl">
-              <Eye className="w-4 h-4" /> View Queue ({stats.scheduledPosts})
-            </Button>
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/[0.08] bg-black/40 backdrop-blur-3xl p-10 group">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-blue-600/10 opacity-50" />
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 blur-[100px] rounded-full animate-pulse" />
+          
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="h-[1px] w-8 bg-primary/50" />
+                <p className="text-[11px] font-black uppercase tracking-[0.4em] text-primary">{dayLabel}</p>
+              </div>
+              <h1 className="text-5xl font-black tracking-tighter text-white mb-4 leading-[0.9]">
+                {greeting},<br />
+                <span className="head-neon">{userName.charAt(0).toUpperCase() + userName.slice(1)}</span> 👋
+              </h1>
+              <div className="flex items-center gap-6 mt-6">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-50">Today's Pulse</span>
+                  <p className="text-sm text-white font-bold">
+                    <span className="text-primary">{todayQueue.length} items</span> in queue
+                  </p>
+                </div>
+                <div className="w-[1px] h-8 bg-white/10" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-50">Strategy Health</span>
+                  <p className="text-sm text-white font-bold">
+                    <span className="text-emerald-400">{stats.scheduledPosts} ready</span> to deploy
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row items-stretch gap-4 shrink-0">
+              <Button onClick={() => navigate("/calendar")} className="bg-primary hover:bg-primary/90 text-white font-black uppercase text-[11px] tracking-[0.2em] gap-3 px-8 py-7 rounded-2xl shadow-2xl shadow-primary/40 group active:scale-95 transition-all">
+                <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> NEW CAMPAIGN
+              </Button>
+              <Button onClick={() => navigate("/pipeline")} variant="outline" className="bg-white/[0.03] border-white/[0.1] hover:bg-white/[0.06] text-white font-black uppercase text-[11px] tracking-[0.2em] gap-3 px-8 py-7 rounded-2xl backdrop-blur-xl active:scale-95 transition-all">
+                <Eye className="w-5 h-5" /> REVISE QUEUE
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -254,12 +280,12 @@ const Index = () => {
         </div>
 
         {/* ── Activity Chart + Platform Health ────────────────────────── */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <div className="xl:col-span-2 bg-card border border-border rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-2 glass-card p-8">
+            <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-sm font-black text-foreground">Posts Activity</h2>
-                <p className="text-[10px] text-muted-foreground">Published vs Scheduled — Last 30 days</p>
+                <h2 className="text-xl font-black text-white tracking-tight uppercase head-neon">Velocity Insights</h2>
+                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">Growth Trajectory — Last 30 Cycles</p>
               </div>
             </div>
             <div className="flex items-center gap-4 mb-3">
@@ -296,11 +322,11 @@ const Index = () => {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-card border border-border rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-black text-foreground">Platform Health</h2>
-              <button onClick={() => navigate("/platforms")} className="text-[10px] font-black text-primary hover:underline flex items-center gap-1">
-                Manage <ArrowRight className="w-3 h-3" />
+          <div className="glass-card p-8">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-lg font-black text-white tracking-tight uppercase">Platform Health</h2>
+              <button onClick={() => navigate("/platforms")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
+                <ArrowRight className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-3">
@@ -320,7 +346,7 @@ const Index = () => {
                         </div>
                       </div>
                       <div className="h-1 bg-muted rounded-full overflow-hidden">
-                        <div className={cn("h-full rounded-full", bar)} style={{ width: `${pct}%` }} />
+                        <div className={cn("h-full rounded-full dynamic-fill-bar", bar)} ref={(el) => { if (el) el.style.width = `${pct}%`; }} />
                       </div>
                     </div>
                   </div>
@@ -331,139 +357,158 @@ const Index = () => {
         </div>
 
         {/* ── Distribution + Today's Queue + Mini Calendar ─────────────── */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Distribution donut */}
-          <div className="bg-card border border-border rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-black text-foreground">Distribution</h2>
-              <button onClick={() => navigate("/analytics")} className="text-[10px] font-black text-primary hover:underline flex items-center gap-1">Details <ArrowRight className="w-3 h-3" /></button>
+          <div className="glass-card p-8">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-lg font-black text-white tracking-tight uppercase">Distribution</h2>
+              <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
+                <ArrowRight className="w-5 h-5" />
+              </button>
             </div>
             {platSlices.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={140}>
+                <ResponsiveContainer width="100%" height={160}>
                   <PieChart>
-                    <Pie data={platSlices} cx="50%" cy="50%" innerRadius={40} outerRadius={58} dataKey="value" strokeWidth={2} stroke="hsl(222 47% 6%)">
+                    <Pie data={platSlices} cx="50%" cy="50%" innerRadius={45} outerRadius={65} dataKey="value" strokeWidth={4} stroke="rgba(0,0,0,0.5)">
                       {platSlices.map((s, i) => <Cell key={i} fill={s.hex} />)}
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="space-y-2 mt-2">
+                <div className="space-y-3 mt-6">
                   {platSlices.map(s => (
-                    <div key={s.name} className="flex items-center justify-between text-[11px]">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: s.hex }} />
-                        <span className="text-muted-foreground">{s.name}</span>
+                    <div key={s.name} className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider">
+                      <div className="flex items-center gap-3">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-[0_0_10px]" style={{ backgroundColor: s.hex, boxShadow: `0 0 10px ${s.hex}66` }} />
+                        <span className="text-muted-foreground/80">{s.name}</span>
                       </div>
-                      <span className="font-black text-foreground">{s.value}</span>
+                      <span className="text-white">{s.value}</span>
                     </div>
                   ))}
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                <BarChart3 className="w-8 h-8 mb-2 opacity-20" />
-                <p className="text-xs">No platform data yet</p>
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/30">
+                <BarChart3 className="w-12 h-12 mb-4 opacity-10" />
+                <p className="text-[10px] font-black uppercase tracking-widest">No spectral data</p>
               </div>
             )}
           </div>
 
           {/* Today's Queue */}
-          <div className="bg-card border border-border rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-primary" />
-                <h2 className="text-sm font-black text-foreground">Today's Queue</h2>
+          <div className="glass-card p-8">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-primary/10">
+                  <Clock className="w-5 h-5 text-primary" />
+                </div>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">Today's Pulse</h2>
               </div>
-              <button onClick={() => navigate("/pipeline")} className="text-[10px] font-black text-primary hover:underline flex items-center gap-1">View All <ArrowRight className="w-3 h-3" /></button>
+              <button onClick={() => navigate("/pipeline")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
+                <ArrowRight className="w-5 h-5" />
+              </button>
             </div>
             {todayQueue.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                <Calendar className="w-8 h-8 mb-2 opacity-20" />
-                <p className="text-xs">Nothing scheduled today</p>
-                <button onClick={() => navigate("/calendar")} className="mt-2 text-[10px] font-black text-primary hover:underline">Schedule content →</button>
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/30">
+                <Calendar className="w-12 h-12 mb-4 opacity-10" />
+                <p className="text-[10px] font-black uppercase tracking-widest">Quiet cycles</p>
+                <button onClick={() => navigate("/calendar")} className="mt-4 text-[10px] font-black text-primary hover:underline uppercase tracking-widest">Initialize →</button>
               </div>
-            ) : todayQueue.slice(0, 8).map((post: any) => {
-              const plat   = post.platforms?.[0]?.platform ?? "website";
-              const cfg    = PLATFORM_CFG[plat];
-              const Icon   = cfg?.Icon ?? Globe;
-              const timeStr = post.scheduledAt ? format(new Date(post.scheduledAt), "HH:mm") : "--:--";
-              const sc = post.status === "scheduled" ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
-                       : post.status === "draft"     ? "text-amber-400 bg-amber-400/10 border-amber-400/20"
-                       : "text-blue-400 bg-blue-400/10 border-blue-400/20";
-              return (
-                <div key={post.id} className="flex items-center gap-3 py-2 border-b border-border/30 last:border-0">
-                  <span className="text-[10px] font-black text-muted-foreground w-10 shrink-0 tabular-nums">{timeStr}</span>
-                  <Icon className={cn("w-4 h-4 shrink-0", cfg?.color ?? "text-muted-foreground")} />
-                  <span className="text-xs text-foreground flex-1 truncate font-medium">{post.title}</span>
-                  <span className={cn("text-[9px] font-black uppercase px-2 py-0.5 rounded border shrink-0", sc)}>
-                    {post.status === "scheduled" ? "READY" : post.status.toUpperCase()}
-                  </span>
-                </div>
-              );
-            })}
+            ) : (
+              <div className="space-y-4">
+                {todayQueue.slice(0, 8).map((post: any) => {
+                  const plat   = post.platforms?.[0]?.platform ?? "website";
+                  const cfg    = PLATFORM_CFG[plat];
+                  const Icon   = cfg?.Icon ?? Globe;
+                  const timeStr = post.scheduledAt ? format(new Date(post.scheduledAt), "HH:mm") : "--:--";
+                  const sc = post.status === "scheduled" ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
+                           : post.status === "draft"     ? "text-amber-400 bg-amber-400/10 border-amber-400/20"
+                           : "text-blue-400 bg-blue-400/10 border-blue-400/20";
+                  return (
+                    <div key={post.id} className="flex items-center gap-4 group cursor-pointer">
+                      <span className="text-[10px] font-black text-muted-foreground w-10 shrink-0 tabular-nums opacity-60 group-hover:opacity-100 transition-opacity">{timeStr}</span>
+                      <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center bg-white/[0.03] border border-white/[0.08] group-hover:border-primary/40 transition-all", cfg?.color ?? "text-muted-foreground")}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className="text-xs text-white flex-1 truncate font-bold group-hover:text-primary transition-colors">{post.title}</span>
+                      <span className={cn("text-[8px] font-black uppercase px-2 py-1 rounded-lg border shrink-0 tracking-widest", sc)}>
+                        {post.status === "scheduled" ? "DEPLOY" : post.status.toUpperCase()}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Mini Calendar */}
-          <div className="bg-card border border-border rounded-2xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar className="w-4 h-4 text-primary" />
-              <h2 className="text-sm font-black text-foreground">Content Calendar</h2>
+          <div className="glass-card p-8">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-2 rounded-xl bg-blue-500/10">
+                <Calendar className="w-5 h-5 text-blue-400" />
+              </div>
+              <h2 className="text-lg font-black text-white tracking-tight uppercase">Orchestrator</h2>
             </div>
             <MiniCalendar posts={posts} />
           </div>
         </div>
 
         {/* ── Heatmap + Activity Feed ──────────────────────────────────── */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <div className="bg-card border border-border rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="glass-card p-8">
+            <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-sm font-black text-foreground">Publishing Heatmap</h2>
-                <p className="text-[10px] text-muted-foreground">Posts per day — last 12 weeks</p>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">Deployment Intensity</h2>
+                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">Publishing Matrix — 84 Day Cycle</p>
               </div>
-              <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
-                <span>Less</span>
-                {HEAT_COLORS.map((c, i) => <span key={i} className={cn("w-3 h-3 rounded-sm inline-block", c)} />)}
-                <span>More</span>
+              <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
+                <span>Low</span>
+                <div className="flex gap-1 px-2">
+                  {HEAT_COLORS.map((c, i) => <span key={i} className={cn("w-3 h-3 rounded-[3px] inline-block", c)} />)}
+                </div>
+                <span>Peak</span>
               </div>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1.5 overflow-x-auto pb-2 custom-scrollbar">
               {heatWeeks.map((week, wi) => (
-                <div key={wi} className="flex flex-col gap-1 shrink-0">
+                <div key={wi} className="flex flex-col gap-1.5 shrink-0">
                   {week.map((day, di) => (
-                    <div key={di} title={`${format(day.date, "MMM d")}: ${day.count}`}
-                      className={cn("w-3.5 h-3.5 rounded-sm hover:ring-1 hover:ring-primary/50", heatColor(day.count))} />
+                    <div key={di} title={`${format(day.date, "MMM d")}: ${day.count} deployments`}
+                      className={cn("w-4 h-4 rounded-[4px] hover:ring-2 hover:ring-primary/50 transition-all cursor-crosshair", heatColor(day.count))} />
                   ))}
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-card border border-border rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-black text-foreground">Activity Feed</h2>
-              <span className="flex items-center gap-1.5 text-[9px] font-black text-emerald-400 uppercase tracking-widest">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" /> Live
-              </span>
-            </div>
-            {activityFeed.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-6">No recent activity</p>
-            ) : activityFeed.map((item, i) => (
-              <div key={i} className="flex items-start gap-3 mb-3">
-                <div className={cn("w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5",
-                  item.status === "published" ? "bg-emerald-500/10" :
-                  item.status === "scheduled" ? "bg-blue-500/10" : "bg-amber-500/10"
-                )}>
-                  {item.status === "published" ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                   : item.status === "scheduled" ? <Clock className="w-3.5 h-3.5 text-blue-400" />
-                   : <FileText className="w-3.5 h-3.5 text-amber-400" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-foreground font-medium leading-tight">{item.text}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{item.ago}</p>
-                </div>
+          <div className="glass-card p-8">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-lg font-black text-white tracking-tight uppercase">Live Stream</h2>
+              <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_15px_rgba(52,211,153,0.1)]">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">Live Status</span>
               </div>
-            ))}
+            </div>
+            <div className="space-y-6">
+              {activityFeed.length === 0 ? (
+                <p className="text-xs text-muted-foreground/30 text-center py-10 uppercase tracking-widest font-black">No recent transmissions</p>
+              ) : activityFeed.map((item, i) => (
+                <div key={i} className="flex items-start gap-5 group">
+                  <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border transition-all",
+                    item.status === "published" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
+                    item.status === "scheduled" ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                  )}>
+                    {item.status === "published" ? <CheckCircle2 className="w-5 h-5" />
+                     : item.status === "scheduled" ? <Clock className="w-5 h-5" />
+                     : <FileText className="w-5 h-5" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white font-bold group-hover:text-primary transition-colors leading-tight">{item.text}</p>
+                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1.5 opacity-50">{item.ago}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -529,57 +574,67 @@ const Index = () => {
         </div>
 
         {/* ── Goals & KPIs + Automation Status ────────────────────────── */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <div className="bg-card border border-border rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="glass-card p-8">
+            <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-sm font-black text-foreground">Goals & KPIs</h2>
-                <p className="text-[10px] text-muted-foreground">Q3 2025 targets — updated in real-time</p>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">Strategic Targets</h2>
+                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">Q3 2025 Benchmarks</p>
               </div>
-              <button onClick={() => navigate("/analytics")} className="text-[10px] font-black text-primary hover:underline flex items-center gap-1">Full Report <ArrowRight className="w-3 h-3" /></button>
+              <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
+                <ArrowRight className="w-5 h-5" />
+              </button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               {goals.map(g => (
-                <div key={g.label} className="bg-muted/20 border border-border/40 rounded-xl p-4">
-                  <div className="flex justify-end mb-1">
-                    <span className="text-[10px] font-black text-emerald-400">{g.change}</span>
+                <div key={g.label} className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 group hover:border-primary/30 transition-all">
+                  <div className="flex justify-end mb-2">
+                    <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg">{g.change}</span>
                   </div>
-                  <p className="text-2xl font-black text-foreground tracking-tight">{g.value}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{g.label}</p>
-                  <p className="text-[9px] text-muted-foreground/60">Target: {g.target}</p>
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-2">
-                    <div className={cn("h-full rounded-full", g.color)} style={{ width: `${g.pct}%` }} />
+                  <p className="text-3xl font-black text-white tracking-tighter mb-1">{g.value}</p>
+                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60 mb-1">{g.label}</p>
+                  <p className="text-[9px] text-muted-foreground/40 font-bold">Target: {g.target}</p>
+                  <div className="h-2 bg-white/[0.05] rounded-full overflow-hidden mt-4">
+                    <div className={cn("h-full rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]", g.color)} style={{ width: `${g.pct}%` }} />
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-card border border-border rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-400" />
-                <h2 className="text-sm font-black text-foreground">Automation Status</h2>
+          <div className="glass-card p-8">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400">
+                  <Zap className="w-5 h-5 shadow-[0_0_15px_rgba(245,158,11,0.2)]" />
+                </div>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">Neural Pathways</h2>
               </div>
-              <button onClick={() => navigate("/automation")} className="text-[10px] font-black text-primary hover:underline flex items-center gap-1">Manage <ArrowRight className="w-3 h-3" /></button>
+              <button onClick={() => navigate("/automation")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
+                <ArrowRight className="w-5 h-5" />
+              </button>
             </div>
             {automations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                <Sparkles className="w-8 h-8 mb-2 opacity-20" />
-                <p className="text-xs">No automations configured yet</p>
-                <button onClick={() => navigate("/automation")} className="mt-2 text-[10px] font-black text-primary hover:underline">Set up automation →</button>
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/30">
+                <Sparkles className="w-12 h-12 mb-4 opacity-10" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-center">No active pathways</p>
+                <button onClick={() => navigate("/automation")} className="mt-4 text-[10px] font-black text-primary hover:underline uppercase tracking-widest">Connect Hub →</button>
               </div>
-            ) : automations.slice(0, 6).map((a: any) => (
-              <div key={a.id} className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-foreground truncate">{a.name}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{a.platforms?.join(", ") ?? "Multi-platform"}</p>
-                </div>
-                <div className={cn("w-8 h-4 rounded-full relative ml-4 shrink-0", a.status === "active" ? "bg-primary" : "bg-muted")}>
-                  <div className={cn("absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all", a.status === "active" ? "right-0.5" : "left-0.5")} />
-                </div>
+            ) : (
+              <div className="space-y-4">
+                {automations.slice(0, 6).map((a: any) => (
+                  <div key={a.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] transition-all group">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-white group-hover:text-primary transition-colors truncate">{a.name}</p>
+                      <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-50">{a.platforms?.join(", ") ?? "Multi-platform"}</p>
+                    </div>
+                    <div className={cn("w-10 h-5 rounded-full relative ml-4 shrink-0 cursor-pointer transition-all", a.status === "active" ? "bg-primary shadow-[0_0_15px_rgba(155,135,245,0.4)]" : "bg-white/10")}>
+                      <div className={cn("absolute top-1 w-3 h-3 rounded-full bg-white transition-all shadow-sm", a.status === "active" ? "right-1" : "left-1")} />
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </div>
 
