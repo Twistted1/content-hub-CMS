@@ -24,13 +24,33 @@ import { toast } from "sonner";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 import { usePosts } from "../hooks/usePosts";
+import { useAutomations, Automation } from "@/hooks/useAutomations";
+import { AutomationCard } from "@/components/automation/AutomationCard";
+import { AutomationDialog } from "@/components/automation/AutomationDialog";
+import { AutomationHistoryDialog } from "@/components/automation/AutomationHistoryDialog";
 
 const AutomationPage = () => {
   const { posts, updatePost } = usePosts();
+  const {
+    automations,
+    automationRuns,
+    addAutomation,
+    updateAutomation,
+    deleteAutomation,
+    toggleAutomation,
+    duplicateAutomation,
+    runAutomation,
+    completeAutomationRun,
+  } = useAutomations();
   const [isProcessingPipeline, setIsProcessingPipeline] = useState(false);
   const [pipelineOpen, setPipelineOpen] = useState(false);
   const [pipelineLogs, setPipelineLogs] = useState<string[]>([]);
   const [pipelineStep, setPipelineStep] = useState(0);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingAutomation, setEditingAutomation] = useState<Automation | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyAutomation, setHistoryAutomation] = useState<Automation | null>(null);
+  const [runningId, setRunningId] = useState<string | null>(null);
 
   const pendingPosts = posts?.filter(p => p.status === "awaiting_review") || [];
 
@@ -50,10 +70,30 @@ const AutomationPage = () => {
   };
 
   const stats = [
-    { label: "Active Automations", value: "8", icon: Zap, color: "text-emerald-400" },
-    { label: "Total Runs", value: "124", icon: RefreshCcw, color: "text-blue-400" },
-    { label: "Time Saved", value: "48h", icon: Clock, color: "text-purple-400" },
-    { label: "Connected Apps", value: "8", icon: Share2, color: "text-orange-400" },
+    {
+      label: "Active Automations",
+      value: String(automations.filter((a) => a.status === "active").length),
+      icon: Zap,
+      color: "text-emerald-400",
+    },
+    {
+      label: "Total Runs",
+      value: String(automations.reduce((s, a) => s + (a.runs || 0), 0)),
+      icon: RefreshCcw,
+      color: "text-blue-400",
+    },
+    {
+      label: "Time Saved",
+      value: `${Math.max(1, Math.floor(automations.reduce((s, a) => s + (a.runs || 0), 0) * 0.4))}h`,
+      icon: Clock,
+      color: "text-purple-400",
+    },
+    {
+      label: "Connected Apps",
+      value: String(new Set(automations.flatMap((a) => a.platforms)).size),
+      icon: Share2,
+      color: "text-orange-400",
+    },
   ];
 
   const streams = [
