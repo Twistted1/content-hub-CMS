@@ -555,7 +555,10 @@ const AutomationPage = () => {
               Run Master Pipeline
             </button>
             
-            <button className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all font-bold text-sm">
+            <button
+              onClick={() => { setEditingAutomation(null); setPresetData(null); setDialogOpen(true); }}
+              className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all font-bold text-sm"
+            >
               <Plus className="w-4 h-4" />
               New Automation
             </button>
@@ -590,8 +593,12 @@ const AutomationPage = () => {
                 <div className="p-3 rounded-xl bg-muted group-hover:bg-primary/10 transition-colors">
                   <stream.icon className="w-6 h-6 text-primary" />
                 </div>
-                <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full">
-                  {stream.status}
+                <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${
+                  isStreamActive(stream.platform)
+                    ? "text-emerald-400 bg-emerald-500/10"
+                    : "text-primary bg-primary/10"
+                }`}>
+                  {isStreamActive(stream.platform) ? "Active" : stream.status}
                 </span>
               </div>
 
@@ -605,12 +612,50 @@ const AutomationPage = () => {
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Frequency</span>
                   <span className="text-sm font-bold text-white">{stream.frequency}</span>
                 </div>
-                <button className="px-4 py-2 bg-foreground text-background text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all">
+                <button
+                  onClick={() => handleConfigureStream(stream)}
+                  className="px-4 py-2 bg-foreground text-background text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all"
+                >
                   Configure
                 </button>
               </div>
             </div>
           ))}
+        </div>
+
+        {/* My Automations */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-white uppercase tracking-tight">My Automations</h2>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">
+                {automations.length} configured · {automations.filter(a => a.status === "active").length} active
+              </p>
+            </div>
+          </div>
+          {automations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground border-2 border-dashed border-border rounded-2xl bg-muted/10">
+              <Zap className="w-10 h-10 mb-3 opacity-20" />
+              <p className="text-xs font-bold tracking-[0.2em] uppercase opacity-60">
+                No automations yet — click "New Automation" or "Configure" a stream above.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {automations.map((a) => (
+                <AutomationCard
+                  key={a.id}
+                  automation={a}
+                  onToggle={toggleAutomation}
+                  onEdit={(au) => { setEditingAutomation(au); setPresetData(null); setDialogOpen(true); }}
+                  onDelete={deleteAutomation}
+                  onRun={executeAutomation}
+                  onViewHistory={(au) => { setHistoryAutomation(au); setHistoryOpen(true); }}
+                  onDuplicate={duplicateAutomation}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Master Review Hub */}
