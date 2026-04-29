@@ -5,12 +5,12 @@ import { toast } from "sonner";
 
 export function useNotes() {
   const queryClient = useQueryClient();
+  const notesTable = () => (supabase as any).from("notes");
 
   const { data: notes = [], isLoading, error } = useQuery({
     queryKey: ["notes"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("notes")
+      const { data, error } = await notesTable()
         .select("*")
         .order("is_pinned", { ascending: false })
         .order("created_at", { ascending: false });
@@ -37,8 +37,7 @@ export function useNotes() {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase
-        .from("notes")
+      const { data, error } = await notesTable()
         .insert({
           title: newNote.title,
           content: newNote.content,
@@ -76,8 +75,7 @@ export function useNotes() {
       if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
       dbUpdates.updated_at = new Date().toISOString();
 
-      const { error } = await supabase
-        .from("notes")
+      const { error } = await notesTable()
         .update(dbUpdates)
         .eq("id", id);
 
@@ -94,8 +92,7 @@ export function useNotes() {
 
   const deleteNote = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("notes")
+      const { error } = await notesTable()
         .delete()
         .eq("id", id);
 
