@@ -28,8 +28,10 @@ import { useAutomations, Automation } from "@/hooks/useAutomations";
 import { AutomationCard } from "@/components/automation/AutomationCard";
 import { AutomationDialog } from "@/components/automation/AutomationDialog";
 import { AutomationHistoryDialog } from "@/components/automation/AutomationHistoryDialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AutomationPage = () => {
+  const queryClient = useQueryClient();
   const { posts, updatePost } = usePosts();
   const {
     automations,
@@ -430,10 +432,10 @@ const AutomationPage = () => {
         return;
       }
       toast.success("Automation created");
-      // refetch
-      window.dispatchEvent(new Event("focus"));
+      queryClient.invalidateQueries({ queryKey: ["automations"] });
     }
     setEditingAutomation(null);
+    setPresetData(null);
   };
 
   const handleConfigureStream = (stream: { name: string; description: string; platform: string }) => {
