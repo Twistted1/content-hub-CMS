@@ -792,6 +792,40 @@ const AutomationPage = () => {
           </div>
         )}
       </div>
+
+      <AutomationDialog
+        open={dialogOpen}
+        onOpenChange={(o) => {
+          setDialogOpen(o);
+          if (!o) { setEditingAutomation(null); setPresetData(null); }
+        }}
+        automation={
+          editingAutomation
+            ? editingAutomation
+            : presetData
+              ? ({
+                  id: "",
+                  name: presetData.name,
+                  description: presetData.description,
+                  trigger: "scheduled",
+                  triggerConfig: { schedule: "daily" },
+                  platforms: presetData.platforms,
+                  status: "active",
+                  lastRun: null,
+                  runs: 0,
+                  createdAt: "",
+                } as Automation)
+              : null
+        }
+        onSave={handleSaveAutomation}
+      />
+
+      <AutomationHistoryDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        automation={historyAutomation}
+        runs={automationRuns}
+      />
     </DashboardLayout>
   );
 };
