@@ -9,7 +9,8 @@ import {
   Box,
   Layout,
   Globe,
-  Settings
+  Settings,
+  Clock
 } from "lucide-react";
 
 const ContentModelsPage = () => {

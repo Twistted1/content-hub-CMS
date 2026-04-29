@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      articles: {
+        Row: {
+          author_id: string | null
+          category: string | null
+          content: string | null
+          created_at: string | null
+          excerpt: string | null
+          id: number
+          image_url: string | null
+          publish_date: string | null
+          read_time: number | null
+          tags: string[] | null
+          title: string
+        }
+        Insert: {
+          author_id?: string | null
+          category?: string | null
+          content?: string | null
+          created_at?: string | null
+          excerpt?: string | null
+          id?: number
+          image_url?: string | null
+          publish_date?: string | null
+          read_time?: number | null
+          tags?: string[] | null
+          title: string
+        }
+        Update: {
+          author_id?: string | null
+          category?: string | null
+          content?: string | null
+          created_at?: string | null
+          excerpt?: string | null
+          id?: number
+          image_url?: string | null
+          publish_date?: string | null
+          read_time?: number | null
+          tags?: string[] | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "articles_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      authors: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          id: string
+          name: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       automation_runs: {
         Row: {
           automation_id: string
@@ -109,36 +180,6 @@ export type Database = {
           trigger?: Database["public"]["Enums"]["automation_trigger"]
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      invitations: {
-        Row: {
-          created_at: string
-          email: string
-          expires_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          status: string
-          token: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          expires_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          status?: string
-          token: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          expires_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          status?: string
-          token?: string
         }
         Relationships: []
       }
@@ -238,42 +279,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      notes: {
-        Row: {
-          color: string | null
-          content: string | null
-          created_at: string
-          id: string
-          is_pinned: boolean | null
-          tags: string[] | null
-          title: string
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          color?: string | null
-          content?: string | null
-          created_at?: string
-          id?: string
-          is_pinned?: boolean | null
-          tags?: string[] | null
-          title: string
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          color?: string | null
-          content?: string | null
-          created_at?: string
-          id?: string
-          is_pinned?: boolean | null
-          tags?: string[] | null
-          title?: string
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: []
       }
       post_platforms: {
         Row: {
@@ -615,6 +620,24 @@ export type Database = {
           },
         ]
       }
+      subscribers: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: number
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: number
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: number
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
@@ -767,48 +790,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_platforms: {
-        Row: {
-          account_name: string
-          avatar_url: string | null
-          created_at: string
-          id: string
-          last_sync: string | null
-          platform_type: Database["public"]["Enums"]["platform_type"]
-          settings: Json
-          status: string
-          updated_at: string
-          user_id: string
-          username: string | null
-        }
-        Insert: {
-          account_name: string
-          avatar_url?: string | null
-          created_at?: string
-          id?: string
-          last_sync?: string | null
-          platform_type: Database["public"]["Enums"]["platform_type"]
-          settings?: Json
-          status?: string
-          updated_at?: string
-          user_id: string
-          username?: string | null
-        }
-        Update: {
-          account_name?: string
-          avatar_url?: string | null
-          created_at?: string
-          id?: string
-          last_sync?: string | null
-          platform_type?: Database["public"]["Enums"]["platform_type"]
-          settings?: Json
-          status?: string
-          updated_at?: string
-          user_id?: string
-          username?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -836,7 +817,6 @@ export type Database = {
         | "linkedin"
         | "website"
         | "podcast"
-        | "rumble"
       post_status:
         | "draft"
         | "scheduled"
@@ -1002,7 +982,6 @@ export const Constants = {
         "linkedin",
         "website",
         "podcast",
-        "rumble",
       ],
       post_status: [
         "draft",

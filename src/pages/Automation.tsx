@@ -313,7 +313,9 @@ const AutomationPage = () => {
           await supabase.from("media").insert({
             post_id: post.id,
             url: item.image,
-            type: "image"
+            filename: `${post.id}-image`,
+            mime_type: "image/*",
+            user_id: activeUserId
           });
         }
 
