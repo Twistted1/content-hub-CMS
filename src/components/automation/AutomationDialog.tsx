@@ -90,10 +90,10 @@ export function AutomationDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>
-              {automation ? "Edit Automation" : "Create Automation"}
+              {automation && automation.id ? "Edit Automation" : "Create Automation"}
             </DialogTitle>
             <DialogDescription>
-              {automation
+              {automation && automation.id
                 ? "Update your automation workflow"
                 : "Set up a new automated workflow"}
             </DialogDescription>
@@ -186,7 +186,7 @@ export function AutomationDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={!name || selectedPlatforms.length === 0}>
-              {automation ? "Save Changes" : "Create Automation"}
+              {automation && automation.id ? "Save Changes" : "Create Automation"}
             </Button>
           </DialogFooter>
         </form>

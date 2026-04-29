@@ -24,13 +24,36 @@ import { toast } from "sonner";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 import { usePosts } from "../hooks/usePosts";
+import { useAutomations, Automation } from "@/hooks/useAutomations";
+import { AutomationCard } from "@/components/automation/AutomationCard";
+import { AutomationDialog } from "@/components/automation/AutomationDialog";
+import { AutomationHistoryDialog } from "@/components/automation/AutomationHistoryDialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AutomationPage = () => {
+  const queryClient = useQueryClient();
   const { posts, updatePost } = usePosts();
+  const {
+    automations,
+    automationRuns,
+    addAutomation,
+    updateAutomation,
+    deleteAutomation,
+    toggleAutomation,
+    duplicateAutomation,
+    runAutomation,
+    completeAutomationRun,
+  } = useAutomations();
   const [isProcessingPipeline, setIsProcessingPipeline] = useState(false);
   const [pipelineOpen, setPipelineOpen] = useState(false);
   const [pipelineLogs, setPipelineLogs] = useState<string[]>([]);
   const [pipelineStep, setPipelineStep] = useState(0);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingAutomation, setEditingAutomation] = useState<Automation | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyAutomation, setHistoryAutomation] = useState<Automation | null>(null);
+  const [runningId, setRunningId] = useState<string | null>(null);
+  const [presetData, setPresetData] = useState<{ name: string; description: string; platforms: string[] } | null>(null);
 
   const pendingPosts = posts?.filter(p => p.status === "awaiting_review") || [];
 
@@ -50,10 +73,30 @@ const AutomationPage = () => {
   };
 
   const stats = [
-    { label: "Active Automations", value: "8", icon: Zap, color: "text-emerald-400" },
-    { label: "Total Runs", value: "124", icon: RefreshCcw, color: "text-blue-400" },
-    { label: "Time Saved", value: "48h", icon: Clock, color: "text-purple-400" },
-    { label: "Connected Apps", value: "8", icon: Share2, color: "text-orange-400" },
+    {
+      label: "Active Automations",
+      value: String(automations.filter((a) => a.status === "active").length),
+      icon: Zap,
+      color: "text-emerald-400",
+    },
+    {
+      label: "Total Runs",
+      value: String(automations.reduce((s, a) => s + (a.runs || 0), 0)),
+      icon: RefreshCcw,
+      color: "text-blue-400",
+    },
+    {
+      label: "Time Saved",
+      value: `${Math.max(1, Math.floor(automations.reduce((s, a) => s + (a.runs || 0), 0) * 0.4))}h`,
+      icon: Clock,
+      color: "text-purple-400",
+    },
+    {
+      label: "Connected Apps",
+      value: String(new Set(automations.flatMap((a) => a.platforms)).size),
+      icon: Share2,
+      color: "text-orange-400",
+    },
   ];
 
   const streams = [
@@ -339,6 +382,159 @@ const AutomationPage = () => {
     }
   };
 
+  const computeNextRun = (schedule: string | undefined): string | null => {
+    if (!schedule) return null;
+    const d = new Date();
+    if (schedule === "hourly") d.setHours(d.getHours() + 1);
+    else if (schedule === "weekly") d.setDate(d.getDate() + 7);
+    else if (schedule === "monthly") d.setMonth(d.getMonth() + 1);
+    else d.setDate(d.getDate() + 1);
+    return d.toISOString();
+  };
+
+  const handleSaveAutomation = async (data: Omit<Automation, "id" | "createdAt" | "lastRun" | "runs">) => {
+    if (editingAutomation && editingAutomation.id) {
+      updateAutomation(editingAutomation.id, data);
+      // also persist next_run if scheduled
+      if (data.trigger === "scheduled") {
+        await supabase
+          .from("automations")
+          .update({
+            schedule: (data.triggerConfig.schedule || "daily") as any,
+            next_run: computeNextRun(data.triggerConfig.schedule),
+          })
+          .eq("id", editingAutomation.id);
+      }
+    } else {
+      // Create then patch schedule + next_run if needed
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Not authenticated");
+        return;
+      }
+      const { data: created, error } = await supabase
+        .from("automations")
+        .insert({
+          name: data.name,
+          description: data.description,
+          trigger: data.trigger,
+          conditions: data.triggerConfig as any,
+          platforms: data.platforms,
+          status: data.status as any,
+          user_id: user.id,
+          schedule: (data.trigger === "scheduled" ? (data.triggerConfig.schedule || "daily") : null) as any,
+          next_run: data.trigger === "scheduled" ? computeNextRun(data.triggerConfig.schedule) : null,
+        })
+        .select()
+        .single();
+      if (error) {
+        toast.error(`Failed to create: ${error.message}`);
+        return;
+      }
+      toast.success("Automation created");
+      queryClient.invalidateQueries({ queryKey: ["automations"] });
+    }
+    setEditingAutomation(null);
+    setPresetData(null);
+  };
+
+  const handleConfigureStream = (stream: { name: string; description: string; platform: string }) => {
+    setPresetData({
+      name: stream.name,
+      description: stream.description,
+      platforms: [capitalize(stream.platform)],
+    });
+    setEditingAutomation(null);
+    setDialogOpen(true);
+  };
+
+  const executeAutomation = async (id: string) => {
+    const automation = automations.find((a) => a.id === id);
+    if (!automation) return;
+    setRunningId(id);
+    let runId: string | undefined;
+    try {
+      runId = await runAutomation(id);
+      toast.info(`Running ${automation.name}...`);
+
+      const { data: strat, error: stratErr } = await supabase.functions.invoke("generate-strategy", {
+        body: { topic: automation.name },
+      });
+      if (stratErr) throw new Error(stratErr.message);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const platforms = automation.platforms.map((p) => p.toLowerCase().replace("x", "twitter"));
+      const today = new Date().toISOString().split("T")[0];
+      const day = strat?.content_strategy?.[0] || {};
+      const items: any[] = [];
+      const dayTopic = day.topic || automation.name;
+
+      if (platforms.includes("twitter") && day.twitter) {
+        const times = ["09:00:00", "13:00:00", "17:00:00"];
+        day.twitter.slice(0, 3).forEach((t: string, i: number) =>
+          items.push({ platform: "twitter", title: `X: ${dayTopic} #${i + 1}`, content: t, image: day.image, time: times[i] })
+        );
+      }
+      if (platforms.includes("instagram") && day.instagram) {
+        items.push({ platform: "instagram", title: `IG: ${dayTopic}`, content: day.instagram.caption, image: day.instagram.image, time: "11:00:00" });
+      }
+      if (platforms.includes("facebook") && day.facebook) {
+        items.push({ platform: "facebook", title: `FB: ${dayTopic}`, content: day.facebook.post, image: day.image, time: "10:00:00" });
+      }
+      if (platforms.includes("linkedin") && day.linkedin) {
+        items.push({ platform: "linkedin", title: `LI: ${dayTopic}`, content: day.linkedin.post, image: day.image, time: "08:30:00" });
+      }
+      if (platforms.includes("tiktok") && day.tiktok) {
+        items.push({ platform: "tiktok", title: `TT: ${dayTopic}`, content: day.tiktok.script, image: day.tiktok.thumbnail, time: "18:00:00" });
+      }
+      if (platforms.includes("youtube") && day.youtube) {
+        items.push({ platform: "youtube", title: day.youtube.video_title, content: day.youtube.community_post, image: day.youtube.thumbnail, time: "15:00:00" });
+      }
+      if (platforms.includes("website") && day.article) {
+        items.push({ platform: "website", title: day.article.title, content: day.article.content, image: day.image, time: "06:00:00" });
+      }
+
+      for (const item of items) {
+        const { data: post, error: postErr } = await supabase
+          .from("posts")
+          .insert({
+            title: item.title,
+            content: item.content,
+            status: "awaiting_review",
+            scheduled_at: `${today}T${item.time}.000Z`,
+            user_id: user.id,
+            category: item.platform === "website" ? "article" : "content",
+            excerpt: (item.content || "").substring(0, 100),
+            is_ai_generated: true,
+          })
+          .select()
+          .single();
+        if (postErr) continue;
+        await supabase.from("post_platforms").insert({ post_id: post.id, platform: item.platform as any, status: "scheduled" });
+        if (item.image) {
+          await supabase.from("media").insert({ post_id: post.id, url: item.image, filename: `${post.id}-image`, mime_type: "image/*", user_id: user.id });
+        }
+      }
+
+      if (runId) completeAutomationRun(runId, true, `Created ${items.length} posts`, id);
+      toast.success(`${automation.name} produced ${items.length} drafts`);
+    } catch (err: any) {
+      if (runId) completeAutomationRun(runId, false, err.message, id);
+      toast.error(`Run failed: ${err.message}`);
+    } finally {
+      setRunningId(null);
+    }
+  };
+
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  const isStreamActive = (platform: string) =>
+    automations.some((a) =>
+      a.platforms.some((p) => p.toLowerCase() === platform.toLowerCase() || (platform === "twitter" && p.toLowerCase() === "x"))
+    );
+
   return (
     <DashboardLayout>
       <div className="space-y-10">
@@ -361,7 +557,10 @@ const AutomationPage = () => {
               Run Master Pipeline
             </button>
             
-            <button className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all font-bold text-sm">
+            <button
+              onClick={() => { setEditingAutomation(null); setPresetData(null); setDialogOpen(true); }}
+              className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all font-bold text-sm"
+            >
               <Plus className="w-4 h-4" />
               New Automation
             </button>
@@ -396,8 +595,12 @@ const AutomationPage = () => {
                 <div className="p-3 rounded-xl bg-muted group-hover:bg-primary/10 transition-colors">
                   <stream.icon className="w-6 h-6 text-primary" />
                 </div>
-                <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full">
-                  {stream.status}
+                <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${
+                  isStreamActive(stream.platform)
+                    ? "text-emerald-400 bg-emerald-500/10"
+                    : "text-primary bg-primary/10"
+                }`}>
+                  {isStreamActive(stream.platform) ? "Active" : stream.status}
                 </span>
               </div>
 
@@ -411,12 +614,50 @@ const AutomationPage = () => {
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Frequency</span>
                   <span className="text-sm font-bold text-white">{stream.frequency}</span>
                 </div>
-                <button className="px-4 py-2 bg-foreground text-background text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all">
+                <button
+                  onClick={() => handleConfigureStream(stream)}
+                  className="px-4 py-2 bg-foreground text-background text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all"
+                >
                   Configure
                 </button>
               </div>
             </div>
           ))}
+        </div>
+
+        {/* My Automations */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-white uppercase tracking-tight">My Automations</h2>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">
+                {automations.length} configured · {automations.filter(a => a.status === "active").length} active
+              </p>
+            </div>
+          </div>
+          {automations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground border-2 border-dashed border-border rounded-2xl bg-muted/10">
+              <Zap className="w-10 h-10 mb-3 opacity-20" />
+              <p className="text-xs font-bold tracking-[0.2em] uppercase opacity-60">
+                No automations yet — click "New Automation" or "Configure" a stream above.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {automations.map((a) => (
+                <AutomationCard
+                  key={a.id}
+                  automation={a}
+                  onToggle={toggleAutomation}
+                  onEdit={(au) => { setEditingAutomation(au); setPresetData(null); setDialogOpen(true); }}
+                  onDelete={deleteAutomation}
+                  onRun={executeAutomation}
+                  onViewHistory={(au) => { setHistoryAutomation(au); setHistoryOpen(true); }}
+                  onDuplicate={duplicateAutomation}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Master Review Hub */}
@@ -553,6 +794,40 @@ const AutomationPage = () => {
           </div>
         )}
       </div>
+
+      <AutomationDialog
+        open={dialogOpen}
+        onOpenChange={(o) => {
+          setDialogOpen(o);
+          if (!o) { setEditingAutomation(null); setPresetData(null); }
+        }}
+        automation={
+          editingAutomation
+            ? editingAutomation
+            : presetData
+              ? ({
+                  id: "",
+                  name: presetData.name,
+                  description: presetData.description,
+                  trigger: "scheduled",
+                  triggerConfig: { schedule: "daily" },
+                  platforms: presetData.platforms,
+                  status: "active",
+                  lastRun: null,
+                  runs: 0,
+                  createdAt: "",
+                } as Automation)
+              : null
+        }
+        onSave={handleSaveAutomation}
+      />
+
+      <AutomationHistoryDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        automation={historyAutomation}
+        runs={automationRuns}
+      />
     </DashboardLayout>
   );
 };
