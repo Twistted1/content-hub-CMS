@@ -379,6 +379,176 @@ const AutomationPage = () => {
     }
   };
 
+  const computeNextRun = (schedule: string | undefined): string | null => {
+    if (!schedule) return null;
+    const d = new Date();
+    if (schedule === "hourly") d.setHours(d.getHours() + 1);
+    else if (schedule === "weekly") d.setDate(d.getDate() + 7);
+    else if (schedule === "monthly") d.setMonth(d.getMonth() + 1);
+    else d.setDate(d.getDate() + 1);
+    return d.toISOString();
+  };
+
+  const handleSaveAutomation = async (data: Omit<Automation, "id" | "createdAt" | "lastRun" | "runs">) => {
+    if (editingAutomation) {
+      updateAutomation(editingAutomation.id, data);
+      // also persist next_run if scheduled
+      if (data.trigger === "scheduled") {
+        await supabase
+          .from("automations")
+          .update({
+            schedule: (data.triggerConfig.schedule || "daily") as any,
+            next_run: computeNextRun(data.triggerConfig.schedule),
+          })
+          .eq("id", editingAutomation.id);
+      }
+    } else {
+      // Create then patch schedule + next_run if needed
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Not authenticated");
+        return;
+      }
+      const { data: created, error } = await supabase
+        .from("automations")
+        .insert({
+          name: data.name,
+          description: data.description,
+          trigger: data.trigger,
+          conditions: data.triggerConfig as any,
+          platforms: data.platforms,
+          status: data.status as any,
+          user_id: user.id,
+          schedule: (data.trigger === "scheduled" ? (data.triggerConfig.schedule || "daily") : null) as any,
+          next_run: data.trigger === "scheduled" ? computeNextRun(data.triggerConfig.schedule) : null,
+        })
+        .select()
+        .single();
+      if (error) {
+        toast.error(`Failed to create: ${error.message}`);
+        return;
+      }
+      toast.success("Automation created");
+      // refetch
+      window.dispatchEvent(new Event("focus"));
+    }
+    setEditingAutomation(null);
+  };
+
+  const handleConfigureStream = (stream: typeof streams[number]) => {
+    setEditingAutomation({
+      id: "",
+      name: stream.name,
+      description: stream.description,
+      trigger: "scheduled",
+      triggerConfig: { schedule: "daily" },
+      platforms: [stream.platform.charAt(0).toUpperCase() + stream.platform.slice(1)],
+      status: "active",
+      lastRun: null,
+      runs: 0,
+      createdAt: "",
+    } as Automation);
+    // We pass it as "preset" — but AutomationDialog treats truthy automation as edit.
+    // To force "create" mode while pre-filling, clear id by using null and seeding via state in dialog won't work.
+    // Workaround: open create dialog and pre-fill via a wrapper state.
+    setPresetData({
+      name: stream.name,
+      description: stream.description,
+      platforms: [capitalize(stream.platform)],
+    });
+    setEditingAutomation(null);
+    setDialogOpen(true);
+  };
+
+  const [presetData, setPresetData] = useState<{ name: string; description: string; platforms: string[] } | null>(null);
+
+  const executeAutomation = async (id: string) => {
+    const automation = automations.find((a) => a.id === id);
+    if (!automation) return;
+    setRunningId(id);
+    let runId: string | undefined;
+    try {
+      runId = await runAutomation(id);
+      toast.info(`Running ${automation.name}...`);
+
+      const { data: strat, error: stratErr } = await supabase.functions.invoke("generate-strategy", {
+        body: { topic: automation.name },
+      });
+      if (stratErr) throw new Error(stratErr.message);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const platforms = automation.platforms.map((p) => p.toLowerCase().replace("x", "twitter"));
+      const today = new Date().toISOString().split("T")[0];
+      const day = strat?.content_strategy?.[0] || {};
+      const items: any[] = [];
+      const dayTopic = day.topic || automation.name;
+
+      if (platforms.includes("twitter") && day.twitter) {
+        const times = ["09:00:00", "13:00:00", "17:00:00"];
+        day.twitter.slice(0, 3).forEach((t: string, i: number) =>
+          items.push({ platform: "twitter", title: `X: ${dayTopic} #${i + 1}`, content: t, image: day.image, time: times[i] })
+        );
+      }
+      if (platforms.includes("instagram") && day.instagram) {
+        items.push({ platform: "instagram", title: `IG: ${dayTopic}`, content: day.instagram.caption, image: day.instagram.image, time: "11:00:00" });
+      }
+      if (platforms.includes("facebook") && day.facebook) {
+        items.push({ platform: "facebook", title: `FB: ${dayTopic}`, content: day.facebook.post, image: day.image, time: "10:00:00" });
+      }
+      if (platforms.includes("linkedin") && day.linkedin) {
+        items.push({ platform: "linkedin", title: `LI: ${dayTopic}`, content: day.linkedin.post, image: day.image, time: "08:30:00" });
+      }
+      if (platforms.includes("tiktok") && day.tiktok) {
+        items.push({ platform: "tiktok", title: `TT: ${dayTopic}`, content: day.tiktok.script, image: day.tiktok.thumbnail, time: "18:00:00" });
+      }
+      if (platforms.includes("youtube") && day.youtube) {
+        items.push({ platform: "youtube", title: day.youtube.video_title, content: day.youtube.community_post, image: day.youtube.thumbnail, time: "15:00:00" });
+      }
+      if (platforms.includes("website") && day.article) {
+        items.push({ platform: "website", title: day.article.title, content: day.article.content, image: day.image, time: "06:00:00" });
+      }
+
+      for (const item of items) {
+        const { data: post, error: postErr } = await supabase
+          .from("posts")
+          .insert({
+            title: item.title,
+            content: item.content,
+            status: "awaiting_review",
+            scheduled_at: `${today}T${item.time}.000Z`,
+            user_id: user.id,
+            category: item.platform === "website" ? "article" : "content",
+            excerpt: (item.content || "").substring(0, 100),
+            is_ai_generated: true,
+          })
+          .select()
+          .single();
+        if (postErr) continue;
+        await supabase.from("post_platforms").insert({ post_id: post.id, platform: item.platform as any, status: "scheduled" });
+        if (item.image) {
+          await supabase.from("media").insert({ post_id: post.id, url: item.image, filename: `${post.id}-image`, mime_type: "image/*", user_id: user.id });
+        }
+      }
+
+      if (runId) completeAutomationRun(runId, true, `Created ${items.length} posts`, id);
+      toast.success(`${automation.name} produced ${items.length} drafts`);
+    } catch (err: any) {
+      if (runId) completeAutomationRun(runId, false, err.message, id);
+      toast.error(`Run failed: ${err.message}`);
+    } finally {
+      setRunningId(null);
+    }
+  };
+
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  const isStreamActive = (platform: string) =>
+    automations.some((a) =>
+      a.platforms.some((p) => p.toLowerCase() === platform.toLowerCase() || (platform === "twitter" && p.toLowerCase() === "x"))
+    );
+
   return (
     <DashboardLayout>
       <div className="space-y-10">
