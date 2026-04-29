@@ -391,7 +391,7 @@ const AutomationPage = () => {
   };
 
   const handleSaveAutomation = async (data: Omit<Automation, "id" | "createdAt" | "lastRun" | "runs">) => {
-    if (editingAutomation) {
+    if (editingAutomation && editingAutomation.id) {
       updateAutomation(editingAutomation.id, data);
       // also persist next_run if scheduled
       if (data.trigger === "scheduled") {
