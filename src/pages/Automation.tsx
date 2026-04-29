@@ -436,22 +436,7 @@ const AutomationPage = () => {
     setEditingAutomation(null);
   };
 
-  const handleConfigureStream = (stream: typeof streams[number]) => {
-    setEditingAutomation({
-      id: "",
-      name: stream.name,
-      description: stream.description,
-      trigger: "scheduled",
-      triggerConfig: { schedule: "daily" },
-      platforms: [stream.platform.charAt(0).toUpperCase() + stream.platform.slice(1)],
-      status: "active",
-      lastRun: null,
-      runs: 0,
-      createdAt: "",
-    } as Automation);
-    // We pass it as "preset" — but AutomationDialog treats truthy automation as edit.
-    // To force "create" mode while pre-filling, clear id by using null and seeding via state in dialog won't work.
-    // Workaround: open create dialog and pre-fill via a wrapper state.
+  const handleConfigureStream = (stream: { name: string; description: string; platform: string }) => {
     setPresetData({
       name: stream.name,
       description: stream.description,
@@ -460,8 +445,6 @@ const AutomationPage = () => {
     setEditingAutomation(null);
     setDialogOpen(true);
   };
-
-  const [presetData, setPresetData] = useState<{ name: string; description: string; platforms: string[] } | null>(null);
 
   const executeAutomation = async (id: string) => {
     const automation = automations.find((a) => a.id === id);
