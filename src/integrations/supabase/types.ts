@@ -333,6 +333,8 @@ export type Database = {
           cover_image_url: string | null
           created_at: string
           excerpt: string | null
+          featured_image_url: string | null
+          full_article_body: string | null
           id: string
           is_ai_generated: boolean | null
           published_at: string | null
@@ -354,6 +356,8 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           excerpt?: string | null
+          featured_image_url?: string | null
+          full_article_body?: string | null
           id?: string
           is_ai_generated?: boolean | null
           published_at?: string | null
@@ -375,6 +379,8 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           excerpt?: string | null
+          featured_image_url?: string | null
+          full_article_body?: string | null
           id?: string
           is_ai_generated?: boolean | null
           published_at?: string | null
