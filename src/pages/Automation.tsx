@@ -51,6 +51,7 @@ const AutomationPage = () => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyAutomation, setHistoryAutomation] = useState<Automation | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
+  const [presetData, setPresetData] = useState<{ name: string; description: string; platforms: string[] } | null>(null);
 
   const pendingPosts = posts?.filter(p => p.status === "awaiting_review") || [];
 
