@@ -24,6 +24,7 @@ const mapPost = (row: PostRow): Post => ({
   updatedAt: row.updated_at,
   category: row.category,
   coverImageUrl: row.cover_image_url,
+  isAiGenerated: row.is_ai_generated,
   automationId: row.automation_id,
   pipelineRunId: row.pipeline_run_id,
   workflowStage: row.workflow_stage,
