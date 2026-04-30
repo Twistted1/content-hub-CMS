@@ -94,6 +94,7 @@ export interface Post {
   updatedAt: string;
   category: string | null;
   coverImageUrl?: string | null;
+  isAiGenerated?: boolean | null;
   automationId?: string | null;
   pipelineRunId?: string | null;
   workflowStage?: string | null;
