@@ -3,6 +3,10 @@ import {
   Zap, 
   RefreshCcw, 
   Plus, 
+  Image,
+  FileText,
+  Eye,
+  Send,
   Twitter, 
   Instagram, 
   Facebook, 
@@ -56,6 +60,16 @@ const AutomationPage = () => {
   const [presetData, setPresetData] = useState<{ name: string; description: string; platforms: string[] } | null>(null);
 
   const pendingPosts = posts?.filter(p => p.status === "awaiting_review") || [];
+  const scheduledPosts = posts?.filter(p => p.status === "scheduled") || [];
+  const publishedPosts = posts?.filter(p => p.status === "published") || [];
+  const generatedPosts = posts?.filter(p => p.isAiGenerated || p.automationId || p.pipelineRunId) || [];
+
+  const workflowSteps = [
+    { label: "Create", value: generatedPosts.length, detail: "Post + image generated", icon: FileText, tone: "text-blue-400" },
+    { label: "Review", value: pendingPosts.length, detail: "Waiting approval", icon: Eye, tone: "text-orange-400" },
+    { label: "Schedule", value: scheduledPosts.length, detail: "On calendar", icon: Clock, tone: "text-purple-400" },
+    { label: "Publish", value: publishedPosts.length, detail: "Delivered", icon: Send, tone: "text-emerald-400" },
+  ];
 
   const handleApproveAll = async () => {
     setIsProcessingPipeline(true);
