@@ -471,69 +471,28 @@ const AutomationPage = () => {
       runId = await runAutomation(id);
       toast.info(`Running ${automation.name}...`);
 
-      const { data: strat, error: stratErr } = await supabase.functions.invoke("generate-strategy", {
-        body: { topic: automation.name },
-      });
-      if (stratErr) throw new Error(stratErr.message);
-
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       const platforms = automation.platforms.map((p) => p.toLowerCase().replace("x", "twitter"));
-      const today = new Date().toISOString().split("T")[0];
-      const day = strat?.content_strategy?.[0] || {};
-      const items: any[] = [];
-      const dayTopic = day.topic || automation.name;
+      const scheduledAt = computeNextRun(automation.triggerConfig.schedule || "daily") || new Date().toISOString();
+      const { data: pipeline, error: pipelineErr } = await supabase.functions.invoke("content-pipeline", {
+        body: {
+          topic: automation.description || automation.name,
+          platforms,
+          scheduleMode: "scheduled",
+          scheduledAt,
+        },
+      });
+      if (pipelineErr) throw new Error(pipelineErr.message);
+      if (pipeline?.error) throw new Error(pipeline.error);
 
-      if (platforms.includes("twitter") && day.twitter) {
-        const times = ["09:00:00", "13:00:00", "17:00:00"];
-        day.twitter.slice(0, 3).forEach((t: string, i: number) =>
-          items.push({ platform: "twitter", title: `X: ${dayTopic} #${i + 1}`, content: t, image: day.image, time: times[i] })
-        );
-      }
-      if (platforms.includes("instagram") && day.instagram) {
-        items.push({ platform: "instagram", title: `IG: ${dayTopic}`, content: day.instagram.caption, image: day.instagram.image, time: "11:00:00" });
-      }
-      if (platforms.includes("facebook") && day.facebook) {
-        items.push({ platform: "facebook", title: `FB: ${dayTopic}`, content: day.facebook.post, image: day.image, time: "10:00:00" });
-      }
-      if (platforms.includes("linkedin") && day.linkedin) {
-        items.push({ platform: "linkedin", title: `LI: ${dayTopic}`, content: day.linkedin.post, image: day.image, time: "08:30:00" });
-      }
-      if (platforms.includes("tiktok") && day.tiktok) {
-        items.push({ platform: "tiktok", title: `TT: ${dayTopic}`, content: day.tiktok.script, image: day.tiktok.thumbnail, time: "18:00:00" });
-      }
-      if (platforms.includes("youtube") && day.youtube) {
-        items.push({ platform: "youtube", title: day.youtube.video_title, content: day.youtube.community_post, image: day.youtube.thumbnail, time: "15:00:00" });
-      }
-      if (platforms.includes("website") && day.article) {
-        items.push({ platform: "website", title: day.article.title, content: day.article.content, image: day.image, time: "06:00:00" });
+      if (pipeline?.postId) {
+        await supabase.from("posts").update({ automation_id: id, pipeline_run_id: pipeline.pipelineId }).eq("id", pipeline.postId);
       }
 
-      for (const item of items) {
-        const { data: post, error: postErr } = await supabase
-          .from("posts")
-          .insert({
-            title: item.title,
-            content: item.content,
-            status: "awaiting_review",
-            scheduled_at: `${today}T${item.time}.000Z`,
-            user_id: user.id,
-            category: item.platform === "website" ? "article" : "content",
-            excerpt: (item.content || "").substring(0, 100),
-            is_ai_generated: true,
-          })
-          .select()
-          .single();
-        if (postErr) continue;
-        await supabase.from("post_platforms").insert({ post_id: post.id, platform: item.platform as any, status: "scheduled" });
-        if (item.image) {
-          await supabase.from("media").insert({ post_id: post.id, url: item.image, filename: `${post.id}-image`, mime_type: "image/*", user_id: user.id });
-        }
-      }
-
-      if (runId) completeAutomationRun(runId, true, `Created ${items.length} posts`, id);
-      toast.success(`${automation.name} produced ${items.length} drafts`);
+      if (runId) completeAutomationRun(runId, true, `Created review draft${pipeline?.hasImage ? " with image" : ""}`, id);
+      toast.success(`${automation.name} created a draft for review`);
     } catch (err: any) {
       if (runId) completeAutomationRun(runId, false, err.message, id);
       toast.error(`Run failed: ${err.message}`);
