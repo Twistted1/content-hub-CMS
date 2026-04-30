@@ -9,5 +9,8 @@ verify_jwt = false
 [functions.check-subscription]
 verify_jwt = false
 
+[functions.demo-login]
+verify_jwt = false
+
 [functions.customer-portal]
 verify_jwt = false
