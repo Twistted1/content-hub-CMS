@@ -81,6 +81,24 @@ export function useAuth() {
     return { data, error };
   }, []);
 
+  const signInWithDemo = useCallback(async () => {
+    const { data, error } = await supabase.functions.invoke('demo-login');
+    if (error) return { data: null, error };
+
+    const session = data?.session;
+    if (!session?.access_token || !session?.refresh_token) {
+      return {
+        data: null,
+        error: new Error('Demo session was not returned. Please try again.'),
+      };
+    }
+
+    return await supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+  }, []);
+
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     return { error };
@@ -93,6 +111,7 @@ export function useAuth() {
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,
+    signInWithDemo,
     signOut,
   };
 }
