@@ -474,7 +474,10 @@ const AutomationPage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const platforms = automation.platforms.map((p) => p.toLowerCase().replace("x", "twitter"));
+      const platforms = automation.platforms
+        .map((p) => p.toLowerCase().replace("x", "twitter"))
+        .filter((p) => ["twitter", "instagram", "facebook", "linkedin", "tiktok", "youtube", "website"].includes(p));
+      if (platforms.length === 0) throw new Error("Choose at least one supported publishing platform");
       const scheduledAt = computeNextRun(automation.triggerConfig.schedule || "daily") || new Date().toISOString();
       const { data: pipeline, error: pipelineErr } = await supabase.functions.invoke("content-pipeline", {
         body: {
