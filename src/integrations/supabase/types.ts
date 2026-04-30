@@ -327,6 +327,7 @@ export type Database = {
       posts: {
         Row: {
           approved_at: string | null
+          automation_id: string | null
           category: string | null
           content: string | null
           cost_estimate: number | null
@@ -337,8 +338,13 @@ export type Database = {
           full_article_body: string | null
           id: string
           is_ai_generated: boolean | null
+          pipeline_run_id: string | null
+          publish_attempted_at: string | null
+          publish_error: string | null
           published_at: string | null
           read_time: number | null
+          review_requested_at: string | null
+          reviewed_at: string | null
           scheduled_at: string | null
           status: Database["public"]["Enums"]["post_status"]
           tags: string[] | null
@@ -346,10 +352,12 @@ export type Database = {
           type: Database["public"]["Enums"]["post_type"]
           updated_at: string
           user_id: string
+          workflow_stage: string
           workflow_step: string | null
         }
         Insert: {
           approved_at?: string | null
+          automation_id?: string | null
           category?: string | null
           content?: string | null
           cost_estimate?: number | null
@@ -360,8 +368,13 @@ export type Database = {
           full_article_body?: string | null
           id?: string
           is_ai_generated?: boolean | null
+          pipeline_run_id?: string | null
+          publish_attempted_at?: string | null
+          publish_error?: string | null
           published_at?: string | null
           read_time?: number | null
+          review_requested_at?: string | null
+          reviewed_at?: string | null
           scheduled_at?: string | null
           status?: Database["public"]["Enums"]["post_status"]
           tags?: string[] | null
@@ -369,10 +382,12 @@ export type Database = {
           type?: Database["public"]["Enums"]["post_type"]
           updated_at?: string
           user_id: string
+          workflow_stage?: string
           workflow_step?: string | null
         }
         Update: {
           approved_at?: string | null
+          automation_id?: string | null
           category?: string | null
           content?: string | null
           cost_estimate?: number | null
@@ -383,8 +398,13 @@ export type Database = {
           full_article_body?: string | null
           id?: string
           is_ai_generated?: boolean | null
+          pipeline_run_id?: string | null
+          publish_attempted_at?: string | null
+          publish_error?: string | null
           published_at?: string | null
           read_time?: number | null
+          review_requested_at?: string | null
+          reviewed_at?: string | null
           scheduled_at?: string | null
           status?: Database["public"]["Enums"]["post_status"]
           tags?: string[] | null
@@ -392,6 +412,7 @@ export type Database = {
           type?: Database["public"]["Enums"]["post_type"]
           updated_at?: string
           user_id?: string
+          workflow_stage?: string
           workflow_step?: string | null
         }
         Relationships: []
