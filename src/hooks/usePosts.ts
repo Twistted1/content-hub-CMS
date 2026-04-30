@@ -23,6 +23,15 @@ const mapPost = (row: PostRow): Post => ({
   createdAt: row.created_at,
   updatedAt: row.updated_at,
   category: row.category,
+  coverImageUrl: row.cover_image_url,
+  isAiGenerated: row.is_ai_generated,
+  automationId: row.automation_id,
+  pipelineRunId: row.pipeline_run_id,
+  workflowStage: row.workflow_stage,
+  reviewRequestedAt: row.review_requested_at,
+  reviewedAt: row.reviewed_at,
+  publishAttemptedAt: row.publish_attempted_at,
+  publishError: row.publish_error,
 });
 
 const mapMedia = (row: MediaRow): Media => ({

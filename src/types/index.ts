@@ -93,6 +93,15 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   category: string | null;
+  coverImageUrl?: string | null;
+  isAiGenerated?: boolean | null;
+  automationId?: string | null;
+  pipelineRunId?: string | null;
+  workflowStage?: string | null;
+  reviewRequestedAt?: string | null;
+  reviewedAt?: string | null;
+  publishAttemptedAt?: string | null;
+  publishError?: string | null;
   platforms?: PostPlatform[];
   media?: Media[];
 }

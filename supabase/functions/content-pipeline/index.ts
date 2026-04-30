@@ -21,23 +21,29 @@ serve(async (req) => {
 
     if (!openaiKey) throw new Error("OPENAI_API_KEY not configured");
 
-    // Verify user
-    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader! } },
-    });
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
     const { topic, platforms, scheduleMode, scheduledAt, user_id } = await req.json();
 
+    const isServiceRequest = authHeader === `Bearer ${supabaseServiceKey}`;
+    let authenticatedUserId: string | null = null;
+
+    if (!isServiceRequest) {
+      const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: authHeader! } },
+      });
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      authenticatedUserId = user.id;
+    }
+
     // Determine target user (either from auth or passed by service role)
-    const targetUserId = user_id || user.id;
+    const targetUserId = isServiceRequest ? user_id : authenticatedUserId;
+    if (!targetUserId) throw new Error("Missing target user");
 
     // --- Frugal Architect Logic: Pre-Flight Budget Check ---
     const calculateMonthlySpend = async (supabase: any) => {
@@ -230,7 +236,7 @@ Return ONLY JSON.`;
       const { data: webhooks } = await adminClient
         .from("webhook_configs")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", targetUserId)
         .eq("is_active", true);
 
       let webhookResults: any[] = [];
