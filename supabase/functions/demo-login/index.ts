@@ -26,15 +26,39 @@ serve(async (req) => {
     const admin = createClient(supabaseUrl, serviceRoleKey);
     const auth = createClient(supabaseUrl, anonKey);
 
-    const { error: createError } = await admin.auth.admin.createUser({
+    const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
       email: DEMO_EMAIL,
       password: DEMO_PASSWORD,
       email_confirm: true,
       user_metadata: { full_name: "Content Hub Demo" },
     });
 
-    if (createError && !createError.message.toLowerCase().includes("already")) {
+    const userAlreadyExists = createError?.message.toLowerCase().includes("already");
+    if (createError && !userAlreadyExists) {
       throw createError;
+    }
+
+    let demoUserId = createdUser.user?.id;
+    if (userAlreadyExists) {
+      const { data: users, error: listError } = await admin.auth.admin.listUsers();
+      if (listError) throw listError;
+
+      const demoUser = users.users.find((user) => user.email?.toLowerCase() === DEMO_EMAIL);
+      if (!demoUser) throw new Error("Demo user could not be found");
+
+      demoUserId = demoUser.id;
+      const { error: updateError } = await admin.auth.admin.updateUserById(demoUser.id, {
+        password: DEMO_PASSWORD,
+        email_confirm: true,
+        user_metadata: { full_name: "Content Hub Demo" },
+      });
+      if (updateError) throw updateError;
+    }
+
+    if (demoUserId) {
+      await admin.from("profiles").upsert({ user_id: demoUserId, display_name: "Content Hub Demo" }, { onConflict: "user_id" });
+      await admin.from("user_roles").upsert({ user_id: demoUserId, role: "user" }, { onConflict: "user_id,role" });
+      await admin.from("subscriptions").upsert({ user_id: demoUserId, tier: "free" }, { onConflict: "user_id" });
     }
 
     const { data: signInData, error: signInError } = await auth.auth.signInWithPassword({
