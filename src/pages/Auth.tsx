@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Chrome } from 'lucide-react';
+import { Loader2, Chrome, PlayCircle } from 'lucide-react';
 import { z } from 'zod';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
@@ -20,9 +20,11 @@ const authSchema = z.object({
 
 export default function Auth() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { user, loading, signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
+  const { user, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, signInWithDemo } = useAuth();
   const { toast } = useToast();
+  const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/dashboard';
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,9 +36,9 @@ export default function Auth() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/dashboard');
+      navigate(fromPath, { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, fromPath]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +105,20 @@ export default function Auth() {
     if (error) {
       toast({
         title: "Google Sign In Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDemoSignIn = async () => {
+    setIsSubmitting(true);
+    const { error } = await signInWithDemo();
+    setIsSubmitting(false);
+
+    if (error) {
+      toast({
+        title: "Preview Sign In Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -234,6 +250,16 @@ export default function Auth() {
           >
             <Chrome className="mr-2 h-4 w-4" />
             Google
+          </Button>
+
+          <Button
+            variant="secondary"
+            className="mt-3 w-full"
+            onClick={handleDemoSignIn}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
+            Enter Preview Demo
           </Button>
 
           <Alert className="mt-4">
