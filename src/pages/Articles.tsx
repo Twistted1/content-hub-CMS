@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import DOMPurify from "dompurify";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -274,7 +275,7 @@ export default function Articles() {
                       {article.title}
                     </h3>
                     <div className="text-sm text-muted-foreground/60 line-clamp-3 mb-8 font-medium leading-relaxed">
-                      <div dangerouslySetInnerHTML={{ __html: article.content || "No content" }} />
+                      <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content || "No content") }} />
                     </div>
                   </div>
                   

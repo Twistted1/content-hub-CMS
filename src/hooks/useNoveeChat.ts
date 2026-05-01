@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -62,9 +63,16 @@ Use this schedule to advise the user on when and where to post. Always adapt rec
       
       while (retries >= 0) {
         try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.access_token) {
+            throw new Error('You must be signed in to use Novee.');
+          }
           resp = await fetch(CHAT_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
             body: JSON.stringify({
               messages: [{ role: 'system', content: systemContext }, ...chatHistory, { role: 'user', content: userContent }],
             }),

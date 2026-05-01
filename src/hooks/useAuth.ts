@@ -16,16 +16,6 @@ export function useAuth() {
   });
 
   useEffect(() => {
-    // Debugger Bypass
-    if (window.location.search.includes('debugger=true')) {
-      setAuthState({
-        user: { id: '0a7fb38e-0c0c-4c4c-befb-123456789abc', email: 'debugger@agent.local' } as any,
-        session: { access_token: 'fake', user: {} } as any,
-        loading: false,
-      });
-      return;
-    }
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setAuthState({
