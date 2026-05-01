@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -76,9 +77,16 @@ ${JSON.stringify(CONTENT_SCHEDULE, null, 2)}`;
       
       while (retries >= 0) {
         try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.access_token) {
+            throw new Error('You must be signed in to use the AI assistant.');
+          }
           resp = await fetch(CHAT_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
             body: JSON.stringify({
               messages: [{ role: 'system', content: systemContext }, ...chatHistory, { role: 'user', content: userContent }],
             }),
