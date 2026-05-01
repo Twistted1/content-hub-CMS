@@ -224,6 +224,48 @@ export type Database = {
           },
         ]
       }
+      notes: {
+        Row: {
+          color: string
+          content: string | null
+          created_at: string
+          due_date: string | null
+          id: string
+          is_pinned: boolean
+          start_date: string | null
+          tags: string[]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          content?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_pinned?: boolean
+          start_date?: string | null
+          tags?: string[]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          content?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_pinned?: boolean
+          start_date?: string | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pipeline_runs: {
         Row: {
           completed_at: string | null

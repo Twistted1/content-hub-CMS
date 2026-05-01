@@ -36,6 +36,14 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const isPreviewHost = () =>
+  typeof window !== "undefined" &&
+  /(^|\.)lovable(project)?\.com$|(^|\.)lovable\.app$/.test(window.location.hostname);
+
+const HomeRoute = () => (
+  isPreviewHost() ? <ProtectedRoute><Index /></ProtectedRoute> : <Landing />
+);
+
 /**
  * Bridges the Zustand AppStore theme value to next-themes.
  * Must be rendered inside <ThemeProvider>.
@@ -60,7 +68,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               {/* Public pages */}
-              <Route path="/" element={<Landing />} />
+              <Route path="/" element={<HomeRoute />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />

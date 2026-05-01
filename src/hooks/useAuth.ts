@@ -8,6 +8,38 @@ interface AuthState {
   loading: boolean;
 }
 
+const isPreviewHost = () =>
+  typeof window !== 'undefined' &&
+  /(^|\.)lovable(project)?\.com$|(^|\.)lovable\.app$/.test(window.location.hostname);
+
+let previewDemoLoginPromise: Promise<Session | null> | null = null;
+
+async function signInPreviewDemo() {
+  if (!previewDemoLoginPromise) {
+    previewDemoLoginPromise = supabase.functions.invoke('demo-login').then(async ({ data, error }) => {
+      if (error) throw error;
+
+      const session = data?.session;
+      if (!session?.access_token || !session?.refresh_token) {
+        throw new Error('Demo session was not returned. Please try again.');
+      }
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      });
+
+      if (sessionError) throw sessionError;
+      return sessionData.session;
+    }).catch((error) => {
+      previewDemoLoginPromise = null;
+      throw error;
+    });
+  }
+
+  return previewDemoLoginPromise;
+}
+
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
@@ -26,7 +58,15 @@ export function useAuth() {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session && isPreviewHost()) {
+        try {
+          session = await signInPreviewDemo();
+        } catch (error) {
+          console.error('Preview demo sign-in failed:', error);
+        }
+      }
+
       setAuthState({
         user: session?.user ?? null,
         session,
@@ -72,21 +112,12 @@ export function useAuth() {
   }, []);
 
   const signInWithDemo = useCallback(async () => {
-    const { data, error } = await supabase.functions.invoke('demo-login');
-    if (error) return { data: null, error };
-
-    const session = data?.session;
-    if (!session?.access_token || !session?.refresh_token) {
-      return {
-        data: null,
-        error: new Error('Demo session was not returned. Please try again.'),
-      };
+    try {
+      const session = await signInPreviewDemo();
+      return { data: { session, user: session?.user ?? null }, error: null };
+    } catch (error) {
+      return { data: null, error: error as Error };
     }
-
-    return await supabase.auth.setSession({
-      access_token: session.access_token,
-      refresh_token: session.refresh_token,
-    });
   }, []);
 
   const signOut = useCallback(async () => {
