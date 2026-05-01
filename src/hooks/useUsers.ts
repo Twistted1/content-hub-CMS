@@ -14,8 +14,9 @@ export interface User {
   permissions?: string[];
 }
 
-export function useUsers() {
+export function useUsers(options: { includeInvitations?: boolean } = {}) {
   const queryClient = useQueryClient();
+  const includeInvitations = options.includeInvitations ?? false;
 
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ["users"],
@@ -33,9 +34,9 @@ export function useUsers() {
         rolesRes.data.forEach((r: any) => rolesMap.set(r.user_id, r.role));
       }
 
-      // Try to fetch invitations (table may not exist)
+      // Try to fetch invitations only where the Users page needs them.
       let invitations: any[] = [];
-      try {
+      if (includeInvitations) try {
         const { data, error: invitesError } = await (supabase as any)
           .from("invitations")
           .select("*")

@@ -37,7 +37,7 @@ import { roles, permissions, rolePermissions } from "@/components/users/usersDat
 
 const UsersPage = () => {
   const { toast } = useToast();
-  const { users, addUser, updateUser, deleteUser, resendInvite } = useUsers();
+  const { users, addUser, updateUser, deleteUser, resendInvite } = useUsers({ includeInvitations: true });
   
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
