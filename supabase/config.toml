@@ -1,7 +1,7 @@
 project_id = "jvbucspwcjahqpoxskvr"
 
 [functions.novee-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-checkout]
 verify_jwt = false
