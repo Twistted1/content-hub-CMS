@@ -24,7 +24,11 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const { user, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, signInWithDemo } = useAuth();
   const { toast } = useToast();
-  const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || '/dashboard';
+  const fromLocation = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)?.from;
+  const fromPath = fromLocation
+    ? `${fromLocation.pathname || '/dashboard'}${fromLocation.search || ''}${fromLocation.hash || ''}`
+    : '/dashboard';
+  const isPreviewHost = /(^|\.)lovable(project)?\.com$|(^|\.)lovable\.app$/.test(window.location.hostname);
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,6 +43,28 @@ export default function Auth() {
       navigate(fromPath, { replace: true });
     }
   }, [user, loading, navigate, fromPath]);
+
+  useEffect(() => {
+    if (loading || user || isSubmitting || !isPreviewHost) return;
+
+    let cancelled = false;
+    setIsSubmitting(true);
+    signInWithDemo().then(({ error }) => {
+      if (cancelled) return;
+      setIsSubmitting(false);
+      if (error) {
+        toast({
+          title: "Preview Sign In Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, user, isSubmitting, isPreviewHost, signInWithDemo, toast]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
