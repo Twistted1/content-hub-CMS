@@ -274,7 +274,7 @@ export default function Articles() {
                       {article.title}
                     </h3>
                     <div className="text-sm text-muted-foreground/60 line-clamp-3 mb-8 font-medium leading-relaxed">
-                      <div dangerouslySetInnerHTML={{ __html: article.content || "No content" }} />
+                      <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content || "No content") }} />
                     </div>
                   </div>
                   
