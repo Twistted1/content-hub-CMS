@@ -15,6 +15,10 @@ export function useNotes() {
         .order("is_pinned", { ascending: false })
         .order("created_at", { ascending: false });
 
+      if (error?.code === "42P01" || error?.message?.includes("Could not find the table")) {
+        return [] as Note[];
+      }
+
       if (error) throw error;
 
       return data.map((note: any) => ({
