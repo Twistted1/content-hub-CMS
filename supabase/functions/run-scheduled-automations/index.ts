@@ -33,6 +33,16 @@ serve(async (req) => {
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  // Restrict to service-role callers (cron / internal). Public callers are forbidden.
+  const authHeader = req.headers.get("Authorization");
+  if (authHeader !== `Bearer ${SERVICE_ROLE}`) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
   const summary: Array<Record<string, unknown>> = [];

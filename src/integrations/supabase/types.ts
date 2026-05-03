@@ -498,8 +498,6 @@ export type Database = {
           id: string
           last_reset_date: string | null
           monthly_openai_budget: number | null
-          supabase_anon_key: string | null
-          supabase_url: string | null
           updated_at: string | null
         }
         Insert: {
@@ -507,8 +505,6 @@ export type Database = {
           id?: string
           last_reset_date?: string | null
           monthly_openai_budget?: number | null
-          supabase_anon_key?: string | null
-          supabase_url?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -516,8 +512,6 @@ export type Database = {
           id?: string
           last_reset_date?: string | null
           monthly_openai_budget?: number | null
-          supabase_anon_key?: string | null
-          supabase_url?: string | null
           updated_at?: string | null
         }
         Relationships: []
