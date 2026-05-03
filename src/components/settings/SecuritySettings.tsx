@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { useUserPreferencesStore } from "@/stores/useUserPreferencesStore";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export function SecuritySettings() {
   const { security, updateSecurity } = useUserPreferencesStore();
@@ -36,8 +37,9 @@ export function SecuritySettings() {
     newPassword: "",
     confirmPassword: "",
   });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       toast.error("Passwords do not match");
       return;
@@ -46,9 +48,37 @@ export function SecuritySettings() {
       toast.error("Password must be at least 8 characters");
       return;
     }
-    toast.success("Password updated successfully");
-    setShowPasswordDialog(false);
-    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    setIsChangingPassword(true);
+    try {
+      // Re-authenticate with current password — Supabase updateUser does not verify it
+      const { data: userData } = await supabase.auth.getUser();
+      const email = userData.user?.email;
+      if (!email) {
+        toast.error("You must be signed in to change your password");
+        return;
+      }
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: passwordForm.currentPassword,
+      });
+      if (signInError) {
+        toast.error("Current password is incorrect");
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: passwordForm.newPassword,
+      });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success("Password updated successfully");
+      setShowPasswordDialog(false);
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const handle2FAToggle = () => {
@@ -341,7 +371,9 @@ export function SecuritySettings() {
             <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handlePasswordChange}>Update Password</Button>
+            <Button onClick={handlePasswordChange} disabled={isChangingPassword}>
+              {isChangingPassword ? "Updating..." : "Update Password"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
