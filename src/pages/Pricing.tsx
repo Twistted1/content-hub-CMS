@@ -1,72 +1,89 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, ArrowLeft, Zap, Building2, Rocket, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Check, ArrowLeft, Zap, Rocket, Sparkles, Loader2 } from 'lucide-react';
 import { Footer } from '@/components/layout/Footer';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription, type BillingInterval } from '@/hooks/useSubscription';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
-const plans = [
+type PlanKey = 'free' | 'starter' | 'pro';
+
+interface PlanDef {
+  key: PlanKey;
+  name: string;
+  description: string;
+  monthly: number;
+  yearly: number;
+  icon: typeof Rocket;
+  features: string[];
+  cta: string;
+  popular: boolean;
+}
+
+const plans: PlanDef[] = [
   {
-    name: "Free",
-    description: "Perfect for individuals getting started",
-    price: "$0",
-    period: "forever",
+    key: 'free',
+    name: 'Free',
+    description: 'Perfect for individuals getting started',
+    monthly: 0,
+    yearly: 0,
     icon: Rocket,
     features: [
-      "Up to 3 connected platforms",
-      "100 scheduled posts/month",
-      "Basic analytics",
-      "1 team member",
-      "Community support",
-      "Novee AI (10 requests/day)"
+      '3 connected platforms',
+      '50 scheduled posts/month',
+      'Basic analytics',
+      '1 team member',
+      'Community support',
+      'Novee AI (10 requests/day)',
     ],
-    cta: "Get Started",
-    popular: false
+    cta: 'Get Started',
+    popular: false,
   },
   {
-    name: "Pro",
-    description: "For growing creators and small teams",
-    price: "$29",
-    period: "/month",
+    key: 'starter',
+    name: 'Starter',
+    description: 'For solo creators ready to scale',
+    monthly: 10,
+    yearly: 96,
     icon: Zap,
     features: [
-      "Unlimited platforms",
-      "Unlimited scheduled posts",
-      "Advanced analytics & reports",
-      "Up to 5 team members",
-      "Priority email support",
-      "Novee AI (unlimited)",
-      "Custom automation workflows",
-      "Content calendar",
-      "API access"
+      '6 connected platforms',
+      '300 scheduled posts/month',
+      'Standard analytics',
+      'Up to 2 team members',
+      'Email support',
+      'Novee AI (100 requests/day)',
+      'Basic automation workflows',
     ],
-    cta: "Start Free Trial",
-    popular: true
+    cta: 'Start with Starter',
+    popular: false,
   },
   {
-    name: "Enterprise",
-    description: "For large teams and organizations",
-    price: "$99",
-    period: "/month",
-    icon: Building2,
+    key: 'pro',
+    name: 'Pro',
+    description: 'For growing teams and power users',
+    monthly: 20,
+    yearly: 192,
+    icon: Sparkles,
     features: [
-      "Everything in Pro",
-      "Unlimited team members",
-      "SSO & advanced security",
-      "Custom integrations",
-      "Dedicated account manager",
-      "24/7 phone support",
-      "SLA guarantee",
-      "Custom training",
-      "White-label options"
+      'Unlimited platforms',
+      'Unlimited scheduled posts',
+      'Advanced analytics & reports',
+      'Unlimited team members',
+      'Priority support',
+      'Novee AI (unlimited)',
+      'Full automation workflows',
+      'Content calendar',
+      'API access',
     ],
-    cta: "Contact Sales",
-    popular: false
-  }
+    cta: 'Go Pro',
+    popular: true,
+  },
 ];
 
 const faqs = [
@@ -80,11 +97,11 @@ const faqs = [
   },
   {
     question: "Do you offer discounts for annual billing?",
-    answer: "Yes! Save 20% when you choose annual billing. Contact us for custom enterprise pricing."
+    answer: "Yes! Save ~20% when you choose annual billing on Starter or Pro."
   },
   {
     question: "Is there a limit on the number of platforms I can connect?",
-    answer: "Free users can connect up to 3 platforms. Pro and Enterprise users have unlimited platform connections."
+    answer: "Free users can connect up to 3 platforms, Starter up to 6, and Pro users have unlimited connections."
   }
 ];
 
@@ -92,6 +109,7 @@ export default function Pricing() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { tier, createCheckout, isLoading: subLoading } = useSubscription();
+  const [billing, setBilling] = useState<BillingInterval>('monthly');
 
   useEffect(() => {
     if (searchParams.get('checkout') === 'canceled') {
@@ -99,43 +117,22 @@ export default function Pricing() {
     }
   }, [searchParams]);
 
-  const handleSubscribe = async (planKey: 'pro' | 'enterprise') => {
+  const handleSubscribe = async (planKey: 'starter' | 'pro') => {
     if (!user) {
       toast.error('Please sign in to subscribe');
       return;
     }
     try {
-      await createCheckout(planKey);
+      await createCheckout(planKey, billing);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to start checkout');
     }
   };
 
-  const getButtonContent = (planName: string, planCta: string) => {
-    const planKey = planName.toLowerCase() as 'pro' | 'enterprise';
-    const isCurrentPlan = tier === planKey;
-    
-    if (planName === 'Free') {
-      return tier === 'free' ? 'Current Plan' : 'Downgrade';
-    }
-    
-    if (isCurrentPlan) {
-      return 'Current Plan';
-    }
-    
-    return planCta;
-  };
-
-  const handlePlanClick = (planName: string) => {
-    const planKey = planName.toLowerCase() as 'pro' | 'enterprise';
-    
-    if (planName === 'Free' || tier === planKey) {
-      return;
-    }
-    
-    if (planKey === 'pro' || planKey === 'enterprise') {
-      handleSubscribe(planKey);
-    }
+  const formatPrice = (plan: PlanDef) => {
+    if (plan.key === 'free') return { amount: '$0', suffix: 'forever' };
+    const value = billing === 'monthly' ? plan.monthly : plan.yearly;
+    return { amount: `$${value}`, suffix: billing === 'monthly' ? '/month' : '/year' };
   };
 
   return (
@@ -181,8 +178,25 @@ export default function Pricing() {
       {/* Pricing Cards */}
       <section className="py-12 px-4">
         <div className="container mx-auto max-w-6xl">
+          <div className="flex items-center justify-center gap-3 mb-10">
+            <Label htmlFor="billing-toggle" className={billing === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}>
+              Monthly
+            </Label>
+            <Switch
+              id="billing-toggle"
+              checked={billing === 'yearly'}
+              onCheckedChange={(c) => setBilling(c ? 'yearly' : 'monthly')}
+            />
+            <Label htmlFor="billing-toggle" className={billing === 'yearly' ? 'text-foreground' : 'text-muted-foreground'}>
+              Yearly <Badge variant="secondary" className="ml-1">Save ~20%</Badge>
+            </Label>
+          </div>
+
           <div className="grid md:grid-cols-3 gap-6">
-            {plans.map((plan) => (
+            {plans.map((plan) => {
+              const { amount, suffix } = formatPrice(plan);
+              const isCurrent = tier === plan.key;
+              return (
               <Card 
                 key={plan.name} 
                 className={`relative flex flex-col ${
@@ -205,8 +219,8 @@ export default function Pricing() {
                 </CardHeader>
                 <CardContent className="flex-1">
                   <div className="mb-6">
-                    <span className="text-4xl font-bold text-foreground">{plan.price}</span>
-                    <span className="text-muted-foreground">{plan.period}</span>
+                    <span className="text-4xl font-bold text-foreground">{amount}</span>
+                    <span className="text-muted-foreground"> {suffix}</span>
                   </div>
                   <ul className="space-y-3">
                     {plan.features.map((feature) => (
@@ -218,7 +232,7 @@ export default function Pricing() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  {plan.name === 'Free' ? (
+                  {plan.key === 'free' ? (
                     <Button 
                       className="w-full" 
                       variant="outline"
@@ -235,19 +249,23 @@ export default function Pricing() {
                     <Button 
                       className="w-full" 
                       variant={plan.popular ? "default" : "outline"}
-                      disabled={subLoading || tier === plan.name.toLowerCase()}
-                      onClick={() => handlePlanClick(plan.name)}
+                      disabled={subLoading || isCurrent}
+                      onClick={() => handleSubscribe(plan.key as 'starter' | 'pro')}
                     >
                       {subLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       ) : null}
-                      {getButtonContent(plan.name, plan.cta)}
+                      {isCurrent ? 'Current Plan' : plan.cta}
                     </Button>
                   )}
                 </CardFooter>
               </Card>
-            ))}
+              );
+            })}
           </div>
+          <p className="text-center text-sm text-muted-foreground mt-8">
+            Need something custom? <a href="mailto:support@contenthub.io" className="text-primary hover:underline">Get in touch</a>.
+          </p>
         </div>
       </section>
 
