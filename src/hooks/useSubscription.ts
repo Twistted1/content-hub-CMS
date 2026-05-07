@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-export type SubscriptionTier = 'free' | 'pro' | 'enterprise';
+export type SubscriptionTier = 'free' | 'starter' | 'pro';
+export type BillingInterval = 'monthly' | 'yearly';
 
 interface SubscriptionState {
   subscribed: boolean;
   tier: SubscriptionTier;
+  billingInterval: BillingInterval | null;
   subscriptionEnd: string | null;
   isLoading: boolean;
   error: string | null;
@@ -17,6 +19,7 @@ export function useSubscription() {
   const [state, setState] = useState<SubscriptionState>({
     subscribed: false,
     tier: 'free',
+    billingInterval: null,
     subscriptionEnd: null,
     isLoading: false,
     error: null,
@@ -27,6 +30,7 @@ export function useSubscription() {
       setState({
         subscribed: false,
         tier: 'free',
+        billingInterval: null,
         subscriptionEnd: null,
         isLoading: false,
         error: null,
@@ -44,6 +48,7 @@ export function useSubscription() {
       setState({
         subscribed: data.subscribed || false,
         tier: data.tier || 'free',
+        billingInterval: data.billing_interval || null,
         subscriptionEnd: data.subscription_end || null,
         isLoading: false,
         error: null,
@@ -70,13 +75,16 @@ export function useSubscription() {
     return () => clearInterval(interval);
   }, [user, checkSubscription]);
 
-  const createCheckout = async (plan: 'pro' | 'enterprise') => {
+  const createCheckout = async (
+    plan: 'starter' | 'pro',
+    billing: BillingInterval = 'monthly'
+  ) => {
     if (!user) {
       throw new Error('Must be logged in to subscribe');
     }
 
     const { data, error } = await supabase.functions.invoke('create-checkout', {
-      body: { plan },
+      body: { plan, billing },
     });
 
     if (error) throw error;
