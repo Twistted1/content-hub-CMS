@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CreditCard, Check, Crown, Zap, Building2, Plus, Trash2, Star } from "lucide-react";
+import { CreditCard, Check, Crown, Zap, Rocket, Plus, Trash2, Star } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,52 +57,51 @@ interface Invoice {
 
 const plans: Plan[] = [
   {
-    id: "starter",
-    name: "Starter",
+    id: "free",
+    name: "Free",
     price: 0,
     period: "monthly",
     description: "Perfect for individuals getting started",
-    icon: <Zap className="h-5 w-5" />,
+    icon: <Rocket className="h-5 w-5" />,
     features: [
-      "Up to 3 social accounts",
+      "3 connected platforms",
       "50 scheduled posts/month",
       "Basic analytics",
+      "Community support",
+    ],
+  },
+  {
+    id: "starter",
+    name: "Starter",
+    price: 10,
+    period: "monthly",
+    description: "For solo creators ready to scale",
+    icon: <Zap className="h-5 w-5" />,
+    features: [
+      "6 connected platforms",
+      "300 scheduled posts/month",
+      "Standard analytics",
+      "Up to 2 team members",
       "Email support",
+      "Basic automation workflows",
     ],
   },
   {
     id: "pro",
-    name: "Professional",
-    price: 29,
+    name: "Pro",
+    price: 20,
     period: "monthly",
     description: "For growing teams and businesses",
     icon: <Crown className="h-5 w-5" />,
     popular: true,
     features: [
-      "Up to 10 social accounts",
+      "Unlimited platforms",
       "Unlimited scheduled posts",
-      "Advanced analytics",
-      "AI content suggestions",
+      "Advanced analytics & reports",
+      "Unlimited Novee AI",
+      "Full automation workflows",
+      "API access",
       "Priority support",
-      "Team collaboration",
-    ],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: 99,
-    period: "monthly",
-    description: "For large organizations",
-    icon: <Building2 className="h-5 w-5" />,
-    features: [
-      "Unlimited social accounts",
-      "Unlimited scheduled posts",
-      "Custom analytics & reports",
-      "AI content generation",
-      "Dedicated account manager",
-      "Custom integrations",
-      "SSO & advanced security",
-      "SLA guarantee",
     ],
   },
 ];
