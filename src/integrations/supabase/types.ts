@@ -902,7 +902,7 @@ export type Database = {
         | "completed"
         | "on-hold"
       strategy_status: "active" | "planning" | "completed" | "paused"
-      subscription_tier: "free" | "pro" | "enterprise"
+      subscription_tier: "free" | "pro" | "enterprise" | "starter"
       task_priority: "low" | "medium" | "high" | "urgent"
       task_status: "todo" | "in-progress" | "review" | "done" | "blocked"
     }
@@ -1071,7 +1071,7 @@ export const Constants = {
         "on-hold",
       ],
       strategy_status: ["active", "planning", "completed", "paused"],
-      subscription_tier: ["free", "pro", "enterprise"],
+      subscription_tier: ["free", "pro", "enterprise", "starter"],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: ["todo", "in-progress", "review", "done", "blocked"],
     },

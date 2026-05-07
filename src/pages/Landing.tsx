@@ -68,8 +68,8 @@ const plans = [
     period: "forever",
     icon: Rocket,
     features: [
-      "Up to 3 connected platforms",
-      "100 scheduled posts/month",
+      "3 connected platforms",
+      "50 scheduled posts/month",
       "Basic analytics",
       "1 team member",
       "Novee AI (10 requests/day)"
@@ -78,40 +78,40 @@ const plans = [
     popular: false
   },
   {
+    name: "Starter",
+    description: "For solo creators ready to scale",
+    price: "$10",
+    period: "/month",
+    icon: Building2,
+    features: [
+      "6 connected platforms",
+      "300 scheduled posts/month",
+      "Standard analytics",
+      "Up to 2 team members",
+      "Novee AI (100 requests/day)",
+      "Basic automation workflows",
+      "Email support"
+    ],
+    cta: "Start with Starter",
+    popular: false
+  },
+  {
     name: "Pro",
     description: "For growing creators and small teams",
-    price: "$29",
+    price: "$20",
     period: "/month",
     icon: Zap,
     features: [
       "Unlimited platforms",
       "Unlimited scheduled posts",
       "Advanced analytics & reports",
-      "Up to 5 team members",
+      "Unlimited team members",
       "Novee AI (unlimited)",
       "Custom automation workflows",
       "Priority support"
     ],
     cta: "Start Free Trial",
     popular: true
-  },
-  {
-    name: "Enterprise",
-    description: "For large teams and organizations",
-    price: "$99",
-    period: "/month",
-    icon: Building2,
-    features: [
-      "Everything in Pro",
-      "Unlimited team members",
-      "SSO & advanced security",
-      "Custom integrations",
-      "Dedicated account manager",
-      "24/7 phone support",
-      "SLA guarantee"
-    ],
-    cta: "Contact Sales",
-    popular: false
   }
 ];
 

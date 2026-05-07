@@ -7,10 +7,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Price IDs for subscription plans
-const PRICE_IDS = {
-  pro: "price_1SwDzc99SwZHUFarC4sdLBXE",
-  enterprise: "price_1SwDzy99SwZHUFarVsDE9ks2",
+// Price IDs for subscription plans (Starter $10, Pro $20; yearly ~20% off)
+const PRICE_IDS: Record<string, Record<string, string>> = {
+  starter: {
+    monthly: "price_1TUbGi99SwZHUFarbpocgTj2",
+    yearly: "price_1TUbHN99SwZHUFarK9uTjwbD",
+  },
+  pro: {
+    monthly: "price_1TUbI699SwZHUFar0ur6blfp",
+    yearly: "price_1TUbIu99SwZHUFarlyuyIqnp",
+  },
 };
 
 const logStep = (step: string, details?: unknown) => {
@@ -45,11 +51,13 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Parse request body for plan selection
-    const { plan } = await req.json();
-    const priceId = PRICE_IDS[plan as keyof typeof PRICE_IDS];
-    if (!priceId) throw new Error(`Invalid plan: ${plan}`);
-    logStep("Plan selected", { plan, priceId });
+    // Parse request body for plan + billing interval
+    const { plan, billing = "monthly" } = await req.json();
+    const planPrices = PRICE_IDS[plan as string];
+    if (!planPrices) throw new Error(`Invalid plan: ${plan}`);
+    const priceId = planPrices[billing as string];
+    if (!priceId) throw new Error(`Invalid billing interval: ${billing}`);
+    logStep("Plan selected", { plan, billing, priceId });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 

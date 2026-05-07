@@ -7,11 +7,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Product IDs for subscription tiers
-const PRODUCT_IDS = {
-  pro: "prod_Tu23n9E83kU6SH",
-  enterprise: "prod_Tu24enzVGb9KJl",
+// Map Stripe price IDs → tier + billing interval (Starter / Pro, monthly + yearly)
+const PRICE_TO_TIER: Record<string, { tier: "starter" | "pro"; interval: "monthly" | "yearly" }> = {
+  price_1TUbGi99SwZHUFarbpocgTj2: { tier: "starter", interval: "monthly" },
+  price_1TUbHN99SwZHUFarK9uTjwbD: { tier: "starter", interval: "yearly" },
+  price_1TUbI699SwZHUFar0ur6blfp: { tier: "pro", interval: "monthly" },
+  price_1TUbIu99SwZHUFarlyuyIqnp: { tier: "pro", interval: "yearly" },
 };
+
+// Legacy product IDs (old $29 pro / $99 enterprise) — fold into "pro" for back-compat
+const LEGACY_PRO_PRODUCTS = new Set(["prod_Tu23n9E83kU6SH", "prod_Tu24enzVGb9KJl"]);
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -67,22 +72,27 @@ serve(async (req) => {
       limit: 1,
     });
     const hasActiveSub = subscriptions.data.length > 0;
-    let tier = "free";
-    let subscriptionEnd = null;
+    let tier: "free" | "starter" | "pro" = "free";
+    let billingInterval: "monthly" | "yearly" | null = null;
+    let subscriptionEnd: string | null = null;
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
       logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
-      
-      const productId = subscription.items.data[0].price.product;
-      
-      if (productId === PRODUCT_IDS.enterprise) {
-        tier = "enterprise";
-      } else if (productId === PRODUCT_IDS.pro) {
+
+      const item = subscription.items.data[0];
+      const priceId = item.price.id;
+      const productId = item.price.product as string;
+      const mapped = PRICE_TO_TIER[priceId];
+      if (mapped) {
+        tier = mapped.tier;
+        billingInterval = mapped.interval;
+      } else if (LEGACY_PRO_PRODUCTS.has(productId)) {
         tier = "pro";
+        billingInterval = item.price.recurring?.interval === "year" ? "yearly" : "monthly";
       }
-      logStep("Determined subscription tier", { tier, productId });
+      logStep("Determined subscription tier", { tier, billingInterval, priceId, productId });
     } else {
       logStep("No active subscription found");
     }
@@ -90,6 +100,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       tier,
+      billing_interval: billingInterval,
       subscription_end: subscriptionEnd
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
