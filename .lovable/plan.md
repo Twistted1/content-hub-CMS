@@ -1,69 +1,71 @@
-## Goal
-Wire up the existing automation primitives (`useAutomations` hook, `AutomationDialog`, `AutomationCard`, `AutomationHistoryDialog`) into the Automation page so users get a real, end-to-end automation workflow — not just the one-shot "Master Pipeline" button.
+## Plan: Close out items 1–3 (Pricing, Publishing, Stability)
 
-## What's already there
-- `automations` table + `automation_runs` table with RLS
-- `useAutomations` hook with full CRUD, toggle, duplicate, run, complete-run mutations
-- `AutomationDialog` (create/edit form), `AutomationCard`, `AutomationHistoryDialog`
-- `Automation.tsx` "Master Pipeline" generator (works) + dead "New Automation" / "Configure" buttons
-- Stats are hardcoded ("8 / 124 / 48h / 8")
+Three sequential workstreams. You can approve all three or tell me to stop after any phase.
 
-## What's missing
-1. No list of user's saved automations on the page
-2. "New Automation" button does nothing
-3. "Configure" buttons on stream cards do nothing — streams are presets, not real automations
-4. No way to run a single automation, view its history, pause/resume, edit, delete
-5. Stats are hardcoded
-6. No actual execution backend — `runAutomation` just creates a `running` row that never completes
+---
 
-## Plan
+### Phase 1 — Pricing restructure (Free / Starter $10 / Pro $20)
 
-### 1. Wire the Automation page to real data
-- Replace hardcoded stats with live counts from `useAutomations` + `automation_runs`:
-  - Active Automations = `automations.filter(status==='active').length`
-  - Total Runs = sum of `runs`
-  - Time Saved = `totalRuns * 0.4h` rough estimate
-  - Connected Apps = unique platforms across automations
-- Hook "New Automation" button → opens `AutomationDialog` (create mode) → `addAutomation`
-- Add a new "My Automations" section above Streams listing `AutomationCard`s with: toggle pause/active, run-now, edit, duplicate, delete, view history
+**Stripe products** (I create via tool):
+- Content Hub Starter — $10/mo and $96/yr (~20% off)
+- Content Hub Pro — $20/mo and $192/yr (~20% off)
+- (Old $29 Pro and $99 Enterprise products left inactive in Stripe so existing subs keep working.)
 
-### 2. Convert Streams into automation templates
-- Make each stream's "Configure" button open `AutomationDialog` pre-filled from the stream preset (name, description, platforms, scheduled trigger). Saving creates a real automation row.
-- Status badge on each stream card changes to "Active" if a matching automation exists, else "Strategy Ready".
+**DB migration**
+- Extend `subscription_tier` enum to add `'starter'` (keeping `free`, `pro`; deprecating `enterprise` from UI but enum stays intact for back-compat).
 
-### 3. Single-automation execution
-- Add `executeAutomation(id)` flow in the page:
-  - Calls `runAutomation` to create a `running` row
-  - Invokes existing `generate-strategy` edge function scoped to the automation's platforms (filter the items array by `automation.platforms`)
-  - Inserts generated posts as `awaiting_review` (same path as Master Pipeline, but only for this automation's platforms)
-  - Calls `completeAutomationRun` with success/failure
-- Run-now button on each `AutomationCard` triggers this flow with a toast + progress.
+**Edge functions**
+- `create-checkout`: replace `PRICE_IDS` with new map keyed by `{ plan: 'starter'|'pro', billing: 'monthly'|'yearly' }`; accept both in body.
+- `check-subscription`: map returned `price.id` → tier (`starter`/`pro`) and include `billing_interval` in response.
 
-### 4. Scheduled execution (cron)
-- New edge function `run-scheduled-automations` (verify_jwt=false):
-  - Fetches all `automations` where `status='active'` and `next_run <= now()`
-  - For each: invokes generate-strategy, inserts posts (awaiting_review), updates `last_run`, computes new `next_run` from `schedule`, inserts `automation_runs` row with success/failure
-- pg_cron job every 15 minutes calling this function (using `supabase--read_query` + insert tool to set up).
-- When user creates/updates an automation with a `scheduled` trigger, compute initial `next_run` client-side and persist it.
+**Frontend**
+- `src/pages/Pricing.tsx`: new 3-tier layout (Free / Starter / Pro), monthly↔yearly toggle showing "Save ~20%", remove Enterprise card, replace with a small "Need more? Contact us" link.
+- `src/pages/Landing.tsx`: update pricing teaser cards to match.
+- `src/hooks/useSubscription.ts`: `SubscriptionTier = 'free' | 'starter' | 'pro'`; `createCheckout(plan, billing)`.
+- Anywhere that gates by `tier === 'enterprise'` → fold into `'pro'`.
 
-### 5. History dialog
-- "View History" button on `AutomationCard` opens `AutomationHistoryDialog` filtered to that automation's runs from `automationRuns`.
+**Feature gating** (Starter vs Pro)
+```text
+Free     → 3 platforms,  50 posts/mo,  Novee 10/day
+Starter  → 6 platforms, 300 posts/mo,  Novee 100/day, basic automations
+Pro      → unlimited platforms & posts, unlimited Novee, full automations, API
+```
+Confirm or override these limits when approving.
 
-### 6. Keep Master Pipeline + Master Review Hub as-is
-The "Run Master Pipeline" button and "Master Review Hub" awaiting_review queue stay unchanged — they remain the bulk weekly workflow. Per-automation flow is additive.
+---
 
-## Technical notes
-- File edits: `src/pages/Automation.tsx` (main rewrite of right-hand sections + button wiring); minor tweaks to `AutomationCard` if needed for the new actions menu.
-- New edge function: `supabase/functions/run-scheduled-automations/index.ts`.
-- Migration: none for tables (schema is sufficient). pg_cron + pg_net job set via insert tool (not a migration) because it contains the project URL + anon key.
-- `useAutomations` already exposes everything needed — no hook changes required.
+### Phase 2 — External publishing decision
 
-## Out of scope (call out for follow-up)
-- Real publishing to external platforms (still simulated via `post_platforms.status='scheduled'` + existing webhook flow)
-- Engagement-based triggers (UI exists, no backend yet)
-- Conditional/branching action graphs
+Currently "publishing" just fires a webhook (Zapier/Make). Three viable paths — pick one when approving:
 
-## Suggested follow-ups after approval
-- Add an "Undo last run" that deletes posts created by a specific `automation_runs` row
-- Add per-automation cost tracking using `posts.cost_estimate`
-- Surface `next_run` countdown on each card
+| Option | What it means | Effort |
+|---|---|---|
+| A. Keep webhooks only | Document Zapier/Make recipes, polish UI copy so users know it's BYO-automation. | Low |
+| B. Direct OAuth for 1–2 platforms | Implement real publishing for **LinkedIn + X** first (secrets already exist). YouTube/TikTok/IG/FB later. | Medium |
+| C. Hybrid (recommended) | Ship B for LinkedIn + X now, keep webhooks as fallback for the others, mark them "Beta — via webhook" in the UI. | Medium |
+
+My recommendation: **C**. Default plan assumes C unless you say otherwise.
+
+---
+
+### Phase 3 — Stability pass
+
+- Run `security--run_security_scan` and fix any new findings.
+- Run `supabase--linter` and resolve warnings.
+- Sweep `useSubscription` consumers for the removed `'enterprise'` literal (TS will surface them).
+- Smoke-test critical flows: signup → checkout (Starter monthly) → dashboard → create post → schedule → publish (webhook path).
+- Verify cron jobs (`scheduled-pipeline`, `run-scheduled-automations`) still authenticate after the recent SERVICE_ROLE lockdown.
+- Tidy: remove dead Enterprise references, update i18n strings (PT primary), update pricing memory.
+
+---
+
+### Manual actions you'll still need to do
+1. Enable **Leaked Password Protection** in Supabase Auth dashboard.
+2. (If choosing B/C) Configure LinkedIn + X OAuth redirect URIs in their developer dashboards — I'll give exact URLs.
+3. In Stripe dashboard, archive the old $29/$99 prices once you confirm no active subs remain on them.
+
+---
+
+**Reply with:**
+- "Go" → I execute all three phases with defaults (Hybrid publishing, gating limits above).
+- Or specify changes (different limits, Option A/B for publishing, skip Phase 3, etc.).
