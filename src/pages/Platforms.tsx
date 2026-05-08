@@ -294,6 +294,8 @@ export default function Platforms() {
             </CardContent>
           </Card>
 
+          <DirectPublishingPanel />
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="bg-muted/50 flex-wrap">
               <TabsTrigger value="connected" className="gap-2">
