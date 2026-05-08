@@ -22,6 +22,8 @@ import { PostDialog } from "@/components/platforms/PostDialog";
 import { ScheduleCalendar } from "@/components/platforms/ScheduleCalendar";
 import { PostCard } from "@/components/platforms/PostCard";
 import { platforms, totalStats, recentActivity, availablePlatforms, overallPerformance, platformColors } from "@/components/platforms/platformsData";
+import { DirectPublishingPanel } from "@/components/platforms/DirectPublishingPanel";
+import { usePlatformOAuth, publishPostDirect, DirectPlatform } from "@/hooks/usePlatformOAuth";
 import {
   Music2,
   RefreshCw,
@@ -47,6 +49,7 @@ import {
 
 export default function Platforms() {
   const { posts, addPost, updatePost, deletePost, publishPost } = usePosts();
+  const { isConnected } = usePlatformOAuth();
   const scheduledPosts = (posts || []).filter((p) => p.status === "scheduled");
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [detailPlatform, setDetailPlatform] = useState<any>(null);
@@ -157,11 +160,42 @@ export default function Platforms() {
     });
   };
 
-  const handlePublishNow = (id: string) => {
+  const handlePublishNow = async (id: string) => {
+    const post = posts.find((p) => p.id === id);
+    const targetPlatforms = ((post?.platforms || []) as any[])
+      .map((p) => (typeof p === "string" ? p : p.platform))
+      .filter((p): p is DirectPlatform => p === "linkedin" || p === "twitter");
+    const directPlatforms = targetPlatforms.filter((p) => isConnected(p));
+
+    if (directPlatforms.length > 0) {
+      try {
+        const result = await publishPostDirect(id, directPlatforms);
+        const failed = (result?.results || []).filter((r: any) => !r.success);
+        if (result?.success) {
+          toast({
+            title: "Post published",
+            description: failed.length
+              ? `Published. ${failed.length} platform(s) failed.`
+              : `Published to ${directPlatforms.join(", ")}.`,
+          });
+        } else {
+          toast({
+            title: "Publish failed",
+            description: failed.map((f: any) => `${f.platform}: ${f.error}`).join("; "),
+            variant: "destructive",
+          });
+        }
+      } catch (e: any) {
+        toast({ title: "Publish failed", description: e.message, variant: "destructive" });
+      }
+      return;
+    }
+
+    // Fallback: mark as published (webhook-driven platforms)
     publishPost.mutate(id);
     toast({
       title: "Post published",
-      description: "Your post has been published successfully.",
+      description: "Your post has been marked as published.",
     });
   };
 
@@ -292,6 +326,8 @@ export default function Platforms() {
               </ChartContainer>
             </CardContent>
           </Card>
+
+          <DirectPublishingPanel />
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="bg-muted/50 flex-wrap">

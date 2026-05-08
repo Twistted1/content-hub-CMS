@@ -14,3 +14,12 @@ verify_jwt = false
 
 [functions.customer-portal]
 verify_jwt = false
+
+[functions.linkedin-oauth-callback]
+verify_jwt = false
+
+[functions.twitter-oauth-callback]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
