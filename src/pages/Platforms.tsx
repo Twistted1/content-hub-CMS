@@ -22,6 +22,7 @@ import { PostDialog } from "@/components/platforms/PostDialog";
 import { ScheduleCalendar } from "@/components/platforms/ScheduleCalendar";
 import { PostCard } from "@/components/platforms/PostCard";
 import { platforms, totalStats, recentActivity, availablePlatforms, overallPerformance, platformColors } from "@/components/platforms/platformsData";
+import { DirectPublishingPanel } from "@/components/platforms/DirectPublishingPanel";
 import {
   Music2,
   RefreshCw,
