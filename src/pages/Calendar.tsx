@@ -57,15 +57,16 @@ const CAT: Record<CatKey, { color: string; bg: string; border: string; label: st
   awaiting_review: { color: "text-orange-300", bg: "bg-orange-500/10", border: "border-orange-500/20", label: "Needs Review", Icon: AlarmClock, iconBg: "bg-orange-500/10", iconColor: "text-orange-400" },
 };
 
-const PLAT: Record<string, { bar: string; badge: string; badgeText: string; label: string; Icon: any }> = {
-  youtube:   { bar: "bg-red-600/10 border-red-600/20",     badge: "bg-red-600 shadow-lg shadow-red-600/20",    badgeText: "text-white", label: "YouTube",   Icon: Youtube },
-  tiktok:    { bar: "bg-zinc-600/10 border-zinc-600/20",    badge: "bg-black shadow-lg shadow-white/10",      badgeText: "text-white", label: "TikTok",    Icon: Music2 },
-  instagram: { bar: "bg-pink-600/10 border-pink-600/20",    badge: "bg-gradient-to-br from-purple-600 to-pink-500 shadow-lg shadow-pink-500/20", badgeText: "text-white", label: "Instagram", Icon: Instagram },
-  twitter:   { bar: "bg-sky-600/10 border-sky-600/20",     badge: "bg-sky-500 shadow-lg shadow-sky-500/20",    badgeText: "text-white", label: "Twitter/X", Icon: Twitter },
-  facebook:  { bar: "bg-blue-700/10 border-blue-700/20",    badge: "bg-blue-600 shadow-lg shadow-blue-600/20",   badgeText: "text-white", label: "Facebook",  Icon: Facebook },
-  linkedin:  { bar: "bg-blue-800/10 border-blue-800/20",    badge: "bg-blue-700 shadow-lg shadow-blue-700/20",   badgeText: "text-white", label: "LinkedIn",  Icon: Linkedin },
-  website:   { bar: "bg-emerald-600/10 border-emerald-600/20", badge: "bg-emerald-600 shadow-lg shadow-emerald-600/20",badgeText: "text-white", label: "Website",   Icon: Globe },
-  rumble:    { bar: "bg-green-600/10 border-green-600/20",   badge: "bg-green-500 shadow-lg shadow-green-600/20",  badgeText: "text-white", label: "Rumble",    Icon: Video },
+const PLAT: Record<string, { bar: string; accent: string; iconColor: string; badge: string; badgeText: string; label: string; Icon: any }> = {
+  youtube:   { bar: "bg-[#FF0000]/15 border-l-4 border-[#FF0000]",                                            accent: "#FF0000", iconColor: "text-[#FF3B3B]", badge: "bg-[#FF0000] shadow-lg shadow-[#FF0000]/30",                                                badgeText: "text-white", label: "YouTube",   Icon: Youtube },
+  tiktok:    { bar: "bg-[#25F4EE]/10 border-l-4 border-[#FE2C55]",                                            accent: "#FE2C55", iconColor: "text-[#25F4EE]", badge: "bg-black shadow-lg shadow-[#FE2C55]/30",                                                    badgeText: "text-white", label: "TikTok",    Icon: Music2 },
+  instagram: { bar: "bg-gradient-to-r from-[#F58529]/15 via-[#DD2A7B]/15 to-[#8134AF]/15 border-l-4 border-[#DD2A7B]", accent: "#DD2A7B", iconColor: "text-[#DD2A7B]", badge: "bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] shadow-lg shadow-[#DD2A7B]/30", badgeText: "text-white", label: "Instagram", Icon: Instagram },
+  twitter:   { bar: "bg-white/[0.03] border-l-4 border-white",                                                accent: "#FFFFFF", iconColor: "text-white",     badge: "bg-black shadow-lg shadow-white/20 ring-1 ring-white/40",                                  badgeText: "text-white", label: "X (Twitter)", Icon: Twitter },
+  facebook:  { bar: "bg-[#1877F2]/15 border-l-4 border-[#1877F2]",                                            accent: "#1877F2", iconColor: "text-[#1877F2]", badge: "bg-[#1877F2] shadow-lg shadow-[#1877F2]/30",                                                badgeText: "text-white", label: "Facebook",  Icon: Facebook },
+  linkedin:  { bar: "bg-[#0A66C2]/15 border-l-4 border-[#0A66C2]",                                            accent: "#0A66C2", iconColor: "text-[#0A66C2]", badge: "bg-[#0A66C2] shadow-lg shadow-[#0A66C2]/30",                                                badgeText: "text-white", label: "LinkedIn",  Icon: Linkedin },
+  website:   { bar: "bg-emerald-500/15 border-l-4 border-emerald-500",                                        accent: "#10B981", iconColor: "text-emerald-400", badge: "bg-emerald-600 shadow-lg shadow-emerald-600/30",                                          badgeText: "text-white", label: "Website",   Icon: Globe },
+  rumble:    { bar: "bg-[#85C742]/15 border-l-4 border-[#85C742]",                                            accent: "#85C742", iconColor: "text-[#85C742]", badge: "bg-[#85C742] shadow-lg shadow-[#85C742]/30",                                                badgeText: "text-white", label: "Rumble",    Icon: Video },
+  podcast:   { bar: "bg-[#9333EA]/15 border-l-4 border-[#9333EA]",                                            accent: "#9333EA", iconColor: "text-[#A855F7]", badge: "bg-[#9333EA] shadow-lg shadow-[#9333EA]/30",                                                badgeText: "text-white", label: "Podcast",   Icon: Music2 },
 };
 
 function getBarColor(evt: CalEvent) {
@@ -317,7 +318,7 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                         ${isReview ? "animate-pulse ring-1 ring-orange-500/40" : ""} 
                         ${isDragging ? "opacity-20 scale-90" : "hover:brightness-125 shadow-sm"}`}
                     >
-                      {p ? <p.Icon className="w-3 h-3 text-white/80 shrink-0" /> : <div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />}
+                      {p ? <p.Icon className={`w-3 h-3 shrink-0 ${p.iconColor}`} /> : <div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />}
                       <span className="text-white/90 truncate tracking-tight">{evt.title}</span>
                     </div>
                   );
