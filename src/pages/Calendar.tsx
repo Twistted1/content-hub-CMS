@@ -7,7 +7,7 @@ import { parseISO, format } from "date-fns";
 import { NotificationsDropdown } from "@/components/header/NotificationsDropdown";
 import { UserDropdown } from "@/components/header/UserDropdown";
 import {
-  ChevronLeft, ChevronRight, Plus, Search, Bell, CalendarDays, Send, AlarmClock,
+  ChevronLeft, ChevronRight, Plus, Search, CalendarDays, Send, AlarmClock,
   Clapperboard, Briefcase, Users as UsersIcon, Sprout, Diamond, Globe,
   ChevronDown
 } from "lucide-react";
