@@ -35,7 +35,12 @@ export function usePlatformOAuth() {
 
   // Listen for callback messages from popup
   useEffect(() => {
+    const expectedOrigin = (() => {
+      try { return new URL(import.meta.env.VITE_SUPABASE_URL as string).origin; }
+      catch { return null; }
+    })();
     function onMessage(e: MessageEvent) {
+      if (expectedOrigin && e.origin !== expectedOrigin) return;
       const data = e.data;
       if (!data || data.source !== "oauth-callback") return;
       setConnecting(null);
