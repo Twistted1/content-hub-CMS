@@ -8,7 +8,7 @@ import { NotificationsDropdown } from "@/components/header/NotificationsDropdown
 import { UserDropdown } from "@/components/header/UserDropdown";
 import {
   ChevronLeft, ChevronRight, Plus, Search, Bell, CalendarDays, Send, AlarmClock,
-  Clapperboard, Briefcase, Users as UsersIcon, Sprout, Diamond, Youtube, Music2, Twitter, Instagram, Facebook, Linkedin, Globe, Video,
+  Clapperboard, Briefcase, Users as UsersIcon, Sprout, Diamond, Globe,
   ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
