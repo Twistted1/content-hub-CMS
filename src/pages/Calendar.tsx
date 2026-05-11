@@ -298,7 +298,7 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                 </span>
                 {dayEvts.length > 0 && <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />}
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {dayEvts.slice(0, 4).map((evt: CalEvent) => {
                   const p = PLAT[evt.platform];
                   const isReview = evt.status === "awaiting_review";
@@ -315,13 +315,14 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                       }}
                       onDragEnd={() => { setDraggingId(null); setDragOverKey(null); }}
                       onClick={(e) => { e.stopPropagation(); onClickEvent(evt); }}
-                      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[10px] font-black truncate cursor-grab active:cursor-grabbing transition-all hover:scale-[1.03] group/evt relative
-                        ${p ? p.bar : "bg-white/[0.05] border border-white/[0.05]"} 
-                        ${isReview ? "animate-pulse ring-1 ring-orange-500/40" : ""} 
-                        ${isDragging ? "opacity-20 scale-90" : "hover:brightness-125 shadow-sm"}`}
+                      className={`flex min-h-8 items-center gap-2 rounded-md px-2.5 py-1.5 text-[10px] font-black cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02] group/evt relative shadow-lg
+                        ${p ? p.card : "bg-muted text-muted-foreground border border-border"} 
+                        ${isReview ? "ring-1 ring-white/35" : ""} 
+                        ${isDragging ? "opacity-20 scale-90" : "hover:brightness-110"}`}
                     >
-                      {p ? <p.Icon className={`w-3 h-3 shrink-0 ${p.iconColor}`} /> : <div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />}
-                      <span className="text-white/90 truncate tracking-tight">{evt.title}</span>
+                      {p ? <p.Icon className="h-3.5 w-3.5 shrink-0 text-white" /> : <div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />}
+                      <span className="shrink-0 text-[9px] opacity-80 tabular-nums">{evt.startTime ? fmtHour(evt.startTime) : "all"}</span>
+                      <span className="truncate tracking-tight">{p ? p.short : evt.title}</span>
                     </div>
                   );
                 })}
