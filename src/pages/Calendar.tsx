@@ -728,9 +728,7 @@ export default function ContentCalendar() {
 
   // Map DB posts → calendar events
   const events: CalEvent[] = posts.map((post: any) => {
-    let date = fmtKey(new Date());
-    let startTime = "";
-    if (post.scheduledAt) { const d = parseISO(post.scheduledAt); date = fmtKey(d); startTime = format(d, "HH:mm"); }
+    const { date, startTime } = splitScheduledAt(post.scheduledAt);
     return {
       id: post.id,
       originalId: post.id,
