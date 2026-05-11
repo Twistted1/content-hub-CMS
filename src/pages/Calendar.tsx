@@ -40,6 +40,13 @@ function isSame(a: Date, b: Date) { return a.getFullYear() === b.getFullYear() &
 function isToday(d: Date) { return isSame(d, new Date()); }
 function fmt12(t: string) { const [h, m] = t.split(":").map(Number); return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`; }
 function fmtHour(t: string) { const h = parseInt(t.split(":")[0]); return `${h % 12 || 12} ${h >= 12 ? "pm" : "am"}`; }
+function splitScheduledAt(raw?: string | null) {
+  if (!raw) return { date: fmtKey(new Date()), startTime: "" };
+  const [datePart, timePart = ""] = raw.split("T");
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return { date: datePart, startTime: timePart.slice(0, 5) };
+  const d = parseISO(raw);
+  return { date: fmtKey(d), startTime: format(d, "HH:mm") };
+}
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
@@ -298,8 +305,8 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                 </span>
                 {dayEvts.length > 0 && <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />}
               </div>
-              <div className="space-y-2">
-                {dayEvts.slice(0, 4).map((evt: CalEvent) => {
+              <div className="grid grid-cols-2 gap-1.5">
+                {dayEvts.map((evt: CalEvent) => {
                   const p = PLAT[evt.platform];
                   const isReview = evt.status === "awaiting_review";
                   const isDragging = draggingId === evt.id;
@@ -315,22 +322,17 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                       }}
                       onDragEnd={() => { setDraggingId(null); setDragOverKey(null); }}
                       onClick={(e) => { e.stopPropagation(); onClickEvent(evt); }}
-                      className={`flex min-h-8 items-center gap-2 rounded-md px-2.5 py-1.5 text-[10px] font-black cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02] group/evt relative shadow-lg
+                      className={`flex h-7 min-w-0 items-center gap-1.5 rounded-md px-2 text-[9px] font-black cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02] group/evt relative shadow-lg
                         ${p ? p.card : "bg-muted text-muted-foreground border border-border"} 
                         ${isReview ? "ring-1 ring-white/35" : ""} 
                         ${isDragging ? "opacity-20 scale-90" : "hover:brightness-110"}`}
                     >
                       {p ? <p.Icon className="h-3.5 w-3.5 shrink-0 text-white" /> : <div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />}
-                      <span className="shrink-0 text-[9px] opacity-80 tabular-nums">{evt.startTime ? fmtHour(evt.startTime) : "all"}</span>
+                      <span className="shrink-0 opacity-85 tabular-nums">{evt.startTime ? fmtHour(evt.startTime) : "all"}</span>
                       <span className="truncate tracking-tight">{p ? p.short : evt.title}</span>
                     </div>
                   );
                 })}
-                {dayEvts.length > 4 && (
-                  <div className="text-[9px] text-muted-foreground font-black px-2 pt-1 uppercase tracking-widest opacity-60">
-                    + {dayEvts.length - 4} More
-                  </div>
-                )}
               </div>
             </div>
           );
