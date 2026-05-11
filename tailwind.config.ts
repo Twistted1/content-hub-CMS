@@ -47,6 +47,18 @@ export default {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
   			},
+			youtube: 'hsl(var(--platform-youtube))',
+			twitter: 'hsl(var(--platform-twitter))',
+			facebook: 'hsl(var(--platform-facebook))',
+			linkedin: 'hsl(var(--platform-linkedin))',
+			'instagram-orange': 'hsl(var(--platform-instagram-orange))',
+			'instagram-pink': 'hsl(var(--platform-instagram-pink))',
+			'instagram-purple': 'hsl(var(--platform-instagram-purple))',
+			'tiktok-cyan': 'hsl(var(--platform-tiktok-cyan))',
+			'tiktok-pink': 'hsl(var(--platform-tiktok-pink))',
+			website: 'hsl(var(--platform-website))',
+			rumble: 'hsl(var(--platform-rumble))',
+			podcast: 'hsl(var(--platform-podcast))',
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',
   				foreground: 'hsl(var(--sidebar-foreground))',

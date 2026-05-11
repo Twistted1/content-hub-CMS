@@ -35,6 +35,19 @@
     --ring: 263.4 85% 60%;
 
     --radius: 1rem;
+
+    --platform-youtube: 0 100% 50%;
+    --platform-twitter: 203 89% 53%;
+    --platform-facebook: 214 89% 52%;
+    --platform-linkedin: 210 90% 40%;
+    --platform-instagram-orange: 28 92% 56%;
+    --platform-instagram-pink: 335 71% 52%;
+    --platform-instagram-purple: 277 54% 45%;
+    --platform-tiktok-cyan: 178 91% 55%;
+    --platform-tiktok-pink: 349 99% 58%;
+    --platform-website: 160 84% 39%;
+    --platform-rumble: 89 53% 52%;
+    --platform-podcast: 270 77% 54%;
     
     /* Premium Gradients */
     --grad-primary: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%);

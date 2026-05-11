@@ -7,11 +7,12 @@ import { parseISO, format } from "date-fns";
 import { NotificationsDropdown } from "@/components/header/NotificationsDropdown";
 import { UserDropdown } from "@/components/header/UserDropdown";
 import {
-  ChevronLeft, ChevronRight, Plus, Search, Bell, CalendarDays, Send, AlarmClock,
-  Clapperboard, Briefcase, Users as UsersIcon, Sprout, Diamond, Youtube, Music2, Twitter, Instagram, Facebook, Linkedin, Globe, Video,
+  ChevronLeft, ChevronRight, Plus, Search, CalendarDays, Send, AlarmClock,
+  Clapperboard, Briefcase, Users as UsersIcon, Sprout, Diamond, Globe,
   ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BrandIcon } from "@/components/platforms/BrandIcon";
 
 /* ── helpers ────────────────────────────────────────────── */
 
@@ -39,6 +40,13 @@ function isSame(a: Date, b: Date) { return a.getFullYear() === b.getFullYear() &
 function isToday(d: Date) { return isSame(d, new Date()); }
 function fmt12(t: string) { const [h, m] = t.split(":").map(Number); return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`; }
 function fmtHour(t: string) { const h = parseInt(t.split(":")[0]); return `${h % 12 || 12} ${h >= 12 ? "pm" : "am"}`; }
+function splitScheduledAt(raw?: string | null) {
+  if (!raw) return { date: fmtKey(new Date()), startTime: "" };
+  const [datePart, timePart = ""] = raw.split("T");
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return { date: datePart, startTime: timePart.slice(0, 5) };
+  const d = parseISO(raw);
+  return { date: fmtKey(d), startTime: format(d, "HH:mm") };
+}
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
@@ -57,16 +65,17 @@ const CAT: Record<CatKey, { color: string; bg: string; border: string; label: st
   awaiting_review: { color: "text-orange-300", bg: "bg-orange-500/10", border: "border-orange-500/20", label: "Needs Review", Icon: AlarmClock, iconBg: "bg-orange-500/10", iconColor: "text-orange-400" },
 };
 
-const PLAT: Record<string, { bar: string; accent: string; iconColor: string; badge: string; badgeText: string; label: string; Icon: any }> = {
-  youtube:   { bar: "bg-[#FF0000]/15 border-l-4 border-[#FF0000]",                                            accent: "#FF0000", iconColor: "text-[#FF3B3B]", badge: "bg-[#FF0000] shadow-lg shadow-[#FF0000]/30",                                                badgeText: "text-white", label: "YouTube",   Icon: Youtube },
-  tiktok:    { bar: "bg-[#25F4EE]/10 border-l-4 border-[#FE2C55]",                                            accent: "#FE2C55", iconColor: "text-[#25F4EE]", badge: "bg-black shadow-lg shadow-[#FE2C55]/30",                                                    badgeText: "text-white", label: "TikTok",    Icon: Music2 },
-  instagram: { bar: "bg-gradient-to-r from-[#F58529]/15 via-[#DD2A7B]/15 to-[#8134AF]/15 border-l-4 border-[#DD2A7B]", accent: "#DD2A7B", iconColor: "text-[#DD2A7B]", badge: "bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] shadow-lg shadow-[#DD2A7B]/30", badgeText: "text-white", label: "Instagram", Icon: Instagram },
-  twitter:   { bar: "bg-[#1DA1F2]/15 border-l-4 border-[#1DA1F2]",                                           accent: "#1DA1F2", iconColor: "text-[#1DA1F2]", badge: "bg-[#1DA1F2] shadow-lg shadow-[#1DA1F2]/30",                                                badgeText: "text-white", label: "Twitter/X", Icon: Twitter },
-  facebook:  { bar: "bg-[#1877F2]/15 border-l-4 border-[#1877F2]",                                            accent: "#1877F2", iconColor: "text-[#1877F2]", badge: "bg-[#1877F2] shadow-lg shadow-[#1877F2]/30",                                                badgeText: "text-white", label: "Facebook",  Icon: Facebook },
-  linkedin:  { bar: "bg-[#0A66C2]/15 border-l-4 border-[#0A66C2]",                                            accent: "#0A66C2", iconColor: "text-[#0A66C2]", badge: "bg-[#0A66C2] shadow-lg shadow-[#0A66C2]/30",                                                badgeText: "text-white", label: "LinkedIn",  Icon: Linkedin },
-  website:   { bar: "bg-emerald-500/15 border-l-4 border-emerald-500",                                        accent: "#10B981", iconColor: "text-emerald-400", badge: "bg-emerald-600 shadow-lg shadow-emerald-600/30",                                          badgeText: "text-white", label: "Website",   Icon: Globe },
-  rumble:    { bar: "bg-[#85C742]/15 border-l-4 border-[#85C742]",                                            accent: "#85C742", iconColor: "text-[#85C742]", badge: "bg-[#85C742] shadow-lg shadow-[#85C742]/30",                                                badgeText: "text-white", label: "Rumble",    Icon: Video },
-  podcast:   { bar: "bg-[#9333EA]/15 border-l-4 border-[#9333EA]",                                            accent: "#9333EA", iconColor: "text-[#A855F7]", badge: "bg-[#9333EA] shadow-lg shadow-[#9333EA]/30",                                                badgeText: "text-white", label: "Podcast",   Icon: Music2 },
+const PLAT: Record<string, { bar: string; card: string; accent: string; iconColor: string; badge: string; badgeText: string; label: string; short: string; Icon: any }> = {
+  youtube:   { bar: "bg-youtube/15 border-l-4 border-youtube", card: "bg-youtube text-white shadow-youtube/25", accent: "0 100% 50%", iconColor: "text-youtube", badge: "bg-youtube shadow-lg shadow-youtube/30", badgeText: "text-white", label: "YouTube", short: "YT", Icon: (props: any) => <BrandIcon name="youtube" {...props} /> },
+  tiktok:    { bar: "bg-tiktok-cyan/15 border-l-4 border-tiktok-pink", card: "bg-tiktok-pink text-white shadow-tiktok-pink/25", accent: "349 99% 58%", iconColor: "text-tiktok-cyan", badge: "bg-tiktok-pink shadow-lg shadow-tiktok-pink/30", badgeText: "text-white", label: "TikTok", short: "TT", Icon: (props: any) => <BrandIcon name="tiktok" {...props} /> },
+  instagram: { bar: "bg-instagram-pink/15 border-l-4 border-instagram-pink", card: "bg-gradient-to-r from-instagram-orange via-instagram-pink to-instagram-purple text-white shadow-instagram-pink/25", accent: "335 71% 52%", iconColor: "text-instagram-pink", badge: "bg-gradient-to-br from-instagram-orange via-instagram-pink to-instagram-purple shadow-lg shadow-instagram-pink/30", badgeText: "text-white", label: "Instagram", short: "IG", Icon: (props: any) => <BrandIcon name="instagram" {...props} /> },
+  twitter:   { bar: "bg-twitter/15 border-l-4 border-twitter", card: "bg-twitter text-white shadow-twitter/25", accent: "203 89% 53%", iconColor: "text-twitter", badge: "bg-twitter shadow-lg shadow-twitter/30", badgeText: "text-white", label: "Twitter/X", short: "X", Icon: (props: any) => <BrandIcon name="twitter" {...props} /> },
+  x:         { bar: "bg-twitter/15 border-l-4 border-twitter", card: "bg-twitter text-white shadow-twitter/25", accent: "203 89% 53%", iconColor: "text-twitter", badge: "bg-twitter shadow-lg shadow-twitter/30", badgeText: "text-white", label: "Twitter/X", short: "X", Icon: (props: any) => <BrandIcon name="twitter" {...props} /> },
+  facebook:  { bar: "bg-facebook/15 border-l-4 border-facebook", card: "bg-facebook text-white shadow-facebook/25", accent: "214 89% 52%", iconColor: "text-facebook", badge: "bg-facebook shadow-lg shadow-facebook/30", badgeText: "text-white", label: "Facebook", short: "FB", Icon: (props: any) => <BrandIcon name="facebook" {...props} /> },
+  linkedin:  { bar: "bg-linkedin/15 border-l-4 border-linkedin", card: "bg-linkedin text-white shadow-linkedin/25", accent: "210 90% 40%", iconColor: "text-linkedin", badge: "bg-linkedin shadow-lg shadow-linkedin/30", badgeText: "text-white", label: "LinkedIn", short: "LI", Icon: (props: any) => <BrandIcon name="linkedin" {...props} /> },
+  website:   { bar: "bg-website/15 border-l-4 border-website", card: "bg-website text-white shadow-website/25", accent: "160 84% 39%", iconColor: "text-website", badge: "bg-website shadow-lg shadow-website/30", badgeText: "text-white", label: "Website", short: "WEB", Icon: Globe },
+  rumble:    { bar: "bg-rumble/15 border-l-4 border-rumble", card: "bg-rumble text-white shadow-rumble/25", accent: "89 53% 52%", iconColor: "text-rumble", badge: "bg-rumble shadow-lg shadow-rumble/30", badgeText: "text-white", label: "Rumble", short: "RUM", Icon: (props: any) => <BrandIcon name="rumble" {...props} /> },
+  podcast:   { bar: "bg-podcast/15 border-l-4 border-podcast", card: "bg-podcast text-white shadow-podcast/25", accent: "270 77% 54%", iconColor: "text-podcast", badge: "bg-podcast shadow-lg shadow-podcast/30", badgeText: "text-white", label: "Podcast", short: "POD", Icon: (props: any) => <BrandIcon name="podcast" {...props} /> },
 };
 
 function getBarColor(evt: CalEvent) {
@@ -296,8 +305,8 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                 </span>
                 {dayEvts.length > 0 && <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />}
               </div>
-              <div className="space-y-1.5">
-                {dayEvts.slice(0, 4).map((evt: CalEvent) => {
+              <div className="grid grid-cols-2 gap-1.5">
+                {dayEvts.map((evt: CalEvent) => {
                   const p = PLAT[evt.platform];
                   const isReview = evt.status === "awaiting_review";
                   const isDragging = draggingId === evt.id;
@@ -313,21 +322,17 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                       }}
                       onDragEnd={() => { setDraggingId(null); setDragOverKey(null); }}
                       onClick={(e) => { e.stopPropagation(); onClickEvent(evt); }}
-                      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[10px] font-black truncate cursor-grab active:cursor-grabbing transition-all hover:scale-[1.03] group/evt relative
-                        ${p ? p.bar : "bg-white/[0.05] border border-white/[0.05]"} 
-                        ${isReview ? "animate-pulse ring-1 ring-orange-500/40" : ""} 
-                        ${isDragging ? "opacity-20 scale-90" : "hover:brightness-125 shadow-sm"}`}
+                      className={`flex h-7 min-w-0 items-center gap-1.5 rounded-md px-2 text-[9px] font-black cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02] group/evt relative shadow-lg
+                        ${p ? p.card : "bg-muted text-muted-foreground border border-border"} 
+                        ${isReview ? "ring-1 ring-white/35" : ""} 
+                        ${isDragging ? "opacity-20 scale-90" : "hover:brightness-110"}`}
                     >
-                      {p ? <p.Icon className={`w-3 h-3 shrink-0 ${p.iconColor}`} /> : <div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />}
-                      <span className="text-white/90 truncate tracking-tight">{evt.title}</span>
+                      {p ? <p.Icon className="h-3.5 w-3.5 shrink-0 text-white" /> : <div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />}
+                      <span className="shrink-0 opacity-85 tabular-nums">{evt.startTime ? fmtHour(evt.startTime) : "all"}</span>
+                      <span className="truncate tracking-tight">{p ? p.short : evt.title}</span>
                     </div>
                   );
                 })}
-                {dayEvts.length > 4 && (
-                  <div className="text-[9px] text-muted-foreground font-black px-2 pt-1 uppercase tracking-widest opacity-60">
-                    + {dayEvts.length - 4} More
-                  </div>
-                )}
               </div>
             </div>
           );
@@ -723,9 +728,7 @@ export default function ContentCalendar() {
 
   // Map DB posts → calendar events
   const events: CalEvent[] = posts.map((post: any) => {
-    let date = fmtKey(new Date());
-    let startTime = "";
-    if (post.scheduledAt) { const d = parseISO(post.scheduledAt); date = fmtKey(d); startTime = format(d, "HH:mm"); }
+    const { date, startTime } = splitScheduledAt(post.scheduledAt);
     return {
       id: post.id,
       originalId: post.id,
