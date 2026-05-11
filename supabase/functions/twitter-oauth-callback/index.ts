@@ -11,15 +11,28 @@ function htmlResponse(body: string, status = 200) {
   return new Response(body, { status, headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
 
+function escapeHtml(s: string) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 function closeWindowPage(success: boolean, message: string, redirectTo?: string | null) {
-  const payload = JSON.stringify({ source: "oauth-callback", platform: "twitter", success, message });
+  const safeMessage = escapeHtml(message);
+  const payload = JSON.stringify({ source: "oauth-callback", platform: "twitter", success, message: safeMessage });
+  // Only allow http(s) redirectTo to a safe absolute URL
+  let safeRedirect: string | null = null;
+  if (redirectTo) {
+    try {
+      const u = new URL(redirectTo);
+      if (u.protocol === "https:" || u.protocol === "http:") safeRedirect = u.toString();
+    } catch { /* ignore */ }
+  }
   return htmlResponse(`<!doctype html><html><body style="font-family:sans-serif;padding:24px;background:#0F172A;color:#fff">
 <h2>${success ? "✅ X (Twitter) connected" : "❌ X connection failed"}</h2>
-<p>${message}</p>
+<p>${safeMessage}</p>
 <p>You can close this window.</p>
 <script>
   try { if (window.opener) { window.opener.postMessage(${payload}, "*"); } } catch(e){}
-  ${redirectTo ? `setTimeout(()=>{ window.location.href=${JSON.stringify(redirectTo)}; }, 800);` : "setTimeout(()=>window.close(), 1500);"}
+  ${safeRedirect ? `setTimeout(()=>{ window.location.href=${JSON.stringify(safeRedirect)}; }, 800);` : "setTimeout(()=>window.close(), 1500);"}
 </script>
 </body></html>`);
 }
