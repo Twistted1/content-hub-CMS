@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Shield, Key, Smartphone, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Shield, Key, Smartphone, AlertTriangle, Eye, EyeOff, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,13 @@ export function SecuritySettings() {
   const { security, updateSecurity } = useUserPreferencesStore();
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [show2FADialog, setShow2FADialog] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaQrSvg, setMfaQrSvg] = useState<string | null>(null);
+  const [mfaSecret, setMfaSecret] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaBusy, setMfaBusy] = useState(false);
+  const [mfaEnrolled, setMfaEnrolled] = useState(false);
+  const [revokingSessions, setRevokingSessions] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
@@ -38,6 +45,23 @@ export function SecuritySettings() {
     confirmPassword: "",
   });
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Load real MFA enrollment status from Supabase
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.auth.mfa.listFactors();
+      if (cancelled || error) return;
+      const verified = (data?.totp ?? []).some((f) => f.status === "verified");
+      setMfaEnrolled(verified);
+      if (verified !== security.twoFactorEnabled) {
+        updateSecurity({ twoFactorEnabled: verified });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handlePasswordChange = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
@@ -81,26 +105,106 @@ export function SecuritySettings() {
     }
   };
 
-  const handle2FAToggle = () => {
-    if (!security.twoFactorEnabled) {
+  const handle2FAToggle = async () => {
+    if (mfaEnrolled) {
+      // Real disable: unenroll all TOTP factors
+      setMfaBusy(true);
+      try {
+        const { data, error } = await supabase.auth.mfa.listFactors();
+        if (error) throw error;
+        for (const f of data?.totp ?? []) {
+          const { error: unErr } = await supabase.auth.mfa.unenroll({ factorId: f.id });
+          if (unErr) throw unErr;
+        }
+        setMfaEnrolled(false);
+        updateSecurity({ twoFactorEnabled: false });
+        toast.success("Two-factor authentication disabled");
+      } catch (e: any) {
+        toast.error(e?.message ?? "Failed to disable 2FA");
+      } finally {
+        setMfaBusy(false);
+      }
+      return;
+    }
+    // Begin enrollment
+    setMfaBusy(true);
+    try {
+      // Clean any unverified factors first
+      const { data: existing } = await supabase.auth.mfa.listFactors();
+      for (const f of existing?.totp ?? []) {
+        if (f.status !== "verified") {
+          await supabase.auth.mfa.unenroll({ factorId: f.id });
+        }
+      }
+      const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp" });
+      if (error) throw error;
+      setMfaFactorId(data.id);
+      setMfaQrSvg(data.totp?.qr_code ?? null);
+      setMfaSecret(data.totp?.secret ?? null);
+      setMfaCode("");
       setShow2FADialog(true);
-    } else {
-      updateSecurity({ twoFactorEnabled: false });
-      toast.success("Two-factor authentication disabled");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to start 2FA enrollment");
+    } finally {
+      setMfaBusy(false);
     }
   };
 
-  const enable2FA = () => {
-    updateSecurity({ twoFactorEnabled: true });
-    toast.success("Two-factor authentication enabled");
-    setShow2FADialog(false);
+  const verify2FA = async () => {
+    if (!mfaFactorId) return;
+    if (!/^\d{6}$/.test(mfaCode)) {
+      toast.error("Enter the 6-digit code from your authenticator app");
+      return;
+    }
+    setMfaBusy(true);
+    try {
+      const { error } = await supabase.auth.mfa.challengeAndVerify({
+        factorId: mfaFactorId,
+        code: mfaCode,
+      });
+      if (error) throw error;
+      setMfaEnrolled(true);
+      updateSecurity({ twoFactorEnabled: true });
+      toast.success("Two-factor authentication enabled");
+      setShow2FADialog(false);
+      setMfaFactorId(null);
+      setMfaQrSvg(null);
+      setMfaSecret(null);
+      setMfaCode("");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Verification failed");
+    } finally {
+      setMfaBusy(false);
+    }
   };
 
-  const sessions = [
-    { device: "MacBook Pro", location: "San Francisco, CA", lastActive: "Now", current: true },
-    { device: "iPhone 14", location: "San Francisco, CA", lastActive: "2 hours ago", current: false },
-    { device: "Windows PC", location: "New York, NY", lastActive: "5 days ago", current: false },
-  ];
+  const cancel2FA = async () => {
+    if (mfaFactorId) {
+      try {
+        await supabase.auth.mfa.unenroll({ factorId: mfaFactorId });
+      } catch {
+        /* ignore */
+      }
+    }
+    setShow2FADialog(false);
+    setMfaFactorId(null);
+    setMfaQrSvg(null);
+    setMfaSecret(null);
+    setMfaCode("");
+  };
+
+  const signOutOtherSessions = async () => {
+    setRevokingSessions(true);
+    try {
+      const { error } = await supabase.auth.signOut({ scope: "others" });
+      if (error) throw error;
+      toast.success("All other sessions have been signed out");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to sign out other sessions");
+    } finally {
+      setRevokingSessions(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -148,15 +252,16 @@ export function SecuritySettings() {
                   Require a verification code when signing in
                 </p>
               </div>
-              {security.twoFactorEnabled && (
+              {mfaEnrolled && (
                 <Badge variant="secondary" className="bg-green-500/10 text-green-500">
                   Enabled
                 </Badge>
               )}
             </div>
             <Switch
-              checked={security.twoFactorEnabled}
+              checked={mfaEnrolled}
               onCheckedChange={handle2FAToggle}
+              disabled={mfaBusy}
             />
           </div>
         </CardContent>
@@ -220,39 +325,26 @@ export function SecuritySettings() {
         <CardHeader>
           <CardTitle>Active Sessions</CardTitle>
           <CardDescription>
-            Manage devices where you're currently logged in.
+            Sign out of every other device where this account is logged in.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {sessions.map((session, index) => (
-            <div key={index}>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <Label>{session.device}</Label>
-                    {session.current && (
-                      <Badge variant="secondary" className="text-xs">
-                        Current
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {session.location} • {session.lastActive}
-                  </p>
-                </div>
-                {!session.current && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toast.success("Session revoked")}
-                  >
-                    Revoke
-                  </Button>
-                )}
-              </div>
-              {index < sessions.length - 1 && <Separator className="mt-4" />}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Sign out other sessions</Label>
+              <p className="text-sm text-muted-foreground">
+                Revokes refresh tokens on every other device. This session stays signed in.
+              </p>
             </div>
-          ))}
+            <Button
+              variant="outline"
+              onClick={signOutOtherSessions}
+              disabled={revokingSessions}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              {revokingSessions ? "Signing out..." : "Sign out others"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -379,7 +471,12 @@ export function SecuritySettings() {
       </Dialog>
 
       {/* 2FA Setup Dialog */}
-      <Dialog open={show2FADialog} onOpenChange={setShow2FADialog}>
+      <Dialog
+        open={show2FADialog}
+        onOpenChange={(open) => {
+          if (!open) cancel2FA();
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Enable Two-Factor Authentication</DialogTitle>
@@ -389,20 +486,40 @@ export function SecuritySettings() {
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div className="bg-muted p-8 rounded-lg flex items-center justify-center">
-              <div className="w-32 h-32 bg-foreground/10 rounded flex items-center justify-center text-muted-foreground">
-                QR Code
-              </div>
+              {mfaQrSvg ? (
+                <div
+                  className="w-40 h-40 [&>svg]:w-full [&>svg]:h-full bg-white rounded p-2"
+                  dangerouslySetInnerHTML={{ __html: mfaQrSvg }}
+                />
+              ) : (
+                <div className="w-40 h-40 bg-foreground/10 rounded flex items-center justify-center text-muted-foreground">
+                  Loading…
+                </div>
+              )}
             </div>
+            {mfaSecret && (
+              <p className="text-xs text-muted-foreground text-center break-all">
+                Or enter this secret manually: <span className="font-mono">{mfaSecret}</span>
+              </p>
+            )}
             <div className="space-y-2">
               <Label>Verification Code</Label>
-              <Input placeholder="Enter 6-digit code" maxLength={6} />
+              <Input
+                placeholder="Enter 6-digit code"
+                maxLength={6}
+                inputMode="numeric"
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShow2FADialog(false)}>
+            <Button variant="outline" onClick={cancel2FA} disabled={mfaBusy}>
               Cancel
             </Button>
-            <Button onClick={enable2FA}>Enable 2FA</Button>
+            <Button onClick={verify2FA} disabled={mfaBusy || mfaCode.length !== 6}>
+              {mfaBusy ? "Verifying..." : "Enable 2FA"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
