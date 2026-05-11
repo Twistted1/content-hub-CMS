@@ -8,6 +8,39 @@ const corsHeaders = {
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
+// SSRF guard: only allow https webhooks to public hosts
+function isPrivateOrLocalHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  if (h === "localhost" || h.endsWith(".localhost") || h === "ip6-localhost") return true;
+  // IPv6 loopback / link-local / ULA
+  if (h === "::1" || h.startsWith("fe80:") || h.startsWith("fc") || h.startsWith("fd")) return true;
+  // IPv4 dotted quad checks
+  const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (m) {
+    const [a, b] = [parseInt(m[1]), parseInt(m[2])];
+    if (a === 10) return true;
+    if (a === 127) return true;
+    if (a === 0) return true;
+    if (a === 169 && b === 254) return true; // link-local / cloud metadata
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+  }
+  return false;
+}
+
+function isSafeWebhookUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== "https:") return false;
+    if (!u.hostname) return false;
+    if (isPrivateOrLocalHost(u.hostname)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -248,6 +281,15 @@ Return ONLY JSON.`;
           );
 
           if (matchingPlatforms.length > 0) {
+            if (!isSafeWebhookUrl(webhook.url)) {
+              webhookResults.push({
+                webhook: webhook.name,
+                status: 0,
+                success: false,
+                error: "Blocked: webhook URL must be https and point to a public host",
+              });
+              continue;
+            }
             try {
               const webhookPayload = {
                 event: "post.published",
@@ -269,11 +311,16 @@ Return ONLY JSON.`;
                 ...(webhook.headers as Record<string, string> || {}),
               };
 
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 5000);
               const whResp = await fetch(webhook.url, {
                 method: "POST",
                 headers: whHeaders,
                 body: JSON.stringify(webhookPayload),
+                redirect: "error",
+                signal: controller.signal,
               });
+              clearTimeout(timeoutId);
 
               webhookResults.push({
                 webhook: webhook.name,
