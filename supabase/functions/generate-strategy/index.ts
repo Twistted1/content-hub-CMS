@@ -41,8 +41,22 @@ serve(async (req) => {
       throw new Error('GEMINI_API_KEY is not set')
     }
 
-    if (!topic) {
-      throw new Error('Topic is required')
+    if (!topic || typeof topic !== 'string') {
+      return new Response(JSON.stringify({ error: 'Topic is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    // Sanitize: strip control chars, collapse whitespace, enforce length cap
+    const sanitizedTopic = topic
+      .replace(/[\u0000-\u001F\u007F]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (sanitizedTopic.length === 0 || sanitizedTopic.length > 500) {
+      return new Response(JSON.stringify({ error: 'Topic must be 1-500 characters' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     const systemInstruction = `You are a Headless CMS Content Strategist. Generate a weekly content strategy (Monday to Sunday) based on the user's topic.
@@ -80,7 +94,7 @@ Note: the 'content_strategy' array MUST contain exactly 7 objects, one for each 
         contents: [
           {
             role: 'user',
-            parts: [{ text: `Generate a 7-day strategy for the topic: ${topic}` }]
+            parts: [{ text: `Generate a 7-day strategy for the topic: ${sanitizedTopic}` }]
           }
         ],
         generationConfig: {
