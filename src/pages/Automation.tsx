@@ -525,6 +525,38 @@ const AutomationPage = () => {
 
           <div className="flex items-center gap-4">
             <button 
+              onClick={async () => {
+                try {
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (!user) { toast.error("Not authenticated"); return; }
+                  const allPlatforms = ["twitter","instagram","facebook","linkedin","tiktok","youtube","rumble","website","podcast"];
+                  const { data: existing } = await supabase
+                    .from("automations").select("id")
+                    .eq("user_id", user.id).eq("name", "Weekly Schedule (templates)").maybeSingle();
+                  if (existing) {
+                    await supabase.from("automations").update({
+                      status: "active", trigger: "scheduled", schedule: "daily",
+                      platforms: allPlatforms, next_run: new Date().toISOString(),
+                    }).eq("id", existing.id);
+                  } else {
+                    await supabase.from("automations").insert({
+                      name: "Weekly Schedule (templates)",
+                      description: "Generates posts from src/data/platforms/*.json into the Review Inbox every 15 minutes.",
+                      trigger: "scheduled", status: "active", schedule: "daily",
+                      platforms: allPlatforms, user_id: user.id,
+                      next_run: new Date().toISOString(),
+                    });
+                  }
+                  toast.success("Weekly schedule activated. First batch arrives in <15 min.");
+                  queryClient.invalidateQueries({ queryKey: ["automations"] });
+                } catch (e: any) { toast.error(e.message); }
+              }}
+              className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 transition-all font-bold text-sm"
+            >
+              <Zap className="w-4 h-4" />
+              Activate Weekly Schedule
+            </button>
+            <button 
               onClick={handleRunPipeline}
               disabled={isProcessingPipeline}
               className="flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-xl hover:bg-secondary/80 transition-all font-bold text-sm"
