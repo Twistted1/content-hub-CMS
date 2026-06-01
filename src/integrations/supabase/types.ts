@@ -453,7 +453,9 @@ export type Database = {
           excerpt: string | null
           featured_image_url: string | null
           full_article_body: string | null
+          full_content: string | null
           id: string
+          image_url: string | null
           is_ai_generated: boolean | null
           pipeline_run_id: string | null
           publish_attempted_at: string | null
@@ -463,6 +465,7 @@ export type Database = {
           review_requested_at: string | null
           reviewed_at: string | null
           scheduled_at: string | null
+          seo_tags: Json | null
           status: Database["public"]["Enums"]["post_status"]
           tags: string[] | null
           title: string
@@ -483,7 +486,9 @@ export type Database = {
           excerpt?: string | null
           featured_image_url?: string | null
           full_article_body?: string | null
+          full_content?: string | null
           id?: string
+          image_url?: string | null
           is_ai_generated?: boolean | null
           pipeline_run_id?: string | null
           publish_attempted_at?: string | null
@@ -493,6 +498,7 @@ export type Database = {
           review_requested_at?: string | null
           reviewed_at?: string | null
           scheduled_at?: string | null
+          seo_tags?: Json | null
           status?: Database["public"]["Enums"]["post_status"]
           tags?: string[] | null
           title: string
@@ -513,7 +519,9 @@ export type Database = {
           excerpt?: string | null
           featured_image_url?: string | null
           full_article_body?: string | null
+          full_content?: string | null
           id?: string
+          image_url?: string | null
           is_ai_generated?: boolean | null
           pipeline_run_id?: string | null
           publish_attempted_at?: string | null
@@ -523,6 +531,7 @@ export type Database = {
           review_requested_at?: string | null
           reviewed_at?: string | null
           scheduled_at?: string | null
+          seo_tags?: Json | null
           status?: Database["public"]["Enums"]["post_status"]
           tags?: string[] | null
           title?: string
@@ -955,6 +964,7 @@ export type Database = {
         | "linkedin"
         | "website"
         | "podcast"
+        | "rumble"
       post_status:
         | "draft"
         | "scheduled"
@@ -1120,6 +1130,7 @@ export const Constants = {
         "linkedin",
         "website",
         "podcast",
+        "rumble",
       ],
       post_status: [
         "draft",
