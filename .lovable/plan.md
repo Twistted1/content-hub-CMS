@@ -1,71 +1,73 @@
-## Plan: Close out items 1–3 (Pricing, Publishing, Stability)
+## Goal
 
-Three sequential workstreams. You can approve all three or tell me to stop after any phase.
+Make the workflow actually run end-to-end, every day, with no manual babysitting:
 
----
-
-### Phase 1 — Pricing restructure (Free / Starter $10 / Pro $20)
-
-**Stripe products** (I create via tool):
-- Content Hub Starter — $10/mo and $96/yr (~20% off)
-- Content Hub Pro — $20/mo and $192/yr (~20% off)
-- (Old $29 Pro and $99 Enterprise products left inactive in Stripe so existing subs keep working.)
-
-**DB migration**
-- Extend `subscription_tier` enum to add `'starter'` (keeping `free`, `pro`; deprecating `enterprise` from UI but enum stays intact for back-compat).
-
-**Edge functions**
-- `create-checkout`: replace `PRICE_IDS` with new map keyed by `{ plan: 'starter'|'pro', billing: 'monthly'|'yearly' }`; accept both in body.
-- `check-subscription`: map returned `price.id` → tier (`starter`/`pro`) and include `billing_interval` in response.
-
-**Frontend**
-- `src/pages/Pricing.tsx`: new 3-tier layout (Free / Starter / Pro), monthly↔yearly toggle showing "Save ~20%", remove Enterprise card, replace with a small "Need more? Contact us" link.
-- `src/pages/Landing.tsx`: update pricing teaser cards to match.
-- `src/hooks/useSubscription.ts`: `SubscriptionTier = 'free' | 'starter' | 'pro'`; `createCheckout(plan, billing)`.
-- Anywhere that gates by `tier === 'enterprise'` → fold into `'pro'`.
-
-**Feature gating** (Starter vs Pro)
 ```text
-Free     → 3 platforms,  50 posts/mo,  Novee 10/day
-Starter  → 6 platforms, 300 posts/mo,  Novee 100/day, basic automations
-Pro      → unlimited platforms & posts, unlimited Novee, full automations, API
+src/data/platforms/*.json (weekly schedule)
+        │
+        ▼  every 15 min, pg_cron
+[schedule-from-templates edge fn]
+        │  finds upcoming slots in next 24h that don't have a post yet
+        ▼
+[content-pipeline edge fn] (Gemini text + image)
+        │
+        ▼
+posts.status = 'awaiting_review'  ──►  Review Inbox (UI)
+        │  user approves
+        ▼
+posts.status = 'scheduled'
+        │  at scheduled_at, pg_cron
+[publish-post edge fn]
+        │
+        ├── LinkedIn API (token in platform_oauth_tokens)
+        ├── X API         (token in platform_oauth_tokens)
+        └── webhook_configs (Zapier/Make) for IG, FB, TikTok, YouTube, Rumble, Podcast, Website
 ```
-Confirm or override these limits when approving.
 
----
+## What's broken right now (verified)
 
-### Phase 2 — External publishing decision
+1. `project_settings` has no `supabase_url`/`supabase_anon_key` columns, so all 3 pg_cron jobs hit `IF ... IS NOT NULL` and exit silently — **nothing has ever run**.
+2. `execute-automation-1min` cron points to a function that doesn't exist.
+3. Even if cron fired, `run-scheduled-automations` and `scheduled-pipeline` require a `service_role` Bearer that cron can't safely store in plaintext.
+4. No `platform_oauth_tokens` rows — LinkedIn/X re-auth didn't persist (likely a callback bug, separate fix).
+5. There is no code that reads the per-platform JSON schedules; the existing pipeline only fires when an `automations` row exists, and there are zero.
 
-Currently "publishing" just fires a webhook (Zapier/Make). Three viable paths — pick one when approving:
+## Fix — 4 steps
 
-| Option | What it means | Effort |
-|---|---|---|
-| A. Keep webhooks only | Document Zapier/Make recipes, polish UI copy so users know it's BYO-automation. | Low |
-| B. Direct OAuth for 1–2 platforms | Implement real publishing for **LinkedIn + X** first (secrets already exist). YouTube/TikTok/IG/FB later. | Medium |
-| C. Hybrid (recommended) | Ship B for LinkedIn + X now, keep webhooks as fallback for the others, mark them "Beta — via webhook" in the UI. | Medium |
+### Step 1 — Cron plumbing (migration + insert)
 
-My recommendation: **C**. Default plan assumes C unless you say otherwise.
+- Drop the broken `execute-automation-1min` job.
+- Store the service-role key in Supabase Vault: `vault.create_secret('<SR>', 'service_role_key')`.
+- Rewrite the two remaining cron jobs to read the secret from Vault and POST with `Authorization: Bearer <service_role>`. Hard-code the project URL `https://jvbucspwcjahqpoxskvr.supabase.co`.
+- Add a 3rd job: `publish-due-posts` every minute — calls a new edge function that publishes any `posts.status='scheduled'` with `scheduled_at <= now()`.
 
----
+### Step 2 — New edge function: `schedule-from-templates`
 
-### Phase 3 — Stability pass
+- Imports the 7 platform JSONs (`youtube`, `twitter`, `instagram`, `facebook`, `linkedin`, `tiktok`, `rumble`, `website`) — bundled at deploy time.
+- For each user with `automations.status='active' AND trigger='scheduled'`, walks the next 24 h of weekly slots.
+- For each slot with no existing post (`posts` lookup by `user_id + platform + scheduled_at`), calls `content-pipeline` with `scheduleMode='awaiting_review'` so it lands in the Review Inbox.
+- Replaces `run-scheduled-automations` (kept for legacy until verified).
 
-- Run `security--run_security_scan` and fix any new findings.
-- Run `supabase--linter` and resolve warnings.
-- Sweep `useSubscription` consumers for the removed `'enterprise'` literal (TS will surface them).
-- Smoke-test critical flows: signup → checkout (Starter monthly) → dashboard → create post → schedule → publish (webhook path).
-- Verify cron jobs (`scheduled-pipeline`, `run-scheduled-automations`) still authenticate after the recent SERVICE_ROLE lockdown.
-- Tidy: remove dead Enterprise references, update i18n strings (PT primary), update pricing memory.
+### Step 3 — New edge function: `publish-due-posts`
 
----
+- Selects `posts` where `status='scheduled' AND scheduled_at <= now() AND publish_attempted_at IS NULL` (lock with `UPDATE ... RETURNING`).
+- For each `post_platforms` row: invokes existing `publish-post` for LinkedIn/X; for others, POSTs to matching `webhook_configs` rows.
+- Updates `posts.status` to `published` (or `failed` with `publish_error`).
 
-### Manual actions you'll still need to do
-1. Enable **Leaked Password Protection** in Supabase Auth dashboard.
-2. (If choosing B/C) Configure LinkedIn + X OAuth redirect URIs in their developer dashboards — I'll give exact URLs.
-3. In Stripe dashboard, archive the old $29/$99 prices once you confirm no active subs remain on them.
+### Step 4 — UI: one-click "Activate weekly schedule"
 
----
+- On the Automation page, a new top card: **"Run my weekly schedule"** — creates one `automations` row per user with `trigger='scheduled'`, `status='active'`, `platforms=['youtube','twitter','instagram','facebook','linkedin','tiktok','rumble','website']`. That single row is what `schedule-from-templates` keys on.
+- Surface the next 10 upcoming slots (read from JSON + posts table) so the user can see what's coming.
 
-**Reply with:**
-- "Go" → I execute all three phases with defaults (Hybrid publishing, gating limits above).
-- Or specify changes (different limits, Option A/B for publishing, skip Phase 3, etc.).
+## Out of scope (do next, not this turn)
+
+- Fixing the LinkedIn / X OAuth callback so `platform_oauth_tokens` actually gets rows. Without those, publishing falls back to webhook only.
+- Podcast/Rumble direct integrations (webhook is the path for now).
+- Backlog cleanup of the 101 `awaiting_review` posts (separate review action).
+
+## Technical notes
+
+- All edge functions keep `verify_jwt=false`, validate `Authorization: Bearer <service_role>` from cron, and validate JWT for user-initiated calls.
+- Idempotency: `schedule-from-templates` keys on `(user_id, platform, scheduled_at)` so re-runs in the same 15 min window create nothing new.
+- `publish-due-posts` uses a `publish_attempted_at IS NULL` filter so a row never gets double-published.
+- All cron commands stored via the supabase **insert** tool (not migration) because they contain a secret pointer.
