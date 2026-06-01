@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 /**
@@ -21,16 +21,22 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Restrict to service-role callers (cron / internal triggers only)
+    const adminClient = createClient(supabaseUrl, serviceKey);
+
+    // Restrict to service-role callers OR pg_cron with x-cron-secret.
     const authHeader = req.headers.get("Authorization");
-    if (authHeader !== `Bearer ${serviceKey}`) {
+    const cronHeader = req.headers.get("x-cron-secret");
+    let authorized = authHeader === `Bearer ${serviceKey}`;
+    if (!authorized && cronHeader) {
+      const { data } = await adminClient.rpc("get_cron_secret");
+      authorized = !!data && data === cronHeader;
+    }
+    if (!authorized) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const adminClient = createClient(supabaseUrl, serviceKey);
 
     // --- Act II: The Worker (Frugal Architect Logic) ---
     const calculateMonthlySpend = async (supabase: any) => {
