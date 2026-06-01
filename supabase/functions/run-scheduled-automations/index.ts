@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 function computeNextRun(schedule: string | null | undefined, from: Date): Date {
@@ -34,16 +34,22 @@ serve(async (req) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-  // Restrict to service-role callers (cron / internal). Public callers are forbidden.
+  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+  // Restrict to service-role callers OR pg_cron with x-cron-secret.
   const authHeader = req.headers.get("Authorization");
-  if (authHeader !== `Bearer ${SERVICE_ROLE}`) {
+  const cronHeader = req.headers.get("x-cron-secret");
+  let authorized = authHeader === `Bearer ${SERVICE_ROLE}`;
+  if (!authorized && cronHeader) {
+    const { data } = await supabase.rpc("get_cron_secret");
+    authorized = !!data && data === cronHeader;
+  }
+  if (!authorized) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-
-  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
   const summary: Array<Record<string, unknown>> = [];
 
