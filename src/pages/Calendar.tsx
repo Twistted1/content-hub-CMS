@@ -517,6 +517,16 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
 
   const isEditing = !!event;
 
+  const limit = getPlatformLimit(platform);
+  const captionLen = caption.length;
+  const captionMax = limit?.caption ?? 0;
+  const captionOver = limit ? captionLen > captionMax : false;
+  const captionPct = limit ? Math.min(100, (captionLen / captionMax) * 100) : 0;
+
+  const hashtagCount = hashtags.split(/\s+/).filter((t: string) => t.startsWith("#")).length;
+  const hashtagMax = limit?.hashtags;
+  const hashtagOver = hashtagMax ? hashtagCount > hashtagMax : false;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
@@ -556,24 +566,51 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
 
           {/* Caption / Main body */}
           <div>
-            <label className={LABEL_CLS}>Caption / Content Body</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className={LABEL_CLS}>Caption / Content Body</label>
+              {limit && (
+                <span className={`text-[10px] font-mono font-bold tabular-nums ${captionOver ? "text-destructive" : captionPct > 85 ? "text-amber-400" : "text-muted-foreground"}`}>
+                  {captionLen.toLocaleString()} / {captionMax.toLocaleString()} chars · {limit.label}
+                </span>
+              )}
+            </div>
             <textarea
               value={caption}
               onChange={e => setCaption(e.target.value)}
               rows={4}
               placeholder="Write your post caption, article intro, or video script hook here…"
-              className={`${INPUT_CLS} resize-none leading-relaxed`}
+              className={`${INPUT_CLS} resize-none leading-relaxed ${captionOver ? "border-destructive focus:border-destructive" : ""}`}
             />
+            {limit && (
+              <div className="mt-1.5 h-1 w-full rounded-full bg-muted/40 overflow-hidden">
+                <div
+                  className={`h-full transition-all ${captionOver ? "bg-destructive" : captionPct > 85 ? "bg-amber-400" : "bg-primary"}`}
+                  style={{ width: `${captionPct}%` }}
+                />
+              </div>
+            )}
+            {captionOver && (
+              <p className="mt-1 text-[10px] text-destructive font-bold">
+                Exceeds {limit?.label} limit by {(captionLen - captionMax).toLocaleString()} characters
+              </p>
+            )}
           </div>
 
           {/* Hashtags */}
           <div>
-            <label className={LABEL_CLS}>Hashtags</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className={LABEL_CLS}>Hashtags</label>
+              {hashtagMax && (
+                <span className={`text-[10px] font-mono font-bold tabular-nums ${hashtagOver ? "text-destructive" : "text-muted-foreground"}`}>
+                  {hashtagCount} / {hashtagMax} tags
+                </span>
+              )}
+            </div>
             <input
               value={hashtags}
               onChange={e => setHashtags(e.target.value)}
               placeholder="#contentmarketing #socialmedia #growthhacking"
-              className={INPUT_CLS}
+              className={`${INPUT_CLS} ${hashtagOver ? "border-destructive focus:border-destructive" : ""}`}
             />
           </div>
 
