@@ -11,6 +11,7 @@ import { Loader2, Chrome } from 'lucide-react';
 import { z } from 'zod';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
@@ -28,6 +29,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Support ?tab=signup or ?tab=signin to deep-link to a specific tab
   const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
@@ -66,7 +68,16 @@ export default function Auth() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (!termsAccepted) {
+      toast({
+        title: "Terms Required",
+        description: "Please accept the Terms of Service and Privacy Policy to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const validation = authSchema.safeParse({ email, password, fullName });
     if (!validation.success) {
       toast({
@@ -206,7 +217,21 @@ export default function Auth() {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="terms"
+                    checked={termsAccepted}
+                    onCheckedChange={(v) => setTermsAccepted(v === true)}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="terms" className="text-xs text-muted-foreground leading-snug cursor-pointer">
+                    I agree to the{' '}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline text-primary">Terms of Service</a>
+                    {' '}and{' '}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline text-primary">Privacy Policy</a>
+                  </label>
+                </div>
+                <Button type="submit" className="w-full" disabled={isSubmitting || !termsAccepted}>
                   {isSubmitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (

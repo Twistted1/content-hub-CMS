@@ -18,7 +18,7 @@ export function useSubscription() {
     subscribed: false,
     tier: 'free',
     subscriptionEnd: null,
-    isLoading: false,
+    isLoading: true,
     error: null,
   });
 
