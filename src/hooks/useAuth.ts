@@ -31,6 +31,9 @@ async function signInPreviewDemo() {
 
       if (sessionError) throw sessionError;
       return sessionData.session;
+    }).finally(() => {
+      // Only de-dupe concurrent in-flight calls; allow retries after completion
+      previewDemoLoginPromise = null;
     }).catch((error) => {
       previewDemoLoginPromise = null;
       throw error;
