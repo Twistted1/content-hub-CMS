@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(npm run dev)",
+      "Bash(npm run dev -- *)",
+      "Bash(git clone *)",
+      "Bash(git fetch *)",
+      "Bash(git -C *)",
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_start",
+      "mcp__Claude_Preview__preview_snapshot",
+      "mcp__Claude_Preview__preview_console_logs",
+      "mcp__Claude_Preview__preview_stop",
+      "mcp__Claude_Preview__preview_logs",
+      "mcp__Claude_Preview__preview_list",
+      "mcp__Claude_Preview__preview_resize",
+      "mcp__Claude_Preview__preview_click",
+      "mcp__Claude_Preview__preview_fill",
+      "mcp__Claude_Preview__preview_eval",
+      "mcp__Claude_Preview__preview_network",
+      "mcp__Claude_Preview__preview_inspect",
+      "mcp__9c23979b-9082-4690-89e9-985db43930e6__get_logs",
+      "mcp__9c23979b-9082-4690-89e9-985db43930e6__list_edge_functions",
+      "mcp__9c23979b-9082-4690-89e9-985db43930e6__list_tables",
+      "mcp__9c23979b-9082-4690-89e9-985db43930e6__list_migrations",
+      "mcp__9c23979b-9082-4690-89e9-985db43930e6__get_project",
+      "mcp__9c23979b-9082-4690-89e9-985db43930e6__get_project_url",
+      "mcp__9c23979b-9082-4690-89e9-985db43930e6__get_advisors",
+      "mcp__4394b466-01fb-4131-8fb4-1a9d60c962bb__list_teams",
+      "mcp__4394b466-01fb-4131-8fb4-1a9d60c962bb__list_projects",
+      "mcp__4394b466-01fb-4131-8fb4-1a9d60c962bb__list_deployments",
+      "mcp__4394b466-01fb-4131-8fb4-1a9d60c962bb__get_deployment",
+      "mcp__4394b466-01fb-4131-8fb4-1a9d60c962bb__get_project"
+    ]
+  }
+}
