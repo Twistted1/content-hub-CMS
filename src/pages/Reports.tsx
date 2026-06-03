@@ -120,13 +120,13 @@ export default function Reports() {
     setDeleteReportTarget(null);
   };
 
-  const handleSchedule = (report: ReportCardType) => {
-    toast.info(`Opening schedule options for "${report.name}"`);
+  const handleSchedule = (_report: ReportCardType) => {
+    // Open the create dialog pre-filled for editing schedule — for now opens create
+    setCreateDialogOpen(true);
   };
 
-  const handleQuickTemplate = (templateName: string) => {
+  const handleQuickTemplate = (_templateName: string) => {
     setCreateDialogOpen(true);
-    toast.info(`Template "${templateName}" selected`);
   };
 
   if (isLoading) {

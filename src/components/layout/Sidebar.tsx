@@ -32,7 +32,7 @@ const mainNavItems = [
   { icon: Calendar, labelKey: "nav.calendar", href: "/calendar" },
   { icon: StickyNote, labelKey: "nav.notes", href: "/notes" },
   { icon: Target, labelKey: "nav.strategies", href: "/strategies" },
-  { icon: GanttChart, labelKey: "nav.contentModels", href: "/models" },
+  { icon: GanttChart, labelKey: "nav.ganttChart", href: "/gantt" },
 ];
 
 const toolsNavItems = [
