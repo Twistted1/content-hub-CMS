@@ -52,6 +52,25 @@ const MONTHS = ["January","February","March","April","May","June","July","August
 const DAYS = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
 const DAYS_SHORT = ["S","M","T","W","T","F","S"];
 
+/* ── per-platform character limits ──────────────────────── */
+const PLATFORM_LIMITS: Record<string, { caption: number; hashtags?: number; label: string }> = {
+  twitter:   { caption: 280,   label: "X (Twitter)" },
+  x:         { caption: 280,   label: "X (Twitter)" },
+  instagram: { caption: 2200,  hashtags: 30, label: "Instagram" },
+  facebook:  { caption: 63206, label: "Facebook" },
+  linkedin:  { caption: 3000,  label: "LinkedIn" },
+  tiktok:    { caption: 2200,  hashtags: 100, label: "TikTok" },
+  youtube:   { caption: 5000,  label: "YouTube" },
+  threads:   { caption: 500,   label: "Threads" },
+  rumble:    { caption: 5000,  label: "Rumble" },
+  website:   { caption: 100000,label: "Website" },
+  podcast:   { caption: 4000,  label: "Podcast" },
+};
+
+function getPlatformLimit(platform: string) {
+  return PLATFORM_LIMITS[platform?.toLowerCase()] ?? null;
+}
+
 /* ── category / platform config ─────────────────────────── */
 
 type CatKey = "content" | "publish" | "meeting" | "deadline" | "personal" | "awaiting_review";
