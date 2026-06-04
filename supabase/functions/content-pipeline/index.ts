@@ -169,8 +169,20 @@ Return ONLY JSON.`;
     });
 
     const contentData = await contentResponse.json();
-    const generatedContent = JSON.parse(contentData.choices?.[0]?.message?.content || "{}");
-    
+    let generatedContent: any = {};
+    try {
+      generatedContent = JSON.parse(contentData.choices?.[0]?.message?.content || "{}");
+    } catch (parseErr) {
+      console.error("Failed to parse OpenAI JSON, using fallback:", parseErr);
+      generatedContent = {};
+    }
+
+    // Safe fallbacks so the post insert never violates NOT NULL constraints
+    const safeTitle = (generatedContent.title && String(generatedContent.title).trim()) || topic.slice(0, 80);
+    const safeContent = (generatedContent.content && String(generatedContent.content).trim()) || topic;
+    generatedContent.title = safeTitle;
+    generatedContent.content = safeContent;
+
     // Estimate Cost: GPT-4o tokens (approx $0.01)
     let estimatedCost = 0.01;
 
