@@ -160,13 +160,13 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
   const done = todayEvents.filter((e: CalEvent) => e.completed).length;
 
   return (
-    <aside className="flex flex-col gap-5 overflow-y-auto pb-6 h-full pr-1 custom-scrollbar">
+    <aside className="flex flex-col gap-3 overflow-y-auto pb-4 h-full pr-1 custom-scrollbar">
       <MiniCal current={miniMonth} selected={selectedDate} events={events} onSelect={onSelectDate} onNav={onNavMonth} />
 
       {/* Filter by type */}
-      <div className="glass-card rounded-2xl p-4">
-        <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] mb-4 px-1">Filter Stream</h3>
-        <div className="space-y-1.5">
+      <div className="glass-card rounded-2xl p-3">
+        <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] mb-2 px-1">Filter Stream</h3>
+        <div className="space-y-0.5">
           {FILTERS.map(f => {
             const active = filter === f.value;
             const count = f.value === "all" ? events.length : events.filter((e: CalEvent) => e.category === f.value).length;
@@ -175,16 +175,16 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
               <button
                 key={f.value}
                 onClick={() => onFilter(f.value)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all group
-                  ${active ? "bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5" : "text-muted-foreground hover:bg-white/[0.03] hover:text-white"}`}
+                className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-bold transition-all group
+                  ${active ? "bg-primary/10 text-primary border border-primary/20" : "text-muted-foreground hover:bg-white/[0.03] hover:text-white"}`}
               >
-                <span className="flex items-center gap-3">
-                  <span className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${cat ? cat.iconBg : "bg-white/[0.05]"} ${active ? "scale-110" : "group-hover:scale-105"}`}>
-                    {cat ? <cat.Icon className={`w-4 h-4 ${cat.iconColor}`} /> : <Diamond className="w-4 h-4 text-primary" />}
+                <span className="flex items-center gap-2">
+                  <span className={`w-5 h-5 flex items-center justify-center rounded-lg transition-all ${cat ? cat.iconBg : "bg-white/[0.05]"}`}>
+                    {cat ? <cat.Icon className={`w-3 h-3 ${cat.iconColor}`} /> : <Diamond className="w-3 h-3 text-primary" />}
                   </span>
                   {f.label}
                 </span>
-                <span className={`text-[10px] px-2.5 py-1 rounded-lg font-black transition-all ${active ? "bg-primary/20 text-primary" : "bg-white/[0.05] text-muted-foreground"}`}>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-black transition-all ${active ? "bg-primary/20 text-primary" : "bg-white/[0.05] text-muted-foreground"}`}>
                   {count}
                 </span>
               </button>

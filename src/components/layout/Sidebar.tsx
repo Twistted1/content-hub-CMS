@@ -106,7 +106,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-72 bg-[#05060b]/80 backdrop-blur-2xl border-r border-white/[0.06] flex flex-col premium-shadow">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-56 bg-[#05060b]/80 backdrop-blur-2xl border-r border-white/[0.06] flex flex-col premium-shadow">
       <div className="flex items-center gap-3.5 px-6 py-8">
         <div className="flex flex-col gap-[4px] justify-center cursor-pointer w-9 h-11 transition-transform hover:scale-105">
           <div className="w-full h-[5px] bg-[#e62b2b] rounded-full"></div>
