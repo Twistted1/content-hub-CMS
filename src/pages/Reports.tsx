@@ -143,7 +143,7 @@ export default function Reports() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-black tracking-tighter text-foreground">Reports</h1>
+            <h1 className="text-3xl font-black tracking-tight text-foreground">Reports</h1>
             <p className="text-muted-foreground">
               Generate and manage your business reports
             </p>

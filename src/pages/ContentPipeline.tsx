@@ -112,7 +112,7 @@ export default function ContentPipeline() {
       <div className="space-y-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Content Pipeline</h1>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Content Pipeline</h1>
           <p className="text-sm text-muted-foreground font-medium max-w-xl opacity-60">
             Advanced neural-orchestration. From initial conceptualization to global multi-platform publication.
           </p>

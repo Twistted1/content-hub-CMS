@@ -849,8 +849,8 @@ export default function ContentCalendar() {
               
               <span className="text-muted-foreground/30 hidden sm:block">|</span>
               
-              <div className="flex flex-col">
-                <h1 className="text-xl font-black text-foreground tracking-tighter uppercase leading-none">Calendar</h1>
+              <div className="flex flex-col shrink-0">
+                <h1 className="text-xl font-black text-foreground tracking-tight uppercase leading-none whitespace-nowrap">Calendar</h1>
                 <span className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none mt-0.5">Content Hub</span>
               </div>
             </div>

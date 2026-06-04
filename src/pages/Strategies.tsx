@@ -207,7 +207,7 @@ const Strategies = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-black tracking-tighter text-foreground">Strategies</h1>
+            <h1 className="text-3xl font-black tracking-tight text-foreground">Strategies</h1>
             <p className="text-muted-foreground">
               Plan and track your content marketing strategies
             </p>
