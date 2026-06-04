@@ -161,6 +161,7 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
 
   return (
     <aside className="flex flex-col gap-3 overflow-y-auto pb-4 h-full pr-1 custom-scrollbar">
+      <h1 className="text-3xl font-black tracking-tight text-foreground pt-2 pb-1">Calendar</h1>
       <MiniCal current={miniMonth} selected={selectedDate} events={events} onSelect={onSelectDate} onNav={onNavMonth} />
 
       {/* Filter by type */}
@@ -881,7 +882,7 @@ export default function ContentCalendar() {
           <div className="flex-1 flex overflow-hidden">
             {/* Sidebar */}
             {sidebarOpen && (
-              <div className="w-[240px] bg-background/20 backdrop-blur-2xl border-r border-white/[0.05] p-4 shrink-0 overflow-y-auto custom-scrollbar relative z-10">
+              <div className="w-[200px] bg-background/20 backdrop-blur-2xl border-r border-white/[0.05] p-3 shrink-0 overflow-y-auto custom-scrollbar relative z-10">
                 <CalSidebar
                   events={filtered}
                   miniMonth={miniMonth}
@@ -898,10 +899,6 @@ export default function ContentCalendar() {
 
             {/* Main grid area */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-              {/* Page title */}
-              <div className="px-8 pt-5 pb-1 shrink-0">
-                <h1 className="text-3xl font-black tracking-tight text-foreground">Calendar</h1>
-              </div>
               {/* Toolbar */}
               <div className="flex-shrink-0 flex items-center justify-between px-8 py-4 border-b border-white/[0.05] bg-background/20 backdrop-blur-xl">
                 <div className="flex items-center gap-5">

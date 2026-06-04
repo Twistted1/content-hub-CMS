@@ -61,18 +61,15 @@ const NavItem = ({ icon: Icon, labelKey, href }: NavItemProps) => {
     <NavLink
       to={href}
       className={cn(
-        "group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300",
+        "group flex items-center gap-2 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-300",
         "text-muted-foreground hover:text-white hover:bg-white/[0.05] border border-transparent hover:border-white/[0.05]"
       )}
-      activeClassName="bg-white/[0.08] text-white border-white/[0.1] shadow-lg shadow-black/20"
+      activeClassName="bg-white/[0.08] text-white border-white/[0.1]"
     >
-      <div className="flex items-center gap-3">
-        <div className="p-1 rounded-lg bg-white/[0.03] group-hover:bg-primary/10 transition-colors">
-          <Icon className="h-4.5 w-4.5 group-hover:text-primary transition-colors" />
-        </div>
-        <span>{t(labelKey)}</span>
+      <div className="p-1 rounded-md bg-white/[0.03] group-hover:bg-primary/10 transition-colors shrink-0">
+        <Icon className="h-3.5 w-3.5 group-hover:text-primary transition-colors" />
       </div>
-      <ChevronRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-40 -translate-x-2 group-hover:translate-x-0 transition-all" />
+      <span className="truncate">{t(labelKey)}</span>
     </NavLink>
   );
 };
@@ -106,8 +103,8 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-56 bg-[#05060b]/80 backdrop-blur-2xl border-r border-white/[0.06] flex flex-col premium-shadow">
-      <div className="flex items-center gap-3.5 px-6 py-8">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-44 bg-[#05060b]/80 backdrop-blur-2xl border-r border-white/[0.06] flex flex-col premium-shadow">
+      <div className="flex items-center gap-2 px-3 py-5">
         <div className="flex flex-col gap-[4px] justify-center cursor-pointer w-9 h-11 transition-transform hover:scale-105">
           <div className="w-full h-[5px] bg-[#e62b2b] rounded-full"></div>
           <div className="w-full h-[5px] bg-white rounded-full"></div>
@@ -125,7 +122,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-4 space-y-9 custom-scrollbar">
+      <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-5 custom-scrollbar">
         <NavSection title={t("nav.main")} items={mainNavItems} />
         <NavSection title={t("nav.tools")} items={toolsNavItems} />
         <NavSection title={t("nav.admin")} items={adminNavItems} />
