@@ -121,16 +121,16 @@ const FILTERS: { value: string; label: string; cat?: CatKey }[] = [
 function MiniCal({ current, selected, events, onSelect, onNav }: { current: Date; selected: Date; events: CalEvent[]; onSelect: (d: Date) => void; onNav: (dir: number) => void }) {
   const days = getDaysInMonth(current.getFullYear(), current.getMonth());
   return (
-    <div className="glass-card rounded-2xl p-4 mb-6">
-      <div className="flex items-center justify-between mb-5 px-1">
-        <button onClick={() => onNav(-1)} aria-label="Previous Month" className="w-8 h-8 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">‹</button>
-        <span className="text-xs font-black text-white tracking-[0.2em] uppercase">{MONTHS[current.getMonth()].slice(0,3)} {current.getFullYear()}</span>
-        <button onClick={() => onNav(1)} aria-label="Next Month" className="w-8 h-8 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">›</button>
+    <div className="glass-card rounded-2xl p-3 mb-4 mx-auto w-full">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <button onClick={() => onNav(-1)} aria-label="Previous Month" className="w-6 h-6 rounded-lg text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all text-sm">‹</button>
+        <span className="text-[10px] font-black text-white tracking-[0.2em] uppercase">{MONTHS[current.getMonth()].slice(0,3)} {current.getFullYear()}</span>
+        <button onClick={() => onNav(1)} aria-label="Next Month" className="w-6 h-6 rounded-lg text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all text-sm">›</button>
       </div>
-      <div className="grid grid-cols-7 mb-2">
-        {DAYS_SHORT.map((d, i) => <div key={i} className="text-center text-[10px] text-muted-foreground font-black py-1">{d}</div>)}
+      <div className="grid grid-cols-7 mb-1">
+        {DAYS_SHORT.map((d, i) => <div key={i} className="text-center text-[9px] text-muted-foreground font-black py-0.5">{d}</div>)}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5">
         {days.map((day, i) => {
           const sel = isSame(day, selected);
           const today = isToday(day);
@@ -140,11 +140,11 @@ function MiniCal({ current, selected, events, onSelect, onNav }: { current: Date
             <button
               key={i}
               onClick={() => onSelect(new Date(day))}
-              className={`relative flex items-center justify-center w-8 h-8 mx-auto rounded-xl text-xs font-bold transition-all
+              className={`relative flex items-center justify-center w-6 h-6 mx-auto rounded-lg text-[10px] font-bold transition-all
                 ${today ? "bg-primary text-white shadow-lg shadow-primary/30" : sel ? "bg-white/20 text-white" : inMonth ? "text-muted-foreground hover:bg-white/5 hover:text-white" : "text-white/10"}`}
             >
               {day.getDate()}
-              {hasEvt && !today && <span className="absolute bottom-1 w-1 h-1 rounded-full bg-primary/60" />}
+              {hasEvt && !today && <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-primary/60" />}
             </button>
           );
         })}
@@ -881,7 +881,7 @@ export default function ContentCalendar() {
           <div className="flex-1 flex overflow-hidden">
             {/* Sidebar */}
             {sidebarOpen && (
-              <div className="w-[340px] bg-background/20 backdrop-blur-2xl border-r border-white/[0.05] p-8 shrink-0 overflow-y-auto custom-scrollbar relative z-10">
+              <div className="w-[240px] bg-background/20 backdrop-blur-2xl border-r border-white/[0.05] p-4 shrink-0 overflow-y-auto custom-scrollbar relative z-10">
                 <CalSidebar
                   events={filtered}
                   miniMonth={miniMonth}
@@ -898,6 +898,10 @@ export default function ContentCalendar() {
 
             {/* Main grid area */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+              {/* Page title */}
+              <div className="px-8 pt-5 pb-1 shrink-0">
+                <h1 className="text-3xl font-black tracking-tight text-foreground">Calendar</h1>
+              </div>
               {/* Toolbar */}
               <div className="flex-shrink-0 flex items-center justify-between px-8 py-4 border-b border-white/[0.05] bg-background/20 backdrop-blur-xl">
                 <div className="flex items-center gap-5">
