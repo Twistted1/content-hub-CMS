@@ -880,6 +880,48 @@ export type Database = {
           },
         ]
       }
+      user_platforms: {
+        Row: {
+          account_name: string
+          avatar_url: string | null
+          created_at: string
+          id: string
+          last_sync: string | null
+          platform_type: Database["public"]["Enums"]["platform_type"]
+          settings: Json
+          status: string
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          account_name: string
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          last_sync?: string | null
+          platform_type: Database["public"]["Enums"]["platform_type"]
+          settings?: Json
+          status?: string
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          account_name?: string
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          last_sync?: string | null
+          platform_type?: Database["public"]["Enums"]["platform_type"]
+          settings?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
