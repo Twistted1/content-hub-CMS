@@ -14,15 +14,8 @@ export default function ContentModel() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 rounded-2xl bg-primary/10 border border-primary/20 text-primary">
-                <GanttChart className="h-6 w-6" />
-              </div>
-              <h1 className="text-xl font-black tracking-tighter text-foreground uppercase italic px-4 bg-gradient-to-r from-primary/20 to-transparent border-l-4 border-primary inline-block">
-                Content Models
-              </h1>
-            </div>
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground mt-2 opacity-60 ml-2">
+            <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Content Models</h1>
+            <p className="text-sm text-muted-foreground font-medium opacity-60">
               Schema Definition & Architectural Mapping
             </p>
           </div>
