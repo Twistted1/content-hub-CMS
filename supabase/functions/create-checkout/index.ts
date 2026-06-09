@@ -69,7 +69,18 @@ serve(async (req) => {
       logStep("Found existing customer", { customerId });
     }
 
-    const origin = req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://localhost:8080";
+    // Build redirect URLs from a server-controlled allowlist to prevent open-redirect attacks
+    // via a caller-controlled Origin header.
+    const ALLOWED_ORIGINS = new Set<string>(
+      [
+        Deno.env.get("SITE_URL"),
+        "https://id-preview--31c64459-d7d6-45e8-9eeb-bedede902146.lovable.app",
+      ].filter((v): v is string => !!v),
+    );
+    const requestOrigin = req.headers.get("origin") ?? "";
+    const origin = ALLOWED_ORIGINS.has(requestOrigin)
+      ? requestOrigin
+      : (Deno.env.get("SITE_URL") || "https://id-preview--31c64459-d7d6-45e8-9eeb-bedede902146.lovable.app");
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create({

@@ -49,7 +49,17 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    const origin = req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://localhost:8080";
+    // Validate caller-supplied Origin against an allowlist to prevent open redirects.
+    const ALLOWED_ORIGINS = new Set<string>(
+      [
+        Deno.env.get("SITE_URL"),
+        "https://id-preview--31c64459-d7d6-45e8-9eeb-bedede902146.lovable.app",
+      ].filter((v): v is string => !!v),
+    );
+    const requestOrigin = req.headers.get("origin") ?? "";
+    const origin = ALLOWED_ORIGINS.has(requestOrigin)
+      ? requestOrigin
+      : (Deno.env.get("SITE_URL") || "https://id-preview--31c64459-d7d6-45e8-9eeb-bedede902146.lovable.app");
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/dashboard`,
