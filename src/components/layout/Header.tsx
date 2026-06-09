@@ -4,36 +4,10 @@ import { Button } from "@/components/ui/button";
 import { NotificationsDropdown } from "@/components/header/NotificationsDropdown";
 import { UserDropdown } from "@/components/header/UserDropdown";
 import { SearchCommand } from "@/components/header/SearchCommand";
-import { useLocation } from "react-router-dom";
-
-const routeTitles: Record<string, string> = {
-  "/dashboard": "Overview",
-  "/automation": "Automation",
-  "/platforms": "Platforms",
-  "/calendar": "Calendar",
-  "/articles": "Articles",
-  "/projects": "Projects",
-  "/strategies": "Strategies",
-  "/notes": "Notes",
-  "/analytics": "Analytics",
-  "/reports": "Reports",
-  "/gantt": "Gantt Chart",
-  "/templates": "Templates",
-  "/ai": "AI Assistant",
-  "/users": "Users",
-  "/import": "Import Data",
-  "/settings": "Settings",
-  "/pipeline": "Content Pipeline",
-  "/models": "Content Models",
-  "/workflow": "Workflow",
-};
-
 const formatTime = () =>
   new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 export function Header() {
-  const location = useLocation();
-  const title = routeTitles[location.pathname] || "Overview";
   const [time, setTime] = useState(formatTime);
 
   useEffect(() => {
@@ -50,11 +24,6 @@ export function Header() {
           <span className="font-medium text-foreground">My Workspace</span>
           <ChevronDown className="h-4 w-4" />
         </Button>
-        <span className="text-muted-foreground">|</span>
-        <div className="flex flex-col">
-          <h2 className="text-xl font-black text-foreground tracking-tighter uppercase leading-none">{title}</h2>
-          <span className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none mt-0.5">Content Hub</span>
-        </div>
       </div>
 
       {/* Search & Actions */}
