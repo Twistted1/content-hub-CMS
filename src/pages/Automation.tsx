@@ -33,6 +33,7 @@ import { AutomationCard } from "@/components/automation/AutomationCard";
 import { AutomationDialog } from "@/components/automation/AutomationDialog";
 import { AutomationHistoryDialog } from "@/components/automation/AutomationHistoryDialog";
 import { useQueryClient } from "@tanstack/react-query";
+import { CONTENT_SCHEDULE, DAYS, getCurrentPeriod, DayName } from "@/utils/scheduling";
 
 const AutomationPage = () => {
   const queryClient = useQueryClient();
@@ -246,104 +247,87 @@ const AutomationPage = () => {
 
       const items: any[] = [];
 
+      // Build items by reading the per-platform schedule JSONs (CONTENT_SCHEDULE)
+      // for the active period — guarantees the calendar matches the schedule
+      // declared in src/data/platforms/*.json.
+      const period = getCurrentPeriod(upcomingMonday);
+      const periodSchedule = CONTENT_SCHEDULE[period] || {};
+
+      const pickContent = (
+        strategy: any,
+        platform: string,
+        slotIdx: number
+      ): { title: string; content: string; image?: string } | null => {
+        if (!strategy) return null;
+        const topic = strategy.topic || "Update";
+        switch (platform) {
+          case "website":
+            if (!strategy.article) return null;
+            return { title: strategy.article.title, content: strategy.article.content, image: strategy.image };
+          case "twitter": {
+            const arr: string[] = Array.isArray(strategy.twitter) ? strategy.twitter : strategy.twitter ? [strategy.twitter] : [];
+            const tweet = arr[slotIdx] ?? arr[arr.length - 1];
+            if (!tweet) return null;
+            return { title: `X: ${topic} #${slotIdx + 1}`, content: tweet, image: strategy.image };
+          }
+          case "instagram":
+            if (!strategy.instagram) return null;
+            return { title: `IG: ${topic}`, content: strategy.instagram.caption, image: strategy.instagram.image || strategy.image };
+          case "facebook":
+            if (!strategy.facebook) return null;
+            return { title: `FB: ${topic}`, content: strategy.facebook.post, image: strategy.image };
+          case "linkedin":
+            if (!strategy.linkedin) return null;
+            return { title: `LI: ${topic}`, content: strategy.linkedin.post, image: strategy.image };
+          case "tiktok":
+            if (!strategy.tiktok) return null;
+            return { title: `TT: ${topic}`, content: strategy.tiktok.script, image: strategy.tiktok.thumbnail || strategy.image };
+          case "youtube":
+            if (!strategy.youtube) return null;
+            return { title: strategy.youtube.video_title, content: strategy.youtube.community_post, image: strategy.youtube.thumbnail || strategy.image };
+          case "rumble":
+            if (!strategy.rumble) return null;
+            return { title: `Rumble: ${topic}`, content: strategy.rumble.post, image: strategy.rumble.thumbnail || strategy.image };
+          default:
+            return null;
+        }
+      };
+
+      // Start time of an HH:mm or HH:mm-HH:mm window (use the window start).
+      const startTimeOf = (slotTime: string): string => {
+        const start = slotTime.split("-")[0];
+        const [h = "00", m = "00"] = start.split(":");
+        return `${h.padStart(2, "0")}:${m.padStart(2, "0")}:00`;
+      };
+
       content_strategy.forEach((strategy: any, dayIdx: number) => {
         const d = new Date(upcomingMonday);
         d.setDate(upcomingMonday.getDate() + dayIdx);
-        const dateStr = d.toISOString().split('T')[0];
-        const dayName = d.toLocaleDateString('en-US', { weekday: 'long' });
-        
+        const dateStr = d.toISOString().split("T")[0];
+        const dayName = DAYS[d.getDay()] as DayName;
         const wallClock = (h: string) => `${dateStr}T${h}.000Z`;
 
-        // 1. WEBSITE ARTICLE
-        if (strategy.article) {
-          items.push({
-            platform: "website",
-            title: strategy.article.title,
-            content: strategy.article.content,
-            image: strategy.image,
-            scheduled_at: wallClock("06:00:00")
-          });
-        }
+        const daySlots = periodSchedule[dayName] || [];
+        // Track per-platform slot index so multiple Twitter slots map to
+        // successive tweets from the strategy.
+        const platformSlotCount: Record<string, number> = {};
 
-        // 2. X (Twitter) - 3x Daily
-        if (strategy.twitter) {
-          const times = ["09:00:00", "13:00:00", "17:00:00"];
-          strategy.twitter.slice(0, 3).forEach((tweet: string, idx: number) => {
-            items.push({
-              platform: "twitter",
-              title: `X: ${strategy.topic} #${idx+1}`,
-              content: tweet,
-              image: strategy.image,
-              scheduled_at: wallClock(times[idx])
-            });
-          });
-        }
+        daySlots.forEach((slot) => {
+          const platform = slot.platform.toLowerCase();
+          const slotIdx = platformSlotCount[platform] ?? 0;
+          platformSlotCount[platform] = slotIdx + 1;
 
-        // 3. INSTAGRAM - 1x Daily
-        if (strategy.instagram) {
-          items.push({
-            platform: "instagram",
-            title: `IG: ${strategy.topic}`,
-            content: strategy.instagram.caption,
-            image: strategy.instagram.image,
-            scheduled_at: wallClock("11:00:00")
-          });
-        }
+          const picked = pickContent(strategy, platform, slotIdx);
+          if (!picked) return;
 
-        // 4. FACEBOOK - 1x Daily (User requested work, giving full coverage)
-        if (strategy.facebook) {
           items.push({
-            platform: "facebook",
-            title: `FB: ${strategy.topic}`,
-            content: strategy.facebook.post,
-            image: strategy.image,
-            scheduled_at: wallClock("10:00:00")
+            platform,
+            title: picked.title,
+            content: picked.content,
+            image: picked.image,
+            scheduled_at: wallClock(startTimeOf(slot.time)),
           });
-        }
-
-        // 5. LINKEDIN - 1x Daily
-        if (strategy.linkedin) {
-          items.push({
-            platform: "linkedin",
-            title: `LI: ${strategy.topic}`,
-            content: strategy.linkedin.post,
-            image: strategy.image,
-            scheduled_at: wallClock("08:30:00")
-          });
-        }
-
-        // 6. TIKTOK - 1x Daily
-        if (strategy.tiktok) {
-          items.push({
-            platform: "tiktok",
-            title: `TT: ${strategy.topic}`,
-            content: strategy.tiktok.script,
-            image: strategy.tiktok.thumbnail,
-            scheduled_at: wallClock("18:00:00")
-          });
-        }
-
-        // 7. YOUTUBE - 1x Daily
-        if (strategy.youtube) {
-          items.push({
-            platform: "youtube",
-            title: strategy.youtube.video_title,
-            content: strategy.youtube.community_post,
-            image: strategy.youtube.thumbnail,
-            scheduled_at: wallClock("15:00:00")
-          });
-        }
-
-        // 8. RUMBLE - 1x Daily
-        if (strategy.rumble) {
-          items.push({
-            platform: "rumble",
-            title: `Rumble: ${strategy.topic}`,
-            content: strategy.rumble.post,
-            image: strategy.rumble.thumbnail,
-            scheduled_at: wallClock("16:00:00")
-          });
-        }
+        });
       });
 
       setPipelineStep(2);
