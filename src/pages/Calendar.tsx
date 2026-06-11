@@ -4,14 +4,10 @@ import { usePosts } from "@/hooks/usePosts";
 import { useUJT } from "@/hooks/useUJT";
 import { DragDropImport } from "@/components/common/DragDropImport";
 import { parseISO, format } from "date-fns";
-import { NotificationsDropdown } from "@/components/header/NotificationsDropdown";
-import { UserDropdown } from "@/components/header/UserDropdown";
 import {
   ChevronLeft, ChevronRight, Plus, Search, CalendarDays, Send, AlarmClock,
   Clapperboard, Briefcase, Users as UsersIcon, Sprout, Diamond, Globe,
-  ChevronDown
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { BrandIcon } from "@/components/platforms/BrandIcon";
 
 /* ── helpers ────────────────────────────────────────────── */
