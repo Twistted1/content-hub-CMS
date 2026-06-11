@@ -67,7 +67,7 @@ const ContentModelsPage = () => {
               <span className="text-xs text-gray-500 font-medium">CONTENT HUB</span>
             </div>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight mb-2">Content Models</h1>
+          <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Content Models</h1>
           <p className="text-gray-400 max-w-2xl font-medium tracking-wide">
             Define the blueprints and data structures for your headless content delivery.
           </p>
