@@ -516,7 +516,7 @@ export default function Projects() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-black tracking-tighter text-foreground">Projects</h1>
+            <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Projects</h1>
             <p className="text-muted-foreground">
               Manage and track your content projects
             </p>
