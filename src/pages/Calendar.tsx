@@ -4,14 +4,10 @@ import { usePosts } from "@/hooks/usePosts";
 import { useUJT } from "@/hooks/useUJT";
 import { DragDropImport } from "@/components/common/DragDropImport";
 import { parseISO, format } from "date-fns";
-import { NotificationsDropdown } from "@/components/header/NotificationsDropdown";
-import { UserDropdown } from "@/components/header/UserDropdown";
 import {
   ChevronLeft, ChevronRight, Plus, Search, CalendarDays, Send, AlarmClock,
   Clapperboard, Briefcase, Users as UsersIcon, Sprout, Diamond, Globe,
-  ChevronDown
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { BrandIcon } from "@/components/platforms/BrandIcon";
 
 /* ── helpers ────────────────────────────────────────────── */
@@ -885,58 +881,41 @@ export default function ContentCalendar() {
   })();
 
   return (
-    <DashboardLayout hideHeader>
+    <DashboardLayout>
       <DragDropImport onImport={(data) => { if (data.version === "1.0") processUJT(data); }} entityName="UJT">
-        <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
+        <div className="flex h-[calc(100vh-8rem)] w-full bg-background text-foreground overflow-hidden">
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-w-0">
 
-          {/* Header */}
-          <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 relative z-20">
+          {/* Page title */}
+          <div className="flex items-center justify-between px-6 pt-2 pb-4">
             <div className="flex items-center gap-4">
-              <button 
-                onClick={() => setSidebarOpen(p => !p)} 
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-muted-foreground transition-all mr-2"
+              <button
+                onClick={() => setSidebarOpen(p => !p)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-muted-foreground transition-all"
+                aria-label="Toggle sidebar"
               >
                 {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </button>
-
-              <Button variant="ghost" className="hidden sm:flex items-center gap-2 text-muted-foreground hover:text-foreground p-0 h-auto">
-                <span className="text-[10px] uppercase tracking-wide font-bold">Workspace</span>
-                <span className="font-bold text-foreground text-sm">My Workspace</span>
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-              
-              <span className="text-muted-foreground/30 hidden sm:block">|</span>
-              
-              <div className="flex flex-col">
-                <h1 className="text-xl font-black text-foreground tracking-tighter uppercase leading-none">Calendar</h1>
-                <span className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none mt-0.5">Content Hub</span>
+              <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-0">Calendar</h1>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 w-3.5 h-3.5" />
+                <input
+                  aria-label="Search"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search strategy..."
+                  className="w-64 bg-white/[0.02] border border-white/[0.05] rounded-xl pl-10 pr-4 py-2 text-xs text-foreground placeholder-muted-foreground/40 focus:outline-none focus:border-primary/30 transition-all"
+                />
               </div>
-            </div>
-
-            <div className="flex-1 max-w-md mx-8 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 w-3.5 h-3.5" />
-              <input
-                aria-label="Search"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search strategy..."
-                className="w-full bg-white/[0.02] border border-white/[0.05] rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-all"
-              />
-            </div>
-
-            <div className="flex items-center gap-4">
               <div className="hidden lg:flex items-center gap-2">
                 <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 uppercase tracking-widest"><CalendarDays className="w-3 h-3" /> {todayCount}</span>
                 <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary/10 border border-primary/20 text-[9px] font-black text-primary uppercase tracking-widest"><Send className="w-3 h-3" /> {publishCount}</span>
               </div>
-              
-              <NotificationsDropdown />
-              <div className="w-[1px] h-4 bg-white/10 mx-1" />
-              <UserDropdown />
             </div>
-          </header>
+          </div>
           
           <div className="flex-1 flex overflow-hidden">
             {/* Sidebar */}

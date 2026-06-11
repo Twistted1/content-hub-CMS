@@ -205,7 +205,7 @@ const UsersPage = () => {
         {/* Header */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-xl font-black tracking-tighter text-foreground">Users & Permissions</h1>
+            <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Users & Permissions</h1>
             <p className="text-muted-foreground">
               Manage team members, roles, and permissions
             </p>
