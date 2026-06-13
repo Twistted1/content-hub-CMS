@@ -66,6 +66,21 @@ allPlatformSchedules.forEach((platformData) => {
 
 export const DAYS: DayName[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+// Website/Articles cycle through 7 strategic core-domain categories — one per day of the week.
+export const WEBSITE_CATEGORY_BY_DAY: Record<DayName, { category: string; focus: string }> = {
+  Monday:    { category: "Geopolitics",                 focus: "International power dynamics" },
+  Tuesday:   { category: "Economics",                   focus: "Global financial systems" },
+  Wednesday: { category: "Media",                       focus: "Narrative control / Information warfare" },
+  Thursday:  { category: "Technology",                  focus: "Surveillance / AI / Infrastructure" },
+  Friday:    { category: "Security",                    focus: "Intelligence / Defense" },
+  Saturday:  { category: "Climate",                     focus: "Resource conflicts / Policy" },
+  Sunday:    { category: "Corporate Social Responsibility", focus: "Governance / Impact" },
+};
+
+export function getWebsiteCategoryForDate(date: Date = new Date()) {
+  return WEBSITE_CATEGORY_BY_DAY[DAYS[getDay(date)]];
+}
+
 export function getCurrentPeriod(date: Date = new Date()): number {
   const weekOfMonth = getWeekOfMonth(date);
   // Cycle between 1-4
