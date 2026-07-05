@@ -186,7 +186,7 @@ export default function Articles() {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
             <div>
-              <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Articles</h1>
+              <h1 className="page-title mb-2">Articles</h1>
               <p className="text-sm text-muted-foreground font-medium max-w-xl opacity-60">
                 Compose high-impact, long-form content. Orchestrate your brand's narrative across Novus Exchange with precision.
               </p>

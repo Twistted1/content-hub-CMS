@@ -24,44 +24,44 @@ const SCHEDULES: Record<string, WeeklySchedule> = {
   instagram: {
     "1": { Monday: ["12:00"], Tuesday: ["12:00"], Wednesday: ["12:00"], Thursday: ["12:00"], Friday: ["12:00"], Saturday: ["12:00"], Sunday: ["12:00"] },
     "2": { Monday: ["13:00"], Tuesday: ["13:00"], Wednesday: ["13:00"], Thursday: ["13:00"], Friday: ["13:00"], Saturday: ["13:00"], Sunday: ["13:00"] },
-    "3": { Monday: ["12:00"], Tuesday: ["12:00"], Wednesday: ["12:00"], Thursday: ["12:00"], Friday: ["12:00"], Saturday: ["12:00"], Sunday: ["12:00"] },
-    "4": { Monday: ["13:00"], Tuesday: ["13:00"], Wednesday: ["13:00"], Thursday: ["13:00"], Friday: ["13:00"], Saturday: ["13:00"], Sunday: ["13:00"] },
+    "3": { Monday: ["14:00"], Tuesday: ["14:00"], Wednesday: ["14:00"], Thursday: ["14:00"], Friday: ["14:00"], Saturday: ["14:00"], Sunday: ["14:00"] },
+    "4": { Monday: ["15:00"], Tuesday: ["15:00"], Wednesday: ["15:00"], Thursday: ["15:00"], Friday: ["15:00"], Saturday: ["15:00"], Sunday: ["15:00"] },
   },
   facebook: {
-    "1": { Monday: ["10:00"], Wednesday: ["14:00"], Friday: ["09:00"] },
-    "2": { Monday: ["11:00"], Wednesday: ["15:00"], Friday: ["10:00"] },
-    "3": { Monday: ["12:00"], Wednesday: ["16:00"], Friday: ["11:00"] },
-    "4": { Monday: ["10:00"], Wednesday: ["14:00"], Friday: ["09:00"] },
+    "1": { Wednesday: ["14:00"] },
+    "2": { Wednesday: ["14:00"] },
+    "3": { Wednesday: ["14:00"] },
+    "4": { Wednesday: ["14:00"] },
   },
   linkedin: {
-    "1": { Tuesday: ["08:00-10:00","17:00-18:00"], Thursday: ["08:00-10:00","17:00-18:00"] },
-    "2": { Tuesday: ["08:00-10:00","17:00-18:00"], Thursday: ["08:00-10:00","17:00-18:00"] },
-    "3": { Tuesday: ["08:00-10:00","17:00-18:00"], Thursday: ["08:00-10:00","17:00-18:00"] },
-    "4": { Tuesday: ["08:00-10:00","17:00-18:00"], Thursday: ["08:00-10:00","17:00-18:00"] },
+    "1": { Tuesday: ["09:00"] },
+    "2": { Tuesday: ["09:00"] },
+    "3": { Tuesday: ["09:00"] },
+    "4": { Tuesday: ["09:00"] },
   },
   tiktok: {
-    "1": { Tuesday: ["06:00-10:00","19:00-23:00"], Thursday: ["06:00-10:00","19:00-23:00"], Friday: ["06:00-10:00","19:00-23:00"] },
-    "2": { Tuesday: ["06:00-10:00","19:00-23:00"], Thursday: ["06:00-10:00","19:00-23:00"], Friday: ["06:00-10:00","19:00-23:00"] },
-    "3": { Tuesday: ["06:00-10:00","19:00-23:00"], Thursday: ["06:00-10:00","19:00-23:00"], Friday: ["06:00-10:00","19:00-23:00"] },
-    "4": { Tuesday: ["06:00-10:00","19:00-23:00"], Thursday: ["06:00-10:00","19:00-23:00"], Friday: ["06:00-10:00","19:00-23:00"] },
+    "1": { Tuesday: ["19:00"], Thursday: ["19:00"], Friday: ["20:00"] },
+    "2": { Tuesday: ["19:00"], Thursday: ["19:00"], Friday: ["20:00"] },
+    "3": { Tuesday: ["19:00"], Thursday: ["19:00"], Friday: ["20:00"] },
+    "4": { Tuesday: ["19:00"], Thursday: ["19:00"], Friday: ["20:00"] },
   },
   youtube: {
-    "1": { Tuesday: ["12:00-15:00"], Thursday: ["12:00-15:00"] },
-    "2": { Tuesday: ["12:00-15:00"], Thursday: ["12:00-15:00"] },
-    "3": { Tuesday: ["12:00-15:00"], Thursday: ["12:00-15:00"] },
-    "4": { Tuesday: ["12:00-15:00"], Thursday: ["12:00-15:00"] },
+    "1": { Thursday: ["14:00"] },
+    "2": { Thursday: ["14:00"] },
+    "3": { Thursday: ["14:00"] },
+    "4": { Thursday: ["14:00"] },
   },
   rumble: {
-    "1": {},
-    "2": { Monday: ["15:00","17:00","19:00"], Friday: ["17:00","19:00","21:00"] },
-    "3": {},
-    "4": {},
+    "1": { Friday: ["18:00"] },
+    "2": { Friday: ["18:00"] },
+    "3": { Friday: ["18:00"] },
+    "4": { Friday: ["18:00"] },
   },
   website: {
-    "1": { Wednesday: ["10:00-14:00"], Thursday: ["10:00-14:00"] },
-    "2": { Wednesday: ["10:00-14:00"], Thursday: ["10:00-14:00"] },
-    "3": { Wednesday: ["10:00-14:00"], Thursday: ["10:00-14:00"] },
-    "4": { Wednesday: ["10:00-14:00"], Thursday: ["10:00-14:00"] },
+    "1": { Monday: ["10:00"], Tuesday: ["10:00"], Wednesday: ["10:00"], Thursday: ["10:00"], Friday: ["10:00"], Saturday: ["10:00"], Sunday: ["10:00"] },
+    "2": { Monday: ["10:00"], Tuesday: ["10:00"], Wednesday: ["10:00"], Thursday: ["10:00"], Friday: ["10:00"], Saturday: ["10:00"], Sunday: ["10:00"] },
+    "3": { Monday: ["10:00"], Tuesday: ["10:00"], Wednesday: ["10:00"], Thursday: ["10:00"], Friday: ["10:00"], Saturday: ["10:00"], Sunday: ["10:00"] },
+    "4": { Monday: ["10:00"], Tuesday: ["10:00"], Wednesday: ["10:00"], Thursday: ["10:00"], Friday: ["10:00"], Saturday: ["10:00"], Sunday: ["10:00"] },
   },
   podcast: {
     "1": { Wednesday: ["08:00"] },
@@ -72,6 +72,15 @@ const SCHEDULES: Record<string, WeeklySchedule> = {
 };
 
 const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const WEBSITE_CATEGORY_BY_DAY: Record<string, { category: string; focus: string }> = {
+  Monday: { category: "Geopolitics", focus: "International power dynamics" },
+  Tuesday: { category: "Economics", focus: "Global financial systems" },
+  Wednesday: { category: "Media", focus: "Narrative control / Information warfare" },
+  Thursday: { category: "Technology", focus: "Surveillance / AI / Infrastructure" },
+  Friday: { category: "Security", focus: "Intelligence / Defense" },
+  Saturday: { category: "Climate", focus: "Resource conflicts / Policy" },
+  Sunday: { category: "Corporate Social Responsibility", focus: "Governance / Impact" },
+};
 
 function weekOfMonth(d: Date): string {
   return String(Math.min(4, Math.ceil(d.getUTCDate() / 7)));
@@ -197,7 +206,9 @@ serve(async (req) => {
                 Authorization: `Bearer ${SERVICE_KEY}`,
               },
               body: JSON.stringify({
-                topic: `${platform.charAt(0).toUpperCase() + platform.slice(1)} post for ${slot.toUTCString()}`,
+                topic: platform === "website"
+                  ? `${WEBSITE_CATEGORY_BY_DAY[DAY_NAMES[slot.getUTCDay()]].category}: ${WEBSITE_CATEGORY_BY_DAY[DAY_NAMES[slot.getUTCDay()]].focus}`
+                  : `${platform.charAt(0).toUpperCase() + platform.slice(1)} post for ${slot.toUTCString()}`,
                 platforms: [platform],
                 scheduleMode: "awaiting_review",
                 scheduledAt: iso,

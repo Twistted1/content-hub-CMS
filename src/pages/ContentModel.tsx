@@ -14,7 +14,7 @@ export default function ContentModel() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Content Models</h1>
+            <h1 className="page-title mb-2">Content Models</h1>
             <p className="text-sm text-muted-foreground font-medium opacity-60">
               Schema Definition & Architectural Mapping
             </p>

@@ -238,7 +238,7 @@ const ImportData = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Import Data</h1>
+          <h1 className="page-title mb-2">Import Data</h1>
           <p className="text-muted-foreground mt-1">
             Upload and import content from CSV or JSON files
           </p>
