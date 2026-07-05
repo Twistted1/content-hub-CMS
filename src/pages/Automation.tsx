@@ -439,7 +439,7 @@ const AutomationPage = () => {
         {/* Simple Header */}
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Automation Console</h1>
+            <h1 className="page-title mb-2">Automation Console</h1>
             <p className="text-muted-foreground text-lg">
               Manage your autonomous content distribution and weekly strategy.
             </p>

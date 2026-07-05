@@ -93,7 +93,7 @@ export default function GanttChart() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Gantt Chart</h1>
+            <h1 className="page-title mb-2">Gantt Chart</h1>
             <p className="text-sm text-muted-foreground font-medium opacity-60">
               Visualize project timelines and dependencies
             </p>

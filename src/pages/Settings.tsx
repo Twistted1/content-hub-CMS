@@ -34,7 +34,7 @@ export default function Settings() {
             <ChevronLeft className="h-6 w-6" />
           </Button>
           <div>
-            <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-2">Settings</h1>
+            <h1 className="page-title mb-2">Settings</h1>
             <p className="text-sm text-muted-foreground font-medium opacity-60">
               Configure your neural parameters and system preferences.
             </p>
