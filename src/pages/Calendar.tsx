@@ -782,6 +782,17 @@ export default function ContentCalendar() {
   const { posts, addPost, updatePost, deletePost, schedulePost } = usePosts();
   const { processUJT } = useUJT();
 
+  const [current, setCurrent] = useState(new Date());
+  const [miniMonth, setMiniMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState("month");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalEvent | null>(null);
+  const [defaultDate, setDefaultDate] = useState<Date | undefined>(undefined);
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -840,17 +851,6 @@ export default function ContentCalendar() {
     ...postEvents,
     ...scheduleTemplateEvents.filter((event) => !postSlotKeys.has(`${event.date}-${event.startTime}-${event.platform}`)),
   ];
-
-  const [current, setCurrent] = useState(new Date());
-  const [miniMonth, setMiniMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState("month");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<CalEvent | null>(null);
-  const [defaultDate, setDefaultDate] = useState<Date | undefined>(undefined);
 
   const navigate = useCallback((dir: number) => {
     const next = new Date(current);
