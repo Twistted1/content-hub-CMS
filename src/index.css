@@ -136,6 +136,10 @@
     @apply max-w-[1400px] mx-auto px-6 md:px-10 py-10;
   }
 
+  .page-title {
+    @apply text-3xl md:text-4xl font-black tracking-tight text-foreground uppercase;
+  }
+
   .head-neon {
     @apply font-black tracking-tight uppercase;
     background: var(--grad-primary);
