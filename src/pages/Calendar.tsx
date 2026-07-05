@@ -9,6 +9,7 @@ import {
   Clapperboard, Briefcase, Users as UsersIcon, Sprout, Diamond, Globe,
 } from "lucide-react";
 import { BrandIcon } from "@/components/platforms/BrandIcon";
+import { formatSlotTime, getSlotsForDate, getWebsiteCategoryForDate } from "@/utils/scheduling";
 
 /* ── helpers ────────────────────────────────────────────── */
 
@@ -120,6 +121,7 @@ interface CalEvent {
   allDay: boolean;
   imageUrl?: string;
   caption: string;
+  isTemplate?: boolean;
 }
 
 function getEventsForDay(events: CalEvent[], day: Date) {
@@ -291,6 +293,8 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
       <div className="flex-1 grid grid-cols-7">
         {days.map((day, i) => {
           const dayEvts = getEventsForDay(events, day).filter((e: CalEvent) => categoryFilter === "all" || e.category === categoryFilter);
+          const visibleEvents = dayEvts.slice(0, 5);
+          const hiddenCount = Math.max(0, dayEvts.length - visibleEvents.length);
           const inMonth = day.getMonth() === current.getMonth();
           const today = isToday(day);
           const dayKey = fmtKey(day);
@@ -309,45 +313,56 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                 setDraggingId(null);
                 if (id && onDropEvent) onDropEvent(id, new Date(day));
               }}
-              className={`min-h-[160px] p-4 border-r border-b border-white/[0.03] cursor-pointer transition-all group relative
+              className={`min-h-[150px] p-3 border-r border-b border-white/[0.03] cursor-pointer transition-all group relative
                 ${!inMonth ? "opacity-10 pointer-events-none" : ""}
                 ${isDropTarget ? "bg-primary/10 ring-2 ring-inset ring-primary/40 shadow-[inset_0_0_50px_rgba(var(--primary),0.1)]" : today ? "bg-primary/[0.02]" : "hover:bg-white/[0.015]"}`}
             >
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex justify-between items-start mb-3">
                 <span className={`inline-flex items-center justify-center w-8 h-8 rounded-xl text-xs font-black transition-all
                   ${today ? "bg-primary text-white shadow-xl shadow-primary/40 scale-110" : inMonth ? "text-muted-foreground group-hover:text-white group-hover:scale-105" : "text-white/5"}`}>
                   {day.getDate()}
                 </span>
-                {dayEvts.length > 0 && <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />}
+                {dayEvts.length > 0 && <span className="rounded-full bg-muted px-2 py-0.5 text-[9px] font-bold text-muted-foreground">{dayEvts.length}</span>}
               </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {dayEvts.map((evt: CalEvent) => {
+              <div className="space-y-1.5">
+                {visibleEvents.map((evt: CalEvent) => {
                   const p = PLAT[evt.platform];
                   const isReview = evt.status === "awaiting_review";
                   const isDragging = draggingId === evt.id;
                   return (
                     <div
                       key={evt.id}
-                      draggable
+                      draggable={!evt.isTemplate}
                       onDragStart={(e) => {
+                        if (evt.isTemplate) return;
                         e.stopPropagation();
                         e.dataTransfer.setData("text/event-id", evt.originalId || evt.id);
                         e.dataTransfer.effectAllowed = "move";
                         setDraggingId(evt.id);
                       }}
                       onDragEnd={() => { setDraggingId(null); setDragOverKey(null); }}
-                      onClick={(e) => { e.stopPropagation(); onClickEvent(evt); }}
-                      className={`flex h-7 min-w-0 items-center gap-1.5 rounded-md px-2 text-[9px] font-black cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02] group/evt relative shadow-lg
+                      onClick={(e) => { e.stopPropagation(); if (!evt.isTemplate) onClickEvent(evt); }}
+                      className={`flex h-8 min-w-0 items-center gap-1.5 rounded-md px-2 text-[9px] font-black transition-all group/evt relative shadow-lg
                         ${p ? p.card : "bg-muted text-muted-foreground border border-border"} 
                         ${isReview ? "ring-1 ring-white/35" : ""} 
+                        ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-grab active:cursor-grabbing"}
                         ${isDragging ? "opacity-20 scale-90" : "hover:brightness-110"}`}
                     >
                       {p ? <p.Icon className="h-3.5 w-3.5 shrink-0 text-white" /> : <div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />}
                       <span className="shrink-0 opacity-85 tabular-nums">{evt.startTime ? fmtHour(evt.startTime) : "all"}</span>
-                      <span className="truncate tracking-tight">{p ? p.short : evt.title}</span>
+                      <span className="truncate tracking-tight">{evt.title}</span>
                     </div>
                   );
                 })}
+                {hiddenCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onClickDay(new Date(day)); }}
+                    className="h-7 w-full rounded-md bg-muted/60 px-2 text-left text-[10px] font-bold text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    +{hiddenCount} more
+                  </button>
+                )}
               </div>
             </div>
           );
@@ -383,8 +398,8 @@ function WeekView({ current, events, onClickEvent }: any) {
                   return (
                     <div
                       key={evt.id}
-                      onClick={() => onClickEvent(evt)}
-                      className={`px-2.5 py-2 rounded-xl text-[10px] font-bold cursor-pointer hover:brightness-125 transition-all ${barColor} border border-white/10`}
+                      onClick={() => { if (!evt.isTemplate) onClickEvent(evt); }}
+                      className={`px-2.5 py-2 rounded-xl text-[10px] font-bold transition-all ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-pointer hover:brightness-125"} ${barColor} border border-white/10`}
                     >
                       {evt.startTime && <span className="text-white/50 mr-1">{fmtHour(evt.startTime)}</span>}
                       <span className="text-white/90">{evt.title}</span>
@@ -421,8 +436,8 @@ function DayView({ current, events, onClickEvent }: any) {
           return (
             <div
               key={evt.id}
-              onClick={() => onClickEvent(evt)}
-              className={`flex gap-6 p-5 rounded-2xl cursor-pointer hover:brightness-110 transition-all border border-white/10 ${barColor}`}
+              onClick={() => { if (!evt.isTemplate) onClickEvent(evt); }}
+              className={`flex gap-6 p-5 rounded-2xl transition-all border border-white/10 ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-pointer hover:brightness-110"} ${barColor}`}
             >
               <div className="w-16 shrink-0 text-sm font-black text-white/40 tabular-nums">{evt.startTime ? fmt12(evt.startTime) : "All Day"}</div>
               <div className="flex-1">
@@ -466,8 +481,8 @@ function AgendaView({ events, onClickEvent }: any) {
                   return (
                     <div
                       key={evt.id}
-                      onClick={() => onClickEvent(evt)}
-                      className={`flex items-center gap-4 p-4 rounded-xl border border-white/5 cursor-pointer hover:brightness-110 transition-all ${barColor}`}
+                      onClick={() => { if (!evt.isTemplate) onClickEvent(evt); }}
+                      className={`flex items-center gap-4 p-4 rounded-xl border border-white/5 transition-all ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-pointer hover:brightness-110"} ${barColor}`}
                     >
                       <div className="w-14 text-xs font-bold text-white/40 tabular-nums">{evt.startTime || "00:00"}</div>
                       <div className="flex-1 font-bold text-white truncate">{evt.title}</div>
@@ -778,25 +793,53 @@ export default function ContentCalendar() {
     e.target.value = "";
   };
 
+  const scheduleTemplateEvents: CalEvent[] = getDaysInMonth(current.getFullYear(), current.getMonth()).flatMap((day) => {
+    if (day.getMonth() !== current.getMonth()) return [];
+
+    return getSlotsForDate(day).map((slot) => ({
+      id: `template-${fmtKey(day)}-${slot.platform}-${slot.time}`,
+      originalId: `template-${fmtKey(day)}-${slot.platform}-${slot.time}`,
+      title: slot.platform === "website" ? slot.category || "Website" : slot.label,
+      description: slot.focus || "Scheduled from weekly platform template",
+      date: fmtKey(day),
+      startTime: slot.time.split("-")[0],
+      category: "content",
+      status: "template",
+      platform: slot.platform,
+      completed: false,
+      allDay: false,
+      caption: "",
+      isTemplate: true,
+    }));
+  });
+
   // Map DB posts → calendar events
-  const events: CalEvent[] = posts.map((post: any) => {
+  const postEvents: CalEvent[] = posts.map((post: any) => {
     const { date, startTime } = splitScheduledAt(post.scheduledAt);
+    const platform = post.platforms?.[0]?.platform?.toLowerCase() || "none";
+    const websiteCategory = platform === "website" && post.scheduledAt ? getWebsiteCategoryForDate(parseISO(post.scheduledAt)) : null;
     return {
       id: post.id,
       originalId: post.id,
-      title: post.title,
-      description: post.excerpt || "",
+      title: websiteCategory ? `${websiteCategory.category}: ${post.title}` : post.title,
+      description: websiteCategory ? websiteCategory.focus : post.excerpt || "",
       caption: post.content || "",
       date,
       startTime,
       category: (post.category?.toLowerCase() || (post.status === "scheduled" ? "content" : post.status === "published" ? "publish" : post.status === "awaiting_review" ? "awaiting_review" : "content")),
       status: post.status,
-      platform: post.platforms?.[0]?.platform?.toLowerCase() || "none",
+      platform,
       completed: post.status === "published",
       allDay: !post.scheduledAt,
       imageUrl: post.cover_image_url || "",
     };
   });
+
+  const postSlotKeys = new Set(postEvents.map((event) => `${event.date}-${event.startTime}-${event.platform}`));
+  const events: CalEvent[] = [
+    ...postEvents,
+    ...scheduleTemplateEvents.filter((event) => !postSlotKeys.has(`${event.date}-${event.startTime}-${event.platform}`)),
+  ];
 
   const [current, setCurrent] = useState(new Date());
   const [miniMonth, setMiniMonth] = useState(new Date());
@@ -897,7 +940,7 @@ export default function ContentCalendar() {
               >
                 {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </button>
-              <h1 className="text-4xl font-black tracking-tighter text-white uppercase head-neon mb-0">Calendar</h1>
+              <h1 className="page-title mb-0">Calendar</h1>
             </div>
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -954,7 +997,7 @@ export default function ContentCalendar() {
                       <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                     </button>
                   </div>
-                  <h2 className="text-lg font-black text-white tracking-tight head-neon">{headerLabel}</h2>
+                  <h2 className="text-lg font-black text-foreground tracking-tight">{headerLabel}</h2>
                 </div>
 
                 <div className="flex items-center gap-4">
