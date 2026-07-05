@@ -12,11 +12,7 @@ import {
   Facebook, 
   Share2, 
   Clock, 
-  ArrowUpRight,
-  Filter,
-  Search,
   Check,
-  Settings,
   Linkedin,
   Youtube,
   Video,
@@ -33,7 +29,16 @@ import { AutomationCard } from "@/components/automation/AutomationCard";
 import { AutomationDialog } from "@/components/automation/AutomationDialog";
 import { AutomationHistoryDialog } from "@/components/automation/AutomationHistoryDialog";
 import { useQueryClient } from "@tanstack/react-query";
-import { CONTENT_SCHEDULE, DAYS, getCurrentPeriod, DayName } from "@/utils/scheduling";
+import {
+  CONTENT_SCHEDULE,
+  DAYS,
+  getCurrentPeriod,
+  DayName,
+  PlatformKey,
+  formatSlotTime,
+  getUpcomingScheduleSlots,
+  getWeeklyPlatformOverview,
+} from "@/utils/scheduling";
 
 const AutomationPage = () => {
   const queryClient = useQueryClient();
@@ -114,89 +119,22 @@ const AutomationPage = () => {
     },
   ];
 
-  const streams = [
-    { 
-      id: "x-daily", 
-      name: "X (Twitter) Daily", 
-      platform: "twitter",
-      description: "Automatically generate and publish 3 posts per day to X — morning, midday, and evening.",
-      frequency: "3x Daily",
-      status: "Strategy Ready",
-      icon: Twitter
-    },
-    { 
-      id: "ig-feed", 
-      name: "Instagram Feed", 
-      platform: "instagram",
-      description: "Schedule high-quality Instagram posts with AI-generated captions and hashtags.",
-      frequency: "1x Daily",
-      status: "Strategy Ready",
-      icon: Instagram
-    },
-    { 
-      id: "fb-strategy", 
-      name: "Facebook Strategy", 
-      platform: "facebook",
-      description: "Publish engaging Facebook updates tailored to your community and followers.",
-      frequency: "1x Daily",
-      status: "Strategy Ready",
-      icon: Facebook
-    },
-    { 
-      id: "li-insights", 
-      name: "LinkedIn Insights", 
-      platform: "linkedin",
-      description: "Professional industry insights and articles distributed to your network daily.",
-      frequency: "1x Daily",
-      status: "Strategy Ready",
-      icon: Linkedin
-    },
-    { 
-      id: "web-articles", 
-      name: "Website Articles", 
-      platform: "website",
-      description: "Deep-dive long-form articles and blog posts for your primary domain.",
-      frequency: "1x Daily",
-      status: "Strategy Ready",
-      icon: Globe
-    },
-    { 
-      id: "tt-viral", 
-      name: "TikTok / Shorts", 
-      platform: "tiktok",
-      description: "Fast-paced video scripts and thumbnails optimized for mobile viewers.",
-      frequency: "1x Daily",
-      status: "Strategy Ready",
-      icon: Video
-    },
-    { 
-      id: "yt-hub", 
-      name: "YouTube Community", 
-      platform: "youtube",
-      description: "Video titles, descriptions, community posts, and high-CTR thumbnails.",
-      frequency: "1x Daily",
-      status: "Strategy Ready",
-      icon: Youtube
-    },
-    { 
-      id: "rumble-stream", 
-      name: "Rumble Distribution", 
-      platform: "rumble",
-      description: "Unfiltered video content and platform-specific social updates.",
-      frequency: "1x Daily",
-      status: "Strategy Ready",
-      icon: Play
-    },
-    { 
-      id: "media-hub", 
-      name: "Media & Thumbnails", 
-      platform: "website",
-      description: "Automated generation of high-CTR thumbnails and social media assets.",
-      frequency: "8x Daily",
-      status: "Strategy Ready",
-      icon: Share2
-    }
-  ];
+  const platformIcons: Record<PlatformKey, typeof Twitter> = {
+    twitter: Twitter,
+    instagram: Instagram,
+    tiktok: Video,
+    facebook: Facebook,
+    rumble: Play,
+    linkedin: Linkedin,
+    youtube: Youtube,
+    website: Globe,
+  };
+
+  const weeklyOverview = getWeeklyPlatformOverview();
+  const upcomingSlots = getUpcomingScheduleSlots(new Date(), 10);
+  const weeklyScheduleActive = automations.some((a) =>
+    a.name === "Weekly Schedule (templates)" && a.status === "active" && a.trigger === "scheduled"
+  );
 
   const handleRunPipeline = async () => {
     setIsProcessingPipeline(true);
@@ -436,10 +374,10 @@ const AutomationPage = () => {
     setPresetData(null);
   };
 
-  const handleConfigureStream = (stream: { name: string; description: string; platform: string }) => {
+  const handleConfigureStream = (stream: { label: string; summary: string; platform: PlatformKey }) => {
     setPresetData({
-      name: stream.name,
-      description: stream.description,
+      name: `${stream.label} Schedule`,
+      description: stream.summary,
       platforms: [capitalize(stream.platform)],
     });
     setEditingAutomation(null);
@@ -513,7 +451,7 @@ const AutomationPage = () => {
                 try {
                   const { data: { user } } = await supabase.auth.getUser();
                   if (!user) { toast.error("Not authenticated"); return; }
-                  const allPlatforms = ["twitter","instagram","facebook","linkedin","tiktok","youtube","rumble","website","podcast"];
+                  const allPlatforms = ["twitter","instagram","facebook","linkedin","tiktok","youtube","rumble","website"];
                   const { data: existing } = await supabase
                     .from("automations").select("id")
                     .eq("user_id", user.id).eq("name", "Weekly Schedule (templates)").maybeSingle();
@@ -579,42 +517,99 @@ const AutomationPage = () => {
           ))}
         </div>
 
-        {/* Streams Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {streams.map((stream) => (
-            <div key={stream.id} className="bg-card border border-border rounded-3xl p-8 hover:border-primary/50 transition-colors group">
-              <div className="flex items-center justify-between mb-6">
-                <div className="p-3 rounded-xl bg-muted group-hover:bg-primary/10 transition-colors">
-                  <stream.icon className="w-6 h-6 text-primary" />
-                </div>
-                <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${
-                  isStreamActive(stream.platform)
-                    ? "text-emerald-400 bg-emerald-500/10"
-                    : "text-primary bg-primary/10"
-                }`}>
-                  {isStreamActive(stream.platform) ? "Active" : stream.status}
-                </span>
+        {/* Weekly Schedule Source of Truth */}
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6">
+          <div className="bg-card border border-border rounded-3xl p-6">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-white uppercase tracking-tight">Weekly Schedule</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  This is the active source of truth used by Automation and Calendar.
+                </p>
               </div>
-
-              <h3 className="text-xl font-bold mb-2 text-white">{stream.name}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed mb-8">
-                {stream.description}
-              </p>
-
-              <div className="flex items-center justify-between pt-6 border-t border-border">
-                <div>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Frequency</span>
-                  <span className="text-sm font-bold text-white">{stream.frequency}</span>
-                </div>
-                <button
-                  onClick={() => handleConfigureStream(stream)}
-                  className="px-4 py-2 bg-foreground text-background text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all"
-                >
-                  Configure
-                </button>
-              </div>
+              <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${weeklyScheduleActive ? "bg-emerald-500/10 text-emerald-400" : "bg-primary/10 text-primary"}`}>
+                {weeklyScheduleActive ? "Active" : "Ready"}
+              </span>
             </div>
-          ))}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {weeklyOverview.map((stream) => {
+                const Icon = platformIcons[stream.platform];
+                const active = isStreamActive(stream.platform);
+
+                return (
+                  <div key={stream.platform} className="rounded-2xl border border-border bg-muted/20 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-sm font-bold text-white">{stream.label}</h3>
+                          <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${active ? "bg-emerald-500/10 text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+                            {active ? "Active" : "Configured"}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">{stream.summary}</p>
+                        <div className="mt-3 grid grid-cols-1 gap-2 text-xs">
+                          <div>
+                            <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Frequency</span>
+                            <span className="font-bold text-white">{stream.frequency}</span>
+                          </div>
+                          <div>
+                            <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Slots</span>
+                            <span className="font-medium text-white/80">{stream.slots}</span>
+                          </div>
+                          <div>
+                            <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Publishing</span>
+                            <span className="font-medium text-white/80">{stream.publishing}</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleConfigureStream(stream)}
+                          className="mt-4 rounded-lg bg-foreground px-3 py-2 text-xs font-bold text-background transition-all hover:bg-primary hover:text-primary-foreground"
+                        >
+                          Configure
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="bg-card border border-border rounded-3xl p-6">
+            <div className="mb-5">
+              <h2 className="text-xl font-bold text-white uppercase tracking-tight">Next 10 Slots</h2>
+              <p className="text-sm text-muted-foreground mt-1">Upcoming items generated into review first.</p>
+            </div>
+            <div className="space-y-3">
+              {upcomingSlots.map((slot, index) => {
+                const Icon = platformIcons[slot.platform];
+                return (
+                  <div key={`${slot.platform}-${slot.date.toISOString()}-${index}`} className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="text-sm font-bold text-white">{slot.label}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                          {slot.date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} · {formatSlotTime(slot.time)}
+                        </span>
+                      </div>
+                      {slot.category && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {slot.category} — {slot.focus}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* My Automations */}
