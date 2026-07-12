@@ -13,6 +13,7 @@ import Pricing from "./pages/Pricing";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import Index from "./pages/Index";
 import Automation from "./pages/Automation";
 import Platforms from "./pages/Platforms";
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               
               {/* Protected dashboard routes */}
               <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />

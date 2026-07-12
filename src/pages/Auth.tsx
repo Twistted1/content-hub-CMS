@@ -211,6 +211,11 @@ export default function Auth() {
                     "Sign In"
                   )}
                 </Button>
+                <div className="text-center">
+                  <a href="/reset-password" className="text-xs text-muted-foreground hover:text-primary underline">
+                    Forgot your password?
+                  </a>
+                </div>
               </form>
             </TabsContent>
 
