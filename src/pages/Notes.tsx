@@ -42,8 +42,10 @@ import { useUJT } from "@/hooks/useUJT";
 import { Note } from "@/types";
 import { RichTextEditor } from "@/components/editor/RichTextEditor";
 import { Calendar as CalendarIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function Notes() {
+  const { t } = useTranslation();
   const { notes, addNote, updateNote, deleteNote } = useNotes();
   const { processUJT } = useUJT();
   const location = useLocation();
@@ -70,12 +72,12 @@ export default function Notes() {
   const [tagInput, setTagInput] = useState("");
 
   const colorOptions = [
-    { name: "Default", value: "bg-card" },
-    { name: "Blue", value: "bg-blue-500/10" },
-    { name: "Green", value: "bg-green-500/10" },
-    { name: "Yellow", value: "bg-yellow-500/10" },
-    { name: "Red", value: "bg-red-500/10" },
-    { name: "Purple", value: "bg-purple-500/10" },
+    { name: t("notes.colorDefault"), value: "bg-card" },
+    { name: t("notes.colorBlue"), value: "bg-blue-500/10" },
+    { name: t("notes.colorGreen"), value: "bg-green-500/10" },
+    { name: t("notes.colorYellow"), value: "bg-yellow-500/10" },
+    { name: t("notes.colorRed"), value: "bg-red-500/10" },
+    { name: t("notes.colorPurple"), value: "bg-purple-500/10" },
   ];
 
   const addTag = (tag: string, isEditing: boolean) => {
@@ -124,7 +126,7 @@ export default function Notes() {
 
   const handleCreateNote = () => {
     if (!newNote.title.trim()) {
-      toast.error("Title is required");
+      toast.error(t("notes.titleRequired"));
       return;
     }
     
@@ -215,14 +217,14 @@ export default function Notes() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => handleEditNote(note)}>
                   <Edit className="h-4 w-4 mr-2" />
-                  Edit
+                  {t("notes.edit")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive"
                   onClick={() => deleteNote(note.id)}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
+                  {t("notes.delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -247,13 +249,13 @@ export default function Notes() {
               {note.startDate && (
                 <div className="flex items-center gap-1">
                   <CalendarIcon className="h-2.5 w-2.5" />
-                  <span>S: {note.startDate}</span>
+                  <span>{t("notes.startLabel", { date: note.startDate })}</span>
                 </div>
               )}
               {note.dueDate && (
                 <div className="flex items-center gap-1">
                   <CalendarIcon className="h-2.5 w-2.5 text-destructive" />
-                  <span>D: {note.dueDate}</span>
+                  <span>{t("notes.dueLabel", { date: note.dueDate })}</span>
                 </div>
               )}
             </div>
@@ -274,45 +276,45 @@ export default function Notes() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="page-title mb-2">Notes</h1>
+            <h1 className="page-title mb-2">{t("notes.title")}</h1>
             <p className="text-muted-foreground">
-              Capture ideas, research, and quick thoughts
+              {t("notes.subtitle")}
             </p>
           </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                New Note
+                {t("notes.newNote")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create New Note</DialogTitle>
+                <DialogTitle>{t("notes.createNewNote")}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-4 max-h-[70vh] overflow-y-auto pr-1">
                   <div className="space-y-2">
-                    <Label>Title</Label>
+                    <Label>{t("notes.noteTitle")}</Label>
                     <Input
-                      placeholder="Note title"
+                      placeholder={t("notes.noteTitlePlaceholder")}
                       value={newNote.title}
                       onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Content (Rich Text)</Label>
+                    <Label>{t("notes.contentRichText")}</Label>
                     <div className="border border-border rounded-lg overflow-hidden bg-muted/20">
-                      <RichTextEditor 
+                      <RichTextEditor
                         content={newNote.content}
                         onChange={(content) => setNewNote({ ...newNote, content })}
-                        placeholder="Start typing your note here..."
+                        placeholder={t("notes.startTyping")}
                         className="min-h-[160px]"
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Start Date</Label>
+                      <Label>{t("notes.startDate")}</Label>
                       <Input
                         type="date"
                         value={newNote.startDate}
@@ -320,7 +322,7 @@ export default function Notes() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Due Date</Label>
+                      <Label>{t("notes.dueDate")}</Label>
                       <Input
                         type="date"
                         value={newNote.dueDate}
@@ -329,15 +331,15 @@ export default function Notes() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Tags</Label>
+                    <Label>{t("notes.tags")}</Label>
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Add a tag..."
+                        placeholder={t("notes.addTagPlaceholder")}
                         value={tagInput}
                         onChange={(e) => setTagInput(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag(tagInput, false))}
                       />
-                      <Button variant="outline" size="sm" onClick={() => addTag(tagInput, false)}>Add</Button>
+                      <Button variant="outline" size="sm" onClick={() => addTag(tagInput, false)}>{t("notes.add")}</Button>
                     </div>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {newNote.tags.map(tag => (
@@ -349,7 +351,7 @@ export default function Notes() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Color</Label>
+                    <Label>{t("notes.color")}</Label>
                     <div className="flex gap-2">
                       {colorOptions.map((opt) => (
                         <button
@@ -366,18 +368,18 @@ export default function Notes() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <Label>Pin to top</Label>
+                    <Label>{t("notes.pinToTop")}</Label>
                     <Button
                       variant={newNote.isPinned ? "default" : "outline"}
                       size="sm"
                       onClick={() => setNewNote({ ...newNote, isPinned: !newNote.isPinned })}
                     >
                       <Pin className={cn("h-4 w-4 mr-2", newNote.isPinned && "fill-current")} />
-                      {newNote.isPinned ? "Pinned" : "Pin Note"}
+                      {newNote.isPinned ? t("notes.pinned") : t("notes.pinNote")}
                     </Button>
                   </div>
                   <Button onClick={handleCreateNote} className="w-full">
-                    Create Note
+                    {t("notes.createNote")}
                   </Button>
                 </div>
             </DialogContent>
@@ -389,7 +391,7 @@ export default function Notes() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search notes..."
+              placeholder={t("notes.searchPlaceholder")}
               className="pl-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -422,7 +424,7 @@ export default function Notes() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{notes.length}</p>
-                <p className="text-xs text-muted-foreground">Total Notes</p>
+                <p className="text-xs text-muted-foreground">{t("notes.totalNotes")}</p>
               </div>
             </CardContent>
           </Card>
@@ -433,7 +435,7 @@ export default function Notes() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{pinnedNotes.length}</p>
-                <p className="text-xs text-muted-foreground">Pinned</p>
+                <p className="text-xs text-muted-foreground">{t("notes.pinned")}</p>
               </div>
             </CardContent>
           </Card>
@@ -446,7 +448,7 @@ export default function Notes() {
                 <p className="text-2xl font-bold">
                   {[...new Set(notes.flatMap((n) => n.tags))].length}
                 </p>
-                <p className="text-xs text-muted-foreground">Tags</p>
+                <p className="text-xs text-muted-foreground">{t("notes.tagsCount")}</p>
               </div>
             </CardContent>
           </Card>
@@ -457,7 +459,7 @@ export default function Notes() {
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
               <Pin className="h-4 w-4" />
-              Pinned
+              {t("notes.pinned")}
             </h2>
             <div
               className={cn(
@@ -477,7 +479,7 @@ export default function Notes() {
         {otherNotes.length > 0 && (
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-muted-foreground">
-              All Notes
+              {t("notes.allNotes")}
             </h2>
             <div
               className={cn(
@@ -496,9 +498,9 @@ export default function Notes() {
         {filteredNotes.length === 0 && (
           <div className="text-center py-12">
             <StickyNote className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No notes found</h3>
+            <h3 className="text-lg font-medium">{t("notes.noNotesFound")}</h3>
             <p className="text-muted-foreground">
-              Try a different search or create a new note
+              {t("notes.tryDifferentSearch")}
             </p>
           </div>
         )}
@@ -507,32 +509,32 @@ export default function Notes() {
         <Dialog open={!!editingNote} onOpenChange={(open) => !open && setEditingNote(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Edit Note</DialogTitle>
+              <DialogTitle>{t("notes.editNote")}</DialogTitle>
             </DialogHeader>
             {editingNote && (
               <div className="space-y-4 pt-4 max-h-[70vh] overflow-y-auto pr-1">
                 <div className="space-y-2">
-                   <Label>Title</Label>
+                   <Label>{t("notes.noteTitle")}</Label>
                   <Input
-                    placeholder="Note title"
+                    placeholder={t("notes.noteTitlePlaceholder")}
                     value={editingNote.title}
                     onChange={(e) => setEditingNote({ ...editingNote, title: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Content (Rich Text)</Label>
+                  <Label>{t("notes.contentRichText")}</Label>
                   <div className="border border-border rounded-lg overflow-hidden bg-muted/20">
-                    <RichTextEditor 
+                    <RichTextEditor
                       content={editingNote.content}
                       onChange={(content) => setEditingNote({ ...editingNote, content })}
-                      placeholder="Edit your note..."
+                      placeholder={t("notes.editYourNote")}
                       className="min-h-[160px]"
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Start Date</Label>
+                    <Label>{t("notes.startDate")}</Label>
                     <Input
                       type="date"
                       value={editingNote.startDate || ""}
@@ -540,7 +542,7 @@ export default function Notes() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Due Date</Label>
+                    <Label>{t("notes.dueDate")}</Label>
                     <Input
                       type="date"
                       value={editingNote.dueDate || ""}
@@ -549,15 +551,15 @@ export default function Notes() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Tags</Label>
+                  <Label>{t("notes.tags")}</Label>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="Add a tag..."
+                      placeholder={t("notes.addTagPlaceholder")}
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag(tagInput, true))}
                     />
-                    <Button variant="outline" size="sm" onClick={() => addTag(tagInput, true)}>Add</Button>
+                    <Button variant="outline" size="sm" onClick={() => addTag(tagInput, true)}>{t("notes.add")}</Button>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {editingNote.tags.map(tag => (
@@ -569,7 +571,7 @@ export default function Notes() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Color</Label>
+                  <Label>{t("notes.color")}</Label>
                   <div className="flex gap-2">
                     {colorOptions.map((opt) => (
                       <button
@@ -586,23 +588,23 @@ export default function Notes() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label>Pin to top</Label>
+                  <Label>{t("notes.pinToTop")}</Label>
                   <Button
                     variant={editingNote.isPinned ? "default" : "outline"}
                     size="sm"
                     onClick={() => setEditingNote({ ...editingNote, isPinned: !editingNote.isPinned })}
                   >
                     <Pin className={cn("h-4 w-4 mr-2", editingNote.isPinned && "fill-current")} />
-                    {editingNote.isPinned ? "Pinned" : "Pin Note"}
+                    {editingNote.isPinned ? t("notes.pinned") : t("notes.pinNote")}
                   </Button>
                 </div>
               </div>
             )}
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditingNote(null)}>
-                Cancel
+                {t("notes.cancel")}
               </Button>
-              <Button onClick={handleSaveEdit}>Save Changes</Button>
+              <Button onClick={handleSaveEdit}>{t("notes.saveChanges")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
