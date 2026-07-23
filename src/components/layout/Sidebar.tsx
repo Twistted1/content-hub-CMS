@@ -98,9 +98,9 @@ export function Sidebar() {
   const handleLogout = async () => {
     const { error } = await signOut();
     if (error) {
-      toast.error("Failed to log out");
+      toast.error(t("header.toastLogoutFailed"));
     } else {
-      toast.success("Logged out successfully");
+      toast.success(t("header.toastLoggedOut"));
       navigate("/");
     }
   };
@@ -118,7 +118,7 @@ export function Sidebar() {
             CONTENT <span className="text-primary">HUB</span>
           </h1>
           <div className="flex items-center gap-1.5 mt-1">
-            <span className="text-[9px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded uppercase tracking-wider">Headless CMS</span>
+            <span className="text-[9px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded uppercase tracking-wider">{t("nav.headlessCms")}</span>
             <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
           </div>
         </div>
@@ -135,10 +135,10 @@ export function Sidebar() {
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
             <Sparkles className="h-12 w-12 text-primary" />
           </div>
-          <h4 className="text-sm font-bold text-white mb-1 relative z-10">Pro Version</h4>
-          <p className="text-[11px] text-muted-foreground mb-4 relative z-10">Unlock unlimited automation & AI features.</p>
+          <h4 className="text-sm font-bold text-white mb-1 relative z-10">{t("nav.proVersion")}</h4>
+          <p className="text-[11px] text-muted-foreground mb-4 relative z-10">{t("nav.proVersionDesc")}</p>
           <button className="w-full py-2.5 rounded-xl bg-white text-black text-xs font-black hover:bg-primary hover:text-white transition-all shadow-lg shadow-white/5 active:scale-95 relative z-10">
-            Upgrade Now
+            {t("nav.upgradeNow")}
           </button>
         </div>
       </nav>

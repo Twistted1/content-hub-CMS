@@ -560,7 +560,7 @@ export default function Templates() {
                   <TabsTrigger value="all">{t("templates.all")}</TabsTrigger>
                   <TabsTrigger value="favorites">{t("templates.favorites")}</TabsTrigger>
                   <TabsTrigger value="recent">{t("templates.recent")}</TabsTrigger>
-                  <TabsTrigger value="import" className="hidden">Import</TabsTrigger>
+                  <TabsTrigger value="import" className="hidden">{t("templates.import")}</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>

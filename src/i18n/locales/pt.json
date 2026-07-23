@@ -40,7 +40,11 @@
     "articles": "Artigos",
     "importTemplates": "Importar Modelos",
     "pipeline": "Pipeline de Conteúdo",
-    "contentModels": "Modelos de Conteúdo"
+    "contentModels": "Modelos de Conteúdo",
+    "headlessCms": "CMS Headless",
+    "proVersion": "Versão Pro",
+    "proVersionDesc": "Desbloqueie automação e recursos de IA ilimitados.",
+    "upgradeNow": "Fazer Upgrade"
   },
   "dashboard": {
     "welcome": "Bem-vindo de volta",
@@ -1271,7 +1275,8 @@
     "catEmail": "Email",
     "catEngagement": "Engajamento",
     "catContent": "Conteúdo",
-    "catSocialProof": "Prova Social"
+    "catSocialProof": "Prova Social",
+    "import": "Importar"
   },
   "contentModel": {
     "title": "Modelos de Conteúdo",

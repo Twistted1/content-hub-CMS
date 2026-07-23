@@ -40,7 +40,11 @@
     "importData": "Import Data",
     "articles": "Articles",
     "importTemplates": "Import Templates",
-    "pipeline": "Content Pipeline"
+    "pipeline": "Content Pipeline",
+    "headlessCms": "Headless CMS",
+    "proVersion": "Pro Version",
+    "proVersionDesc": "Unlock unlimited automation & AI features.",
+    "upgradeNow": "Upgrade Now"
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -1271,7 +1275,8 @@
     "catEmail": "Email",
     "catEngagement": "Engagement",
     "catContent": "Content",
-    "catSocialProof": "Social Proof"
+    "catSocialProof": "Social Proof",
+    "import": "Import"
   },
   "contentModel": {
     "title": "Content Models",
