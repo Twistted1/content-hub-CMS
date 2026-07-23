@@ -541,13 +541,47 @@
   "projects": {
     "title": "Projetos",
     "newProject": "Novo Projeto",
-    "status": {
-      "planning": "Planejamento",
-      "inProgress": "Em Progresso",
-      "review": "Revisão",
-      "completed": "Concluído",
-      "onHold": "Em Espera"
-    }
+    "status": "Status",
+    "subtitle": "Gerencie e acompanhe seus projetos de conteúdo",
+    "searchPlaceholder": "Buscar projetos...",
+    "priority": "Prioridade",
+    "allPriority": "Toda Prioridade",
+    "priorityLow": "Baixa",
+    "priorityMedium": "Média",
+    "priorityHigh": "Alta",
+    "allStatus": "Todos os Status",
+    "columnPlanning": "Planejamento",
+    "columnInProgress": "Em Andamento",
+    "columnInReview": "Em Revisão",
+    "columnCompleted": "Concluído",
+    "columnOnHold": "Em Espera",
+    "progress": "Progresso",
+    "noDate": "Sem data",
+    "allProjectsTitle": "Todos os Projetos",
+    "edit": "Editar",
+    "duplicate": "Duplicar",
+    "delete": "Excluir",
+    "createDialogTitle": "Criar Novo Projeto",
+    "createDialogDesc": "Adicione um novo projeto para acompanhar seu trabalho de conteúdo.",
+    "editDialogTitle": "Editar Projeto",
+    "editDialogDesc": "Atualize os detalhes do seu projeto.",
+    "cancel": "Cancelar",
+    "createProject": "Criar Projeto",
+    "saveChanges": "Salvar Alterações",
+    "formTitle": "Título",
+    "formTitlePlaceholder": "Título do projeto",
+    "formDescription": "Descrição",
+    "formDescriptionPlaceholder": "Descrição do projeto",
+    "formStartDate": "Data de Início",
+    "formDueDate": "Data de Entrega",
+    "formProgress": "Progresso (%)",
+    "formTags": "Tags",
+    "formTagPlaceholder": "Adicionar tag",
+    "formAdd": "Adicionar",
+    "formAssignees": "Responsáveis",
+    "formAssigneePlaceholder": "Adicionar nome do responsável",
+    "toastEnterTitle": "Digite um título para o projeto",
+    "entityName": "Projeto"
   },
   "automation": {
     "title": "Automação",
@@ -1331,5 +1365,9 @@
     "editTemplate": "Editar modelo",
     "sendMessage": "Enviar Mensagem",
     "disclaimer": "As respostas da IA podem exigir verificação. Use com critério."
+  },
+  "notFound": {
+    "message": "Ops! Página não encontrada",
+    "returnHome": "Voltar para o Início"
   }
 }

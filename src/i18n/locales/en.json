@@ -541,13 +541,47 @@
   "projects": {
     "title": "Projects",
     "newProject": "New Project",
-    "status": {
-      "planning": "Planning",
-      "inProgress": "In Progress",
-      "review": "Review",
-      "completed": "Completed",
-      "onHold": "On Hold"
-    }
+    "status": "Status",
+    "subtitle": "Manage and track your content projects",
+    "searchPlaceholder": "Search projects...",
+    "priority": "Priority",
+    "allPriority": "All Priority",
+    "priorityLow": "Low",
+    "priorityMedium": "Medium",
+    "priorityHigh": "High",
+    "allStatus": "All Status",
+    "columnPlanning": "Planning",
+    "columnInProgress": "In Progress",
+    "columnInReview": "In Review",
+    "columnCompleted": "Completed",
+    "columnOnHold": "On Hold",
+    "progress": "Progress",
+    "noDate": "No date",
+    "allProjectsTitle": "All Projects",
+    "edit": "Edit",
+    "duplicate": "Duplicate",
+    "delete": "Delete",
+    "createDialogTitle": "Create New Project",
+    "createDialogDesc": "Add a new project to track your content work.",
+    "editDialogTitle": "Edit Project",
+    "editDialogDesc": "Update your project details.",
+    "cancel": "Cancel",
+    "createProject": "Create Project",
+    "saveChanges": "Save Changes",
+    "formTitle": "Title",
+    "formTitlePlaceholder": "Project title",
+    "formDescription": "Description",
+    "formDescriptionPlaceholder": "Project description",
+    "formStartDate": "Start Date",
+    "formDueDate": "Due Date",
+    "formProgress": "Progress (%)",
+    "formTags": "Tags",
+    "formTagPlaceholder": "Add tag",
+    "formAdd": "Add",
+    "formAssignees": "Assignees",
+    "formAssigneePlaceholder": "Add assignee name",
+    "toastEnterTitle": "Please enter a project title",
+    "entityName": "Project"
   },
   "automation": {
     "title": "Automation",
@@ -1331,5 +1365,9 @@
     "editTemplate": "Edit template",
     "sendMessage": "Send Message",
     "disclaimer": "AI responses may require verification. Use critically."
+  },
+  "notFound": {
+    "message": "Oops! Page not found",
+    "returnHome": "Return to Home"
   }
 }

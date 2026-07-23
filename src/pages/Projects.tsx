@@ -48,19 +48,35 @@ import { useProjects } from "@/hooks/useProjects";
 import { useUJT } from "@/hooks/useUJT";
 import { Project, ProjectStatus } from "@/types";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
-const columns: { id: ProjectStatus; title: string; color: string }[] = [
-  { id: "planning", title: "Planning", color: "bg-muted" },
-  { id: "in-progress", title: "In Progress", color: "bg-primary/20" },
-  { id: "review", title: "In Review", color: "bg-warning/20" },
-  { id: "completed", title: "Completed", color: "bg-success/20" },
-  { id: "on-hold", title: "On Hold", color: "bg-destructive/10" },
+const getColumns = (t: TFunction): { id: ProjectStatus; title: string; color: string }[] => [
+  { id: "planning", title: t("projects.columnPlanning"), color: "bg-muted" },
+  { id: "in-progress", title: t("projects.columnInProgress"), color: "bg-primary/20" },
+  { id: "review", title: t("projects.columnInReview"), color: "bg-warning/20" },
+  { id: "completed", title: t("projects.columnCompleted"), color: "bg-success/20" },
+  { id: "on-hold", title: t("projects.columnOnHold"), color: "bg-destructive/10" },
 ];
 
 const priorityColors = {
   low: "bg-muted text-muted-foreground",
   medium: "bg-warning/20 text-warning-foreground",
   high: "bg-destructive/20 text-destructive",
+};
+
+const PRIORITY_KEYS: Record<string, string> = {
+  low: "projects.priorityLow",
+  medium: "projects.priorityMedium",
+  high: "projects.priorityHigh",
+};
+
+const STATUS_KEYS: Record<string, string> = {
+  planning: "projects.columnPlanning",
+  "in-progress": "projects.columnInProgress",
+  review: "projects.columnInReview",
+  completed: "projects.columnCompleted",
+  "on-hold": "projects.columnOnHold",
 };
 
 interface ProjectCardProps {
@@ -72,6 +88,7 @@ interface ProjectCardProps {
 }
 
 function ProjectCard({ project, index, onEdit, onDelete, onDuplicate }: ProjectCardProps) {
+  const { t } = useTranslation();
   return (
     <Draggable draggableId={project.id} index={index}>
       {(provided) => (
@@ -100,15 +117,15 @@ function ProjectCard({ project, index, onEdit, onDelete, onDuplicate }: ProjectC
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => onEdit(project)}>
                       <Edit className="h-4 w-4 mr-2" />
-                      Edit
+                      {t("projects.edit")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onDuplicate(project)}>
                       <Copy className="h-4 w-4 mr-2" />
-                      Duplicate
+                      {t("projects.duplicate")}
                     </DropdownMenuItem>
                     <DropdownMenuItem className="text-destructive" onClick={() => onDelete(project.id)}>
                       <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
+                      {t("projects.delete")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -123,7 +140,7 @@ function ProjectCard({ project, index, onEdit, onDelete, onDuplicate }: ProjectC
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Progress</span>
+                  <span className="text-muted-foreground">{t("projects.progress")}</span>
                   <span className="font-medium">{project.progress}%</span>
                 </div>
                 <Progress value={project.progress} className="h-1.5" />
@@ -133,10 +150,10 @@ function ProjectCard({ project, index, onEdit, onDelete, onDuplicate }: ProjectC
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    {project.dueDate || "No date"}
+                    {project.dueDate || t("projects.noDate")}
                   </span>
                   <Badge className={priorityColors[project.priority]} variant="secondary">
-                    {project.priority}
+                    {t(PRIORITY_KEYS[project.priority] || project.priority)}
                   </Badge>
                 </div>
               </div>
@@ -216,30 +233,33 @@ const ProjectForm = ({
   setNewAssignee: (v: string) => void;
   addAssignee: (isNew: boolean) => void;
   removeAssignee: (name: string, isNew: boolean) => void;
-}) => (
+}) => {
+  const { t } = useTranslation();
+  const columns = getColumns(t);
+  return (
   <div className="space-y-4 py-4">
     <div className="space-y-2">
-      <Label htmlFor="title">Title</Label>
+      <Label htmlFor="title">{t("projects.formTitle")}</Label>
       <Input
         id="title"
         value={data.title}
         onChange={(e) => onChange({ ...data, title: e.target.value })}
-        placeholder="Project title"
+        placeholder={t("projects.formTitlePlaceholder")}
       />
     </div>
     <div className="space-y-2">
-      <Label htmlFor="description">Description</Label>
+      <Label htmlFor="description">{t("projects.formDescription")}</Label>
       <Textarea
         id="description"
         value={data.description}
         onChange={(e) => onChange({ ...data, description: e.target.value })}
-        placeholder="Project description"
+        placeholder={t("projects.formDescriptionPlaceholder")}
         rows={8}
       />
     </div>
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
-        <Label>Status</Label>
+        <Label>{t("projects.status")}</Label>
         <Select
           value={data.status}
           onValueChange={(value: ProjectStatus) => onChange({ ...data, status: value })}
@@ -257,7 +277,7 @@ const ProjectForm = ({
         </Select>
       </div>
       <div className="space-y-2">
-        <Label>Priority</Label>
+        <Label>{t("projects.priority")}</Label>
         <Select
           value={data.priority}
           onValueChange={(value: "low" | "medium" | "high") =>
@@ -268,16 +288,16 @@ const ProjectForm = ({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="low">Low</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="low">{t("projects.priorityLow")}</SelectItem>
+            <SelectItem value="medium">{t("projects.priorityMedium")}</SelectItem>
+            <SelectItem value="high">{t("projects.priorityHigh")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
     </div>
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
-        <Label htmlFor="startDate">Start Date</Label>
+        <Label htmlFor="startDate">{t("projects.formStartDate")}</Label>
         <Input
           id="startDate"
           type="date"
@@ -286,7 +306,7 @@ const ProjectForm = ({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="dueDate">Due Date</Label>
+        <Label htmlFor="dueDate">{t("projects.formDueDate")}</Label>
         <Input
           id="dueDate"
           type="date"
@@ -296,7 +316,7 @@ const ProjectForm = ({
       </div>
     </div>
     <div className="space-y-2">
-      <Label htmlFor="progress">Progress (%)</Label>
+      <Label htmlFor="progress">{t("projects.formProgress")}</Label>
       <Input
         id="progress"
         type="number"
@@ -307,16 +327,16 @@ const ProjectForm = ({
       />
     </div>
     <div className="space-y-2">
-      <Label>Tags</Label>
+      <Label>{t("projects.formTags")}</Label>
       <div className="flex gap-2">
         <Input
           value={newTag}
           onChange={(e) => setNewTag(e.target.value)}
-          placeholder="Add tag"
+          placeholder={t("projects.formTagPlaceholder")}
           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag(isNew))}
         />
         <Button type="button" variant="outline" onClick={() => addTag(isNew)}>
-          Add
+          {t("projects.formAdd")}
         </Button>
       </div>
       <div className="flex flex-wrap gap-1 mt-2">
@@ -334,16 +354,16 @@ const ProjectForm = ({
       </div>
     </div>
     <div className="space-y-2">
-      <Label>Assignees</Label>
+      <Label>{t("projects.formAssignees")}</Label>
       <div className="flex gap-2">
         <Input
           value={newAssignee}
           onChange={(e) => setNewAssignee(e.target.value)}
-          placeholder="Add assignee name"
+          placeholder={t("projects.formAssigneePlaceholder")}
           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addAssignee(isNew))}
         />
         <Button type="button" variant="outline" onClick={() => addAssignee(isNew)}>
-          Add
+          {t("projects.formAdd")}
         </Button>
       </div>
       <div className="flex flex-wrap gap-1 mt-2">
@@ -361,9 +381,12 @@ const ProjectForm = ({
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default function Projects() {
+  const { t } = useTranslation();
+  const columns = getColumns(t);
   const { projects, addProject, updateProject, deleteProject, moveProject } = useProjects();
   const { processUJT } = useUJT();
   const [viewMode, setViewMode] = useState<"board" | "list">("board");
@@ -406,7 +429,7 @@ export default function Projects() {
 
   const handleCreateProject = () => {
     if (!newProject.title) {
-      toast.error("Please enter a project title");
+      toast.error(t("projects.toastEnterTitle"));
       return;
     }
 
@@ -510,20 +533,20 @@ export default function Projects() {
   };
 
   return (
-    <DragDropImport onImport={handleImport} entityName="Project">
+    <DragDropImport onImport={handleImport} entityName={t("projects.entityName")}>
       <DashboardLayout>
         <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="page-title mb-2">Projects</h1>
+            <h1 className="page-title mb-2">{t("projects.title")}</h1>
             <p className="text-muted-foreground">
-              Manage and track your content projects
+              {t("projects.subtitle")}
             </p>
           </div>
           <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
             <Plus className="h-4 w-4" />
-            New Project
+            {t("projects.newProject")}
           </Button>
         </div>
 
@@ -532,7 +555,7 @@ export default function Projects() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search projects..."
+              placeholder={t("projects.searchPlaceholder")}
               className="pl-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -541,26 +564,26 @@ export default function Projects() {
           <div className="flex items-center gap-2">
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
               <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="Priority" />
+                <SelectValue placeholder={t("projects.priority")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Priority</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="all">{t("projects.allPriority")}</SelectItem>
+                <SelectItem value="low">{t("projects.priorityLow")}</SelectItem>
+                <SelectItem value="medium">{t("projects.priorityMedium")}</SelectItem>
+                <SelectItem value="high">{t("projects.priorityHigh")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("projects.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="planning">Planning</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="review">In Review</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="on-hold">On Hold</SelectItem>
+                <SelectItem value="all">{t("projects.allStatus")}</SelectItem>
+                <SelectItem value="planning">{t("projects.columnPlanning")}</SelectItem>
+                <SelectItem value="in-progress">{t("projects.columnInProgress")}</SelectItem>
+                <SelectItem value="review">{t("projects.columnInReview")}</SelectItem>
+                <SelectItem value="completed">{t("projects.columnCompleted")}</SelectItem>
+                <SelectItem value="on-hold">{t("projects.columnOnHold")}</SelectItem>
               </SelectContent>
             </Select>
             <div className="flex items-center border border-border rounded-lg">
@@ -629,7 +652,7 @@ export default function Projects() {
         {viewMode === "list" && (
           <Card>
             <CardHeader>
-              <CardTitle>All Projects</CardTitle>
+              <CardTitle>{t("projects.allProjectsTitle")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -655,13 +678,13 @@ export default function Projects() {
                     </div>
                     <div className="flex items-center gap-4">
                       <Badge className={priorityColors[project.priority]} variant="secondary">
-                        {project.priority}
+                        {t(PRIORITY_KEYS[project.priority] || project.priority)}
                       </Badge>
                       <div className="w-24">
                         <Progress value={project.progress} className="h-2" />
                       </div>
                       <span className="text-sm text-muted-foreground w-24">{project.dueDate}</span>
-                      <Badge variant="outline">{project.status.replace("-", " ")}</Badge>
+                      <Badge variant="outline">{t(STATUS_KEYS[project.status] || project.status)}</Badge>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -671,18 +694,18 @@ export default function Projects() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => setEditingProject(project)}>
                             <Edit className="h-4 w-4 mr-2" />
-                            Edit
+                            {t("projects.edit")}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDuplicateProject(project)}>
                             <Copy className="h-4 w-4 mr-2" />
-                            Duplicate
+                            {t("projects.duplicate")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={() => handleDeleteProject(project.id)}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
+                            {t("projects.delete")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -698,8 +721,8 @@ export default function Projects() {
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create New Project</DialogTitle>
-              <DialogDescription>Add a new project to track your content work.</DialogDescription>
+              <DialogTitle>{t("projects.createDialogTitle")}</DialogTitle>
+              <DialogDescription>{t("projects.createDialogDesc")}</DialogDescription>
             </DialogHeader>
             <ProjectForm 
               data={newProject} 
@@ -716,9 +739,9 @@ export default function Projects() {
             />
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                Cancel
+                {t("projects.cancel")}
               </Button>
-              <Button onClick={handleCreateProject}>Create Project</Button>
+              <Button onClick={handleCreateProject}>{t("projects.createProject")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -727,8 +750,8 @@ export default function Projects() {
         <Dialog open={!!editingProject} onOpenChange={(open) => !open && setEditingProject(null)}>
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Project</DialogTitle>
-              <DialogDescription>Update your project details.</DialogDescription>
+              <DialogTitle>{t("projects.editDialogTitle")}</DialogTitle>
+              <DialogDescription>{t("projects.editDialogDesc")}</DialogDescription>
             </DialogHeader>
             {editingProject && (
               <ProjectForm 
@@ -747,9 +770,9 @@ export default function Projects() {
             )}
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditingProject(null)}>
-                Cancel
+                {t("projects.cancel")}
               </Button>
-              <Button onClick={handleUpdateProject}>Save Changes</Button>
+              <Button onClick={handleUpdateProject}>{t("projects.saveChanges")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
