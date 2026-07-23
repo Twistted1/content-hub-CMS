@@ -39,13 +39,13 @@ export function AppearanceSettings() {
 
   const handleThemeChange = (theme: typeof appearance.theme) => {
     updateAppearance({ theme });
-    toast.success(`Theme changed to ${theme}`);
+    toast.success(t("settings.theme.toastChanged", { theme: t(`settings.theme.${theme}`) }));
   };
 
   const handleLanguageChange = (value: string) => {
     updateAppearance({ language: value });
     i18n.changeLanguage(value);
-    toast.success(t("settings.language.language") + " updated");
+    toast.success(t("settings.language.toastLanguageUpdated"));
   };
 
   return (
@@ -124,7 +124,7 @@ export function AppearanceSettings() {
               checked={appearance.compactMode}
               onCheckedChange={(checked) => {
                 updateAppearance({ compactMode: checked });
-                toast.success(checked ? "Compact mode enabled" : "Compact mode disabled");
+                toast.success(checked ? t("settings.display.toastCompactEnabled") : t("settings.display.toastCompactDisabled"));
               }}
             />
           </div>
@@ -140,7 +140,7 @@ export function AppearanceSettings() {
               checked={appearance.showAnimations}
               onCheckedChange={(checked) => {
                 updateAppearance({ showAnimations: checked });
-                toast.success(checked ? "Animations enabled" : "Animations disabled");
+                toast.success(checked ? t("settings.display.toastAnimationsEnabled") : t("settings.display.toastAnimationsDisabled"));
               }}
             />
           </div>
@@ -180,7 +180,7 @@ export function AppearanceSettings() {
                 value={appearance.dateFormat}
                 onValueChange={(value) => {
                   updateAppearance({ dateFormat: value });
-                  toast.success("Date format updated");
+                  toast.success(t("settings.language.toastDateFormatUpdated"));
                 }}
               >
                 <SelectTrigger>
@@ -202,7 +202,7 @@ export function AppearanceSettings() {
               value={appearance.timeFormat}
               onValueChange={(value) => {
                 updateAppearance({ timeFormat: value as "12h" | "24h" });
-                toast.success("Time format updated");
+                toast.success(t("settings.language.toastTimeFormatUpdated"));
               }}
               className="flex gap-4"
             >

@@ -311,10 +311,10 @@ const AutomationPage = () => {
 
       setPipelineStep(3);
       setPipelineLogs(prev => [...prev, "   ✅ MASTER RESTORE COMPLETE.", "SYSTEM STABILIZED."]);
-      toast.success("Pipeline executed successfully.");
+      toast.success(t("automation.toastPipelineSuccess"));
     } catch (err: any) {
       setPipelineLogs(prev => [...prev, `❌ ERROR: ${err.message}`]);
-      toast.error("Pipeline failed.");
+      toast.error(t("automation.toastPipelineFailed"));
     } finally {
       setIsProcessingPipeline(false);
     }

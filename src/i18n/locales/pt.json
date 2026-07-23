@@ -474,7 +474,8 @@
       "description": "Escolha seu tema de cores preferido para a interface.",
       "light": "Claro",
       "dark": "Escuro",
-      "system": "Sistema"
+      "system": "Sistema",
+      "toastChanged": "Tema alterado para {{theme}}"
     },
     "display": {
       "title": "Preferências de Exibição",
@@ -482,7 +483,11 @@
       "compactMode": "Modo Compacto",
       "compactModeDescription": "Reduz espaçamento para um layout mais denso",
       "animations": "Animações",
-      "animationsDescription": "Ativar transições e animações suaves"
+      "animationsDescription": "Ativar transições e animações suaves",
+      "toastCompactEnabled": "Modo compacto ativado",
+      "toastCompactDisabled": "Modo compacto desativado",
+      "toastAnimationsEnabled": "Animações ativadas",
+      "toastAnimationsDisabled": "Animações desativadas"
     },
     "language": {
       "title": "Idioma e Região",
@@ -491,7 +496,10 @@
       "dateFormat": "Formato de Data",
       "timeFormat": "Formato de Hora",
       "12hour": "12 horas (1:30 PM)",
-      "24hour": "24 horas (13:30)"
+      "24hour": "24 horas (13:30)",
+      "toastDateFormatUpdated": "Formato de data atualizado",
+      "toastTimeFormatUpdated": "Formato de hora atualizado",
+      "toastLanguageUpdated": "Idioma atualizado"
     },
     "header": {
       "title": "Configurações",
@@ -802,7 +810,9 @@
     "historyDescFor": "Execuções recentes de \"{{name}}\"",
     "noRunsYet": "Ainda sem execuções",
     "success": "Sucesso",
-    "failed": "Falhou"
+    "failed": "Falhou",
+    "toastPipelineSuccess": "Pipeline executado com sucesso.",
+    "toastPipelineFailed": "Falha no pipeline."
   },
   "reports": {
     "title": "Relatórios",

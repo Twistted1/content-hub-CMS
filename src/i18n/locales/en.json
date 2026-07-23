@@ -474,7 +474,8 @@
       "description": "Choose your preferred color theme for the interface.",
       "light": "Light",
       "dark": "Dark",
-      "system": "System"
+      "system": "System",
+      "toastChanged": "Theme changed to {{theme}}"
     },
     "display": {
       "title": "Display Preferences",
@@ -482,7 +483,11 @@
       "compactMode": "Compact Mode",
       "compactModeDescription": "Reduce spacing and padding for a denser layout",
       "animations": "Animations",
-      "animationsDescription": "Enable smooth transitions and animations"
+      "animationsDescription": "Enable smooth transitions and animations",
+      "toastCompactEnabled": "Compact mode enabled",
+      "toastCompactDisabled": "Compact mode disabled",
+      "toastAnimationsEnabled": "Animations enabled",
+      "toastAnimationsDisabled": "Animations disabled"
     },
     "language": {
       "title": "Language & Region",
@@ -491,7 +496,10 @@
       "dateFormat": "Date Format",
       "timeFormat": "Time Format",
       "12hour": "12-hour (1:30 PM)",
-      "24hour": "24-hour (13:30)"
+      "24hour": "24-hour (13:30)",
+      "toastDateFormatUpdated": "Date format updated",
+      "toastTimeFormatUpdated": "Time format updated",
+      "toastLanguageUpdated": "Language updated"
     },
     "header": {
       "title": "Settings",
@@ -802,7 +810,9 @@
     "historyDescFor": "Recent runs for \"{{name}}\"",
     "noRunsYet": "No runs yet",
     "success": "Success",
-    "failed": "Failed"
+    "failed": "Failed",
+    "toastPipelineSuccess": "Pipeline executed successfully.",
+    "toastPipelineFailed": "Pipeline failed."
   },
   "reports": {
     "title": "Reports",
