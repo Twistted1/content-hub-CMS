@@ -50,8 +50,16 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { DragDropImport } from "@/components/common/DragDropImport";
 import { useUJT } from "@/hooks/useUJT";
+import { useTranslation } from "react-i18next";
+
+const STATUS_KEYS: Record<string, string> = {
+  published: "articles.statusPublished",
+  draft: "articles.statusDraft",
+  scheduled: "articles.statusScheduled",
+};
 
 export default function Articles() {
+  const { t } = useTranslation();
   const { posts, addPost, updatePost, deletePost, publishPost } = usePosts();
   const { uploadMedia } = useMedia();
   const { processUJT } = useUJT();
@@ -97,7 +105,7 @@ export default function Articles() {
 
   const handleSave = () => {
     if (!currentArticle.title) {
-      toast.error("Please enter a title");
+      toast.error(t("articles.titleRequired"));
       return;
     }
 
@@ -113,7 +121,7 @@ export default function Articles() {
       }, {
         onSuccess: () => {
           setIsEditorOpen(false);
-          toast.success("Article draft saved");
+          toast.success(t("articles.draftSaved"));
         }
       });
     } else if (currentArticle.id) {
@@ -127,14 +135,14 @@ export default function Articles() {
       }, {
         onSuccess: () => {
           setIsEditorOpen(false);
-          toast.success("Article updated");
+          toast.success(t("articles.articleUpdated"));
         }
       });
     }
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this article?")) {
+    if (confirm(t("articles.confirmDelete"))) {
       deletePost.mutate(id);
     }
   };
@@ -166,7 +174,7 @@ export default function Articles() {
     // Fallback for simple content import
     if (data.content) {
       setCurrentArticle(prev => ({ ...prev, content: data.content }));
-      toast.success("Content imported successfully");
+      toast.success(t("articles.contentImported"));
     }
   };
 
@@ -186,14 +194,14 @@ export default function Articles() {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
             <div>
-              <h1 className="page-title mb-2">Articles</h1>
+              <h1 className="page-title mb-2">{t("articles.title")}</h1>
               <p className="text-sm text-muted-foreground font-medium max-w-xl opacity-60">
-                Compose high-impact, long-form content. Orchestrate your brand's narrative across Novus Exchange with precision.
+                {t("articles.subtitle")}
               </p>
             </div>
             <Button onClick={handleCreateArticle} className="bg-primary hover:bg-primary/90 text-white font-black uppercase text-[11px] tracking-[0.2em] gap-3 px-8 py-7 rounded-2xl shadow-2xl shadow-primary/30 active:scale-95 transition-all">
               <Plus className="h-5 w-5" />
-              NEW ARTICLE
+              {t("articles.newArticle")}
             </Button>
           </div>
 
@@ -203,7 +211,7 @@ export default function Articles() {
               <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-[20px] opacity-0 group-focus-within:opacity-100 transition-opacity" />
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 group-focus-within:text-primary transition-colors" />
               <Input
-                placeholder="Search global archives..."
+                placeholder={t("articles.searchPlaceholder")}
                 className="pl-12 bg-white/[0.03] border-white/[0.08] rounded-2xl py-6 text-sm placeholder:text-muted-foreground/40 focus:border-primary/40 focus:bg-white/[0.05] transition-all relative z-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -211,13 +219,13 @@ export default function Articles() {
             </div>
             <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
               <SelectTrigger className="w-full sm:w-[220px] bg-white/[0.03] border-white/[0.08] rounded-2xl py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-white transition-all">
-                <SelectValue placeholder="STATUS FILTER" />
+                <SelectValue placeholder={t("articles.statusFilter")} />
               </SelectTrigger>
               <SelectContent className="bg-background/95 backdrop-blur-xl border-white/[0.08] rounded-2xl">
-                <SelectItem value="all" className="text-[10px] font-black uppercase tracking-widest py-3">ALL TRANSMISSIONS</SelectItem>
-                <SelectItem value="draft" className="text-[10px] font-black uppercase tracking-widest py-3 text-amber-400">DRAFTS</SelectItem>
-                <SelectItem value="scheduled" className="text-[10px] font-black uppercase tracking-widest py-3 text-blue-400">SCHEDULED</SelectItem>
-                <SelectItem value="published" className="text-[10px] font-black uppercase tracking-widest py-3 text-emerald-400">PUBLISHED</SelectItem>
+                <SelectItem value="all" className="text-[10px] font-black uppercase tracking-widest py-3">{t("articles.allTransmissions")}</SelectItem>
+                <SelectItem value="draft" className="text-[10px] font-black uppercase tracking-widest py-3 text-amber-400">{t("articles.drafts")}</SelectItem>
+                <SelectItem value="scheduled" className="text-[10px] font-black uppercase tracking-widest py-3 text-blue-400">{t("articles.scheduled")}</SelectItem>
+                <SelectItem value="published" className="text-[10px] font-black uppercase tracking-widest py-3 text-emerald-400">{t("articles.published")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -228,11 +236,11 @@ export default function Articles() {
               <div className="w-24 h-24 rounded-[2rem] bg-white/[0.03] flex items-center justify-center mb-8 border border-white/[0.08]">
                 <FileText className="h-10 w-10 text-muted-foreground/30" />
               </div>
-              <h3 className="text-2xl font-black text-white tracking-tight uppercase mb-4">No content found</h3>
+              <h3 className="text-2xl font-black text-white tracking-tight uppercase mb-4">{t("articles.noContentFound")}</h3>
               <p className="text-muted-foreground mb-10 text-center max-w-sm font-medium opacity-60">
-                Your archive is currently empty. Initialize your first long-form strategy to begin the sequence.
+                {t("articles.archiveEmpty")}
               </p>
-              <Button onClick={handleCreateArticle} className="bg-primary px-10 py-7 rounded-2xl font-black uppercase tracking-widest">Create Sequence</Button>
+              <Button onClick={handleCreateArticle} className="bg-primary px-10 py-7 rounded-2xl font-black uppercase tracking-widest">{t("articles.createSequence")}</Button>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
@@ -246,7 +254,7 @@ export default function Articles() {
                   
                   <div className="flex justify-between items-center mb-6 relative z-10">
                     <Badge variant="outline" className={cn("text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-lg border-white/[0.08]", getStatusColor(article.status))}>
-                      {article.status}
+                      {t(STATUS_KEYS[article.status] || article.status)}
                     </Badge>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -256,15 +264,15 @@ export default function Articles() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="bg-background/95 backdrop-blur-xl border-white/[0.08] rounded-2xl p-2 min-w-[180px]">
                         <DropdownMenuItem className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest gap-3" onClick={(e) => { e.stopPropagation(); handleEditArticle(article); }}>
-                          <Edit className="h-4 w-4" /> Edit Sequence
+                          <Edit className="h-4 w-4" /> {t("articles.editSequence")}
                         </DropdownMenuItem>
                         {article.status !== "published" && (
                           <DropdownMenuItem className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest gap-3 text-primary" onClick={(e) => { e.stopPropagation(); handlePublish(article.id); }}>
-                            <Send className="h-4 w-4" /> Deploy Now
+                            <Send className="h-4 w-4" /> {t("articles.deployNow")}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest gap-3 text-rose-400" onClick={(e) => { e.stopPropagation(); handleDelete(article.id); }}>
-                          <Trash2 className="h-4 w-4" /> Purge Record
+                          <Trash2 className="h-4 w-4" /> {t("articles.purgeRecord")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -289,7 +297,7 @@ export default function Articles() {
                     {article.status === "published" && (
                       <div className="flex items-center gap-2 text-emerald-400">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Live Node</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{t("articles.liveNode")}</span>
                       </div>
                     )}
                   </div>
@@ -302,23 +310,23 @@ export default function Articles() {
           <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
             <DialogContent className="max-w-[95vw] w-full h-[95vh] flex flex-col p-0 gap-0">
               <DialogHeader className="px-6 py-4 border-b flex flex-row items-center justify-between space-y-0">
-                <DialogTitle>{isNew ? "New Article" : "Edit Article"}</DialogTitle>
+                <DialogTitle>{isNew ? t("articles.newArticleTitle") : t("articles.editArticleTitle")}</DialogTitle>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={handleImportClick} className="gap-2">
                         <Upload className="h-4 w-4" />
-                        Import
+                        {t("articles.import")}
                     </Button>
                     <Badge variant="outline" className="mr-4">
-                        {isNew ? "Draft" : currentArticle.status}
+                        {isNew ? t("articles.draft") : t(STATUS_KEYS[currentArticle.status || "draft"] || currentArticle.status)}
                     </Badge>
                   </div>
               </DialogHeader>
-              
-              <input 
-                  type="file" 
-                  ref={importInputRef} 
-                  title="Import article file"
-                  aria-label="Import article file"
+
+              <input
+                  type="file"
+                  ref={importInputRef}
+                  title={t("articles.import")}
+                  aria-label={t("articles.import")}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
@@ -352,20 +360,20 @@ export default function Articles() {
                   {/* Title Area */}
                   <div className="w-full max-w-4xl mx-auto px-6 sm:px-12 pt-12 pb-6">
                     <Input
-                      placeholder="Article Title"
+                      placeholder={t("articles.articleTitlePlaceholder")}
                       className="text-4xl sm:text-5xl font-extrabold border-none shadow-none px-0 focus-visible:ring-0 h-auto placeholder:text-muted-foreground/30 bg-transparent tracking-tight text-foreground"
                       value={currentArticle.title}
                       onChange={(e) => setCurrentArticle({ ...currentArticle, title: e.target.value })}
                     />
                   </div>
-                  
+
                   {/* Editor Area */}
                   <div className="flex-1 w-full bg-background border-t shadow-sm">
                     <RichTextEditor
                       content={currentArticle.content || ""}
                       onChange={(content) => setCurrentArticle({ ...currentArticle, content })}
                       className="w-full border-none shadow-none"
-                      placeholder="Start writing your story..."
+                      placeholder={t("articles.startWriting")}
                       onImageUpload={handleImageUpload}
                     />
                   </div>
@@ -376,25 +384,25 @@ export default function Articles() {
               <DialogFooter className="px-6 py-4 border-t bg-background shadow-[0_-4px_15px_-5px_rgba(0,0,0,0.1)] z-20 sticky bottom-0">
                 <div className="flex justify-between w-full items-center">
                   <Button variant="ghost" onClick={() => setIsEditorOpen(false)} className="text-muted-foreground hover:text-foreground h-11 px-6">
-                    Cancel
+                    {t("articles.cancel")}
                   </Button>
                   <div className="flex items-center gap-3">
                     {!isNew && currentArticle.status !== "published" && (
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="bg-background border-primary/20 hover:border-primary/50 text-foreground shadow-sm transition-all"
                           onClick={() => handlePublish(currentArticle.id!)}
                         >
                           <Send className="h-4 w-4 mr-2 text-primary" />
-                          Publish Now
+                          {t("articles.publishNow")}
                         </Button>
                     )}
-                    <Button 
+                    <Button
                       onClick={handleSave}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-all px-8 rounded-full"
                     >
                       <Save className="h-4 w-4 mr-2" />
-                      Save Article
+                      {t("articles.saveArticle")}
                     </Button>
                   </div>
                 </div>
