@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { usePlatforms } from "@/hooks/usePlatforms";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 export interface PlatformData {
   id: string;
@@ -54,6 +55,7 @@ interface PlatformCardProps {
 }
 
 export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor, onOpenDetail }: PlatformCardProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { togglePlatformStatus } = usePlatforms();
 
@@ -103,7 +105,7 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
                     {platform.username || platform.url}
                   </a>
                 ) : (
-                  platform.username || "Not connected"
+                  platform.username || t("platforms.notConnectedStatus")
                 )}
               </CardDescription>
             </div>
@@ -117,7 +119,7 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
             }`}
           >
             <CheckCircle2 className="h-3 w-3 mr-1" />
-            {localStatus === "active" ? "Active" : "Paused"}
+            {localStatus === "active" ? t("platforms.active") : t("platforms.paused")}
           </Badge>
         </div>
       </CardHeader>
@@ -125,9 +127,9 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: "Total Posts", value: platform.totalPosts },
-            { label: "Scheduled", value: platform.scheduledCount },
-            { label: "Published", value: platform.publishedCount },
+            { label: t("platforms.statTotalPostsShort"), value: platform.totalPosts },
+            { label: t("platforms.statScheduledShort"), value: platform.scheduledCount },
+            { label: t("platforms.statPublishedShort"), value: platform.publishedCount },
           ].map((stat) => (
             <div key={stat.label} className="p-2 rounded-lg bg-muted/50 text-center">
               <p className="text-lg font-bold text-foreground">{stat.value}</p>
@@ -157,13 +159,13 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
           <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
             <p className="text-[10px] text-muted-foreground mb-1.5 flex items-center gap-1">
               <FileText className="h-3 w-3" />
-              Latest Post
+              {t("platforms.latestPost")}
             </p>
             <p className="text-xs font-medium text-foreground mb-1 truncate">
               "{platform.latestPost.title}"
             </p>
             <Badge variant="outline" className="text-[10px] capitalize">
-              {platform.latestPost.status.replace("_", " ")}
+              {t(`calendar.status${platform.latestPost.status.charAt(0).toUpperCase()}${platform.latestPost.status.slice(1)}`, { defaultValue: platform.latestPost.status.replace("_", " ") })}
             </Badge>
           </div>
         )}
@@ -173,11 +175,11 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-primary" />
             <span className="text-xs text-foreground">
-              {platform.scheduledCount} posts scheduled
+              {platform.scheduledCount} {t("platforms.postsScheduledSuffix")}
             </span>
           </div>
           <Badge variant="outline" className="text-[10px]">
-            {platform.publishedCount} published
+            {platform.publishedCount} {t("platforms.publishedSuffix")}
           </Badge>
         </div>
 
@@ -186,8 +188,8 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
             <Clock className="h-3 w-3" />
             {platform.lastActivity
-              ? `Last activity ${formatDistanceToNow(new Date(platform.lastActivity), { addSuffix: true })}`
-              : "No activity yet"}
+              ? t("platforms.lastActivity", { time: formatDistanceToNow(new Date(platform.lastActivity), { addSuffix: true }) })
+              : t("platforms.noActivityYet")}
           </div>
           <div onClick={stopPropagation}>
             <Switch
@@ -203,7 +205,7 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
                     status: newStatus,
                   });
                 } else {
-                  toast.error("Connect this platform first");
+                  toast.error(t("platforms.toastConnectFirst"));
                   setLocalStatus(platform.status);
                 }
               }}
@@ -220,7 +222,7 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
             onClick={() => onOpenDetail(platform)}
           >
             <Settings className="h-3 w-3" />
-            Configure
+            {t("platforms.configure")}
           </Button>
           <Button
             variant="outline"
@@ -229,7 +231,7 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
             onClick={() => navigate("/analytics")}
           >
             <BarChart3 className="h-3 w-3" />
-            Analytics
+            {t("platforms.analyticsButton")}
           </Button>
           <Button
             variant="outline"
