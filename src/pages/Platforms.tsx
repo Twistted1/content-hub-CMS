@@ -39,8 +39,10 @@ import {
   CalendarClock,
   FileText,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function Platforms() {
+  const { t } = useTranslation();
   const { posts, addPost, updatePost, deletePost, publishPost } = usePosts();
   const { isConnected } = usePlatformOAuth();
   const { platforms: userPlatforms } = usePlatforms();
@@ -140,7 +142,7 @@ export default function Platforms() {
     setSyncing(true);
     setTimeout(() => {
       setSyncing(false);
-      toast({ title: "Sync complete", description: "All platforms have been synced." });
+      toast({ title: t("platforms.syncCompleteTitle"), description: t("platforms.syncCompleteDesc") });
     }, 2000);
   };
 
@@ -149,8 +151,8 @@ export default function Platforms() {
   const handleCreatePost = () => {
     if (!newPost.title || !newPost.content || newPost.platforms.length === 0) {
       toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields and select at least one platform.",
+        title: t("platforms.missingFieldsTitle"),
+        description: t("platforms.missingFieldsDesc"),
         variant: "destructive",
       });
       return;
@@ -177,8 +179,8 @@ export default function Platforms() {
     });
     setIsCreateDialogOpen(false);
     toast({
-      title: "Post created",
-      description: isScheduled ? "Your post has been scheduled." : "Your post has been saved as a draft.",
+      title: t("platforms.postCreatedTitle"),
+      description: isScheduled ? t("platforms.postScheduledDesc") : t("platforms.postDraftDesc"),
     });
   };
 
@@ -194,16 +196,16 @@ export default function Platforms() {
     });
     setEditingPost(null);
     toast({
-      title: "Post updated",
-      description: "Your post has been updated successfully.",
+      title: t("platforms.postUpdatedTitle"),
+      description: t("platforms.postUpdatedDesc"),
     });
   };
 
   const handleDeletePost = (id: string) => {
     deletePost.mutate(id);
     toast({
-      title: "Post deleted",
-      description: "The post has been removed.",
+      title: t("platforms.postDeletedTitle"),
+      description: t("platforms.postDeletedDesc"),
     });
   };
 
@@ -220,20 +222,20 @@ export default function Platforms() {
         const failed = (result?.results || []).filter((r: any) => !r.success);
         if (result?.success) {
           toast({
-            title: "Post published",
+            title: t("platforms.postPublishedTitle"),
             description: failed.length
-              ? `Published. ${failed.length} platform(s) failed.`
-              : `Published to ${directPlatforms.join(", ")}.`,
+              ? t("platforms.publishedPartialDesc", { count: failed.length })
+              : t("platforms.publishedToDesc", { platforms: directPlatforms.join(", ") }),
           });
         } else {
           toast({
-            title: "Publish failed",
+            title: t("platforms.publishFailedTitle"),
             description: failed.map((f: any) => `${f.platform}: ${f.error}`).join("; "),
             variant: "destructive",
           });
         }
       } catch (e: any) {
-        toast({ title: "Publish failed", description: e.message, variant: "destructive" });
+        toast({ title: t("platforms.publishFailedTitle"), description: e.message, variant: "destructive" });
       }
       return;
     }
@@ -241,8 +243,8 @@ export default function Platforms() {
     // Fallback: mark as published (webhook-driven platforms)
     publishPost.mutate(id);
     toast({
-      title: "Post published",
-      description: "Your post has been marked as published.",
+      title: t("platforms.postPublishedTitle"),
+      description: t("platforms.postMarkedPublishedDesc"),
     });
   };
 
@@ -273,9 +275,9 @@ export default function Platforms() {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
             <div>
-              <h1 className="page-title mb-2">Platforms</h1>
+              <h1 className="page-title mb-2">{t("platforms.title")}</h1>
               <p className="text-sm text-muted-foreground font-medium max-w-xl opacity-60">
-                Centralized neural-link for all connected social nodes. Monitor reach and orchestrate global transmissions.
+                {t("platforms.subtitle")}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -286,11 +288,11 @@ export default function Platforms() {
                 disabled={syncing}
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
-                {syncing ? "SYNCING..." : "SYNC ALL"}
+                {syncing ? t("platforms.syncing") : t("platforms.syncAll")}
               </Button>
               <Button className="bg-primary hover:bg-primary/90 text-white font-black uppercase text-[10px] tracking-widest px-8 py-6 rounded-2xl shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={() => setIsAddPlatformOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                ADD PLATFORM
+                {t("platforms.addPlatform")}
               </Button>
             </div>
           </div>
@@ -298,10 +300,10 @@ export default function Platforms() {
           {/* Overview Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: CheckCircle2, label: "Connected", value: `${connectedPlatforms.length}/${platforms.length}`, subtext: "platforms", color: "text-emerald-400" },
-              { icon: BarChart3, label: "Total Posts", value: (posts || []).length.toString(), subtext: "all time", color: "text-purple-400" },
-              { icon: Calendar, label: "Scheduled", value: scheduledPosts.filter((p) => p.status !== "published").length.toString(), subtext: "pending", color: "text-indigo-400" },
-              { icon: FileText, label: "Published", value: (posts || []).filter((p) => p.status === "published").length.toString(), subtext: "all time", color: "text-primary" },
+              { icon: CheckCircle2, label: t("platforms.statConnected"), value: `${connectedPlatforms.length}/${platforms.length}`, subtext: t("platforms.statPlatformsSubtext"), color: "text-emerald-400" },
+              { icon: BarChart3, label: t("platforms.statTotalPosts"), value: (posts || []).length.toString(), subtext: t("platforms.statAllTime"), color: "text-purple-400" },
+              { icon: Calendar, label: t("platforms.statScheduled"), value: scheduledPosts.filter((p) => p.status !== "published").length.toString(), subtext: t("platforms.statPending"), color: "text-indigo-400" },
+              { icon: FileText, label: t("platforms.statPublished"), value: (posts || []).filter((p) => p.status === "published").length.toString(), subtext: t("platforms.statAllTime"), color: "text-primary" },
             ].map((stat, index) => (
               <div
                 key={index}
@@ -322,17 +324,17 @@ export default function Platforms() {
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
                 <Activity className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Posts by Platform</CardTitle>
+                <CardTitle className="text-lg">{t("platforms.postsByPlatform")}</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               {platformPostDistribution.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
-                  No posts yet. Create your first post to see the platform breakdown here.
+                  {t("platforms.noPostsYetChart")}
                 </p>
               ) : (
                 <ChartContainer
-                  config={{ posts: { label: "Posts", color: "hsl(var(--primary))" } }}
+                  config={{ posts: { label: t("platforms.postsLabel"), color: "hsl(var(--primary))" } }}
                   className="h-[180px] w-full"
                 >
                   <BarChart data={platformPostDistribution}>
@@ -352,19 +354,19 @@ export default function Platforms() {
             <TabsList className="bg-muted/50 flex-wrap">
               <TabsTrigger value="connected" className="gap-2">
                 <CheckCircle2 className="h-4 w-4" />
-                Connected ({connectedPlatforms.length})
+                {t("platforms.tabConnected")} ({connectedPlatforms.length})
               </TabsTrigger>
               <TabsTrigger value="schedule" className="gap-2">
                 <CalendarClock className="h-4 w-4" />
-                Schedule ({scheduledPosts.filter(p => p.status !== "published").length})
+                {t("platforms.tabSchedule")} ({scheduledPosts.filter(p => p.status !== "published").length})
               </TabsTrigger>
               <TabsTrigger value="available" className="gap-2">
                 <Plus className="h-4 w-4" />
-                Available ({disconnectedPlatforms.length + availablePlatforms.length})
+                {t("platforms.tabAvailable")} ({disconnectedPlatforms.length + availablePlatforms.length})
               </TabsTrigger>
               <TabsTrigger value="activity" className="gap-2">
                 <Zap className="h-4 w-4" />
-                Activity
+                {t("platforms.tabActivity")}
               </TabsTrigger>
             </TabsList>
 
@@ -391,8 +393,8 @@ export default function Platforms() {
             <TabsContent value="schedule" className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">Scheduled Posts</h3>
-                  <p className="text-sm text-muted-foreground">Manage and schedule content across all platforms</p>
+                  <h3 className="text-lg font-semibold text-foreground">{t("platforms.scheduledPostsTitle")}</h3>
+                  <p className="text-sm text-muted-foreground">{t("platforms.scheduledPostsDesc")}</p>
                 </div>
                 <PostDialog
                   isOpen={isCreateDialogOpen}
@@ -413,11 +415,11 @@ export default function Platforms() {
                   <Card className="bg-card border-border border-dashed">
                     <CardContent className="p-8 text-center">
                       <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-foreground mb-2">No scheduled posts</h3>
-                      <p className="text-sm text-muted-foreground mb-4">Create your first post to get started</p>
+                      <h3 className="text-lg font-medium text-foreground mb-2">{t("platforms.noScheduledPosts")}</h3>
+                      <p className="text-sm text-muted-foreground mb-4">{t("platforms.noScheduledPostsDesc")}</p>
                       <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
                         <Plus className="h-4 w-4" />
-                        Create Post
+                        {t("platforms.createPost")}
                       </Button>
                     </CardContent>
                   </Card>
@@ -443,15 +445,15 @@ export default function Platforms() {
             <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
               <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
-                  <DialogTitle>Edit Post</DialogTitle>
+                  <DialogTitle>{t("platforms.editPostTitle")}</DialogTitle>
                   <DialogDescription>
-                    Update your scheduled post details.
+                    {t("platforms.editPostDesc")}
                   </DialogDescription>
                 </DialogHeader>
                 {editingPost && (
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-title">Title</Label>
+                      <Label htmlFor="edit-title">{t("platforms.editTitle")}</Label>
                       <Input
                         id="edit-title"
                         value={editingPost.title}
@@ -459,7 +461,7 @@ export default function Platforms() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-content">Content</Label>
+                      <Label htmlFor="edit-content">{t("platforms.editContent")}</Label>
                       <Textarea
                         id="edit-content"
                         rows={4}
@@ -468,7 +470,7 @@ export default function Platforms() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Platforms</Label>
+                      <Label>{t("platforms.postPlatforms")}</Label>
                       <div className="flex flex-wrap gap-2">
                         {connectedPlatforms.map((platform) => (
                           <div
@@ -495,7 +497,7 @@ export default function Platforms() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="edit-date">Schedule Date</Label>
+                        <Label htmlFor="edit-date">{t("platforms.scheduleDate")}</Label>
                         <Input
                           id="edit-date"
                           type="date"
@@ -507,7 +509,7 @@ export default function Platforms() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="edit-time">Schedule Time</Label>
+                        <Label htmlFor="edit-time">{t("platforms.scheduleTime")}</Label>
                         <Input
                           id="edit-time"
                           type="time"
@@ -523,10 +525,10 @@ export default function Platforms() {
                 )}
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setEditingPost(null)}>
-                    Cancel
+                    {t("platforms.cancel")}
                   </Button>
                   <Button onClick={handleUpdatePost}>
-                    Save Changes
+                    {t("platforms.saveChanges")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -548,19 +550,19 @@ export default function Platforms() {
                       </div>
                       <h3 className="font-semibold text-lg mb-1 text-foreground">{platform.name}</h3>
                       <p className="text-sm text-muted-foreground mb-4 flex-grow">
-                        Connect your {platform.name} account to track performance
+                        {t("platforms.connectAccountPrefix")} {platform.name} {t("platforms.connectAccountSuffix")}
                       </p>
                       <Button
                         className="w-full bg-primary hover:bg-primary/90 mt-auto"
                         onClick={() => {
                           toast({
-                            title: `Connecting ${platform.name}...`,
-                            description: "You'll be redirected to authenticate with your account.",
+                            title: t("platforms.connectingToast", { name: platform.name }),
+                            description: t("platforms.connectingDesc"),
                           });
                         }}
                       >
                         <Plus className="h-4 w-4 mr-2" />
-                        Connect {platform.name}
+                        {t("platforms.connectButton", { name: platform.name })}
                       </Button>
                     </CardContent>
                   </Card>
@@ -577,18 +579,18 @@ export default function Platforms() {
                       </span>
                       <h3 className="font-semibold text-lg mb-1 text-foreground">{platform.name}</h3>
                       <p className="text-sm text-muted-foreground mb-2">{platform.description}</p>
-                      <p className="text-xs text-primary mb-4 flex-grow">{platform.users} active users</p>
+                      <p className="text-xs text-primary mb-4 flex-grow">{platform.users} {t("platforms.activeUsersSuffix")}</p>
                       <Button
                         className="w-full bg-primary hover:bg-primary/90 mt-auto"
                         onClick={() => {
                           toast({
-                            title: `Connecting ${platform.name}...`,
-                            description: "You'll be redirected to authenticate with your account.",
+                            title: t("platforms.connectingToast", { name: platform.name }),
+                            description: t("platforms.connectingDesc"),
                           });
                         }}
                       >
                         <Plus className="h-4 w-4 mr-2" />
-                        Connect {platform.name}
+                        {t("platforms.connectButton", { name: platform.name })}
                       </Button>
                     </CardContent>
                   </Card>
@@ -599,16 +601,16 @@ export default function Platforms() {
                     <div className="p-4 rounded-2xl bg-muted/50 mx-auto w-fit mb-4">
                       <Plus className="h-8 w-8 text-muted-foreground" />
                     </div>
-                    <h3 className="font-semibold text-lg mb-1 text-foreground">Add Custom Platform</h3>
+                    <h3 className="font-semibold text-lg mb-1 text-foreground">{t("platforms.addCustomPlatform")}</h3>
                     <p className="text-sm text-muted-foreground mb-4 flex-grow">
-                      Configure a new custom destination for your content.
+                      {t("platforms.addCustomPlatformDesc")}
                     </p>
                     <Button
                       variant="outline"
                       className="w-full mt-auto"
                       onClick={() => setIsAddPlatformOpen(true)}
                     >
-                      Add Platform
+                      {t("platforms.addPlatformButton")}
                     </Button>
                   </CardContent>
                 </Card>
@@ -621,14 +623,14 @@ export default function Platforms() {
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Zap className="h-5 w-5 text-primary" />
-                    <CardTitle>Recent Activity</CardTitle>
+                    <CardTitle>{t("platforms.recentActivity")}</CardTitle>
                   </div>
-                  <CardDescription>Your most recently created posts, across all platforms</CardDescription>
+                  <CardDescription>{t("platforms.recentActivityDesc")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {recentPosts.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">
-                      No posts yet. Create your first post to see activity here.
+                      {t("platforms.noPostsYetActivity")}
                     </p>
                   ) : (
                     <div className="space-y-4">
@@ -650,7 +652,7 @@ export default function Platforms() {
                                   </Badge>
                                 ))}
                                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0 capitalize">
-                                  {post.status.replace("_", " ")}
+                                  {t(`calendar.status${post.status.charAt(0).toUpperCase()}${post.status.slice(1)}`, { defaultValue: post.status.replace("_", " ") })}
                                 </Badge>
                               </div>
                               <p className="font-medium text-foreground">{post.title}</p>
@@ -681,23 +683,23 @@ export default function Platforms() {
       <Dialog open={isAddPlatformOpen} onOpenChange={setIsAddPlatformOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Add Custom Platform</DialogTitle>
+            <DialogTitle>{t("platforms.addCustomPlatformDialogTitle")}</DialogTitle>
             <DialogDescription>
-              Create a custom integration endpoint for your content dashboard.
+              {t("platforms.addCustomPlatformDialogDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="platform-name">Platform Name</Label>
+              <Label htmlFor="platform-name">{t("platforms.platformName")}</Label>
               <Input
                 id="platform-name"
-                placeholder="e.g. Medium, Substack, Custom CMS"
+                placeholder={t("platforms.platformNamePlaceholder")}
                 value={newPlatform.name}
                 onChange={(e) => setNewPlatform({ ...newPlatform, name: e.target.value })}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="platform-url">Connection URL (Optional)</Label>
+              <Label htmlFor="platform-url">{t("platforms.connectionUrl")}</Label>
               <Input
                 id="platform-url"
                 placeholder="https://"
@@ -706,10 +708,10 @@ export default function Platforms() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="platform-desc">Description</Label>
+              <Label htmlFor="platform-desc">{t("platforms.descriptionLabel")}</Label>
               <Textarea
                 id="platform-desc"
-                placeholder="What type of content goes here?"
+                placeholder={t("platforms.descriptionPlaceholder")}
                 value={newPlatform.description}
                 onChange={(e) => setNewPlatform({ ...newPlatform, description: e.target.value })}
               />
@@ -717,12 +719,12 @@ export default function Platforms() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddPlatformOpen(false)}>
-              Cancel
+              {t("platforms.cancel")}
             </Button>
-            <Button 
+            <Button
               onClick={() => {
                 if (!newPlatform.name) {
-                  toast({ title: "Name required", description: "Please enter a platform name.", variant: "destructive" });
+                  toast({ title: t("platforms.nameRequiredTitle"), description: t("platforms.nameRequiredDesc"), variant: "destructive" });
                   return;
                 }
                 setCustomAvailablePlatforms([...customAvailablePlatforms, {
@@ -734,10 +736,10 @@ export default function Platforms() {
                 }]);
                 setIsAddPlatformOpen(false);
                 setNewPlatform({ name: "", url: "", description: "" });
-                toast({ title: "Platform Added", description: `${newPlatform.name} is now available for connection in your dashboard.` });
+                toast({ title: t("platforms.platformAddedTitle"), description: t("platforms.platformAddedDesc", { name: newPlatform.name }) });
               }}
             >
-              Add Platform
+              {t("platforms.addPlatformButton")}
             </Button>
           </DialogFooter>
         </DialogContent>
