@@ -1897,7 +1897,9 @@
     "newsletterHeading": "Fique por Dentro",
     "newsletterDesc": "Assine para receber atualizações e dicas do produto.",
     "copyright": "Content Hub. Todos os direitos reservados.",
-    "madeWith": "Feito com ❤️ para criadores de conteúdo"
+    "madeWith": "Feito com ❤️ para criadores de conteúdo",
+    "dashboardCopyright": "Content Hub CMS. Todos os direitos reservados.",
+    "support": "Suporte"
   },
   "workflowTest": {
     "title": "Teste do Motor de Fluxo de Trabalho",

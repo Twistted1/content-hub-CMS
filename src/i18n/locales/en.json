@@ -1897,7 +1897,9 @@
     "newsletterHeading": "Stay Updated",
     "newsletterDesc": "Subscribe for product updates and tips.",
     "copyright": "Content Hub. All rights reserved.",
-    "madeWith": "Made with ❤️ for content creators"
+    "madeWith": "Made with ❤️ for content creators",
+    "dashboardCopyright": "Content Hub CMS. All rights reserved.",
+    "support": "Support"
   },
   "workflowTest": {
     "title": "Workflow Engine Test",
