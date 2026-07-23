@@ -22,6 +22,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { useTranslation } from "react-i18next";
 
 import { usePosts } from "../hooks/usePosts";
 import { useAutomations, Automation } from "@/hooks/useAutomations";
@@ -41,6 +42,7 @@ import {
 } from "@/utils/scheduling";
 
 const AutomationPage = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { posts, updatePost } = usePosts();
   const {
@@ -80,13 +82,13 @@ const AutomationPage = () => {
   const handleApproveAll = async () => {
     setIsProcessingPipeline(true);
     try {
-      setPipelineLogs(["Approving weekly strategy...", "Updating 37 content units..."]);
+      setPipelineLogs(["Approving weekly strategy...", `Updating ${pendingPosts.length} content units...`]);
       for (const post of pendingPosts) {
         await updatePost.mutateAsync({ id: post.id, status: "scheduled" as any });
       }
-      toast.success(`Successfully approved ${pendingPosts.length} posts!`);
+      toast.success(t("automation.approvedPosts", { count: pendingPosts.length }));
     } catch (err: any) {
-      toast.error("Failed to approve strategy");
+      toast.error(t("automation.failedApproveStrategy"));
     } finally {
       setIsProcessingPipeline(false);
     }
@@ -94,25 +96,25 @@ const AutomationPage = () => {
 
   const stats = [
     {
-      label: "Active Automations",
+      label: t("automation.activeAutomations"),
       value: String(automations.filter((a) => a.status === "active").length),
       icon: Zap,
       color: "text-emerald-400",
     },
     {
-      label: "Total Runs",
+      label: t("automation.totalRuns"),
       value: String(automations.reduce((s, a) => s + (a.runs || 0), 0)),
       icon: RefreshCcw,
       color: "text-blue-400",
     },
     {
-      label: "Time Saved",
+      label: t("automation.timeSaved"),
       value: `${Math.max(1, Math.floor(automations.reduce((s, a) => s + (a.runs || 0), 0) * 0.4))}h`,
       icon: Clock,
       color: "text-purple-400",
     },
     {
-      label: "Connected Apps",
+      label: t("automation.connectedApps"),
       value: String(new Set(automations.flatMap((a) => a.platforms)).size),
       icon: Share2,
       color: "text-orange-400",
@@ -345,7 +347,7 @@ const AutomationPage = () => {
       // Create then patch schedule + next_run if needed
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Not authenticated");
+        toast.error(t("automation.notAuthenticated"));
         return;
       }
       const { data: created, error } = await supabase
@@ -364,10 +366,10 @@ const AutomationPage = () => {
         .select()
         .single();
       if (error) {
-        toast.error(`Failed to create: ${error.message}`);
+        toast.error(t("automation.failedCreate", { error: error.message }));
         return;
       }
-      toast.success("Automation created");
+      toast.success(t("automation.automationCreated"));
       queryClient.invalidateQueries({ queryKey: ["automations"] });
     }
     setEditingAutomation(null);
@@ -391,15 +393,15 @@ const AutomationPage = () => {
     let runId: string | undefined;
     try {
       runId = await runAutomation(id);
-      toast.info(`Running ${automation.name}...`);
+      toast.info(t("automation.runningAutomation", { name: automation.name }));
 
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!user) throw new Error(t("automation.notAuthenticated"));
 
       const platforms = automation.platforms
         .map((p) => p.toLowerCase().replace("x", "twitter"))
         .filter((p) => ["twitter", "instagram", "facebook", "linkedin", "tiktok", "youtube", "website"].includes(p));
-      if (platforms.length === 0) throw new Error("Choose at least one supported publishing platform");
+      if (platforms.length === 0) throw new Error(t("automation.chooseAtLeastOnePlatform"));
       const scheduledAt = computeNextRun(automation.triggerConfig.schedule || "daily") || new Date().toISOString();
       const { data: pipeline, error: pipelineErr } = await supabase.functions.invoke("content-pipeline", {
         body: {
@@ -417,10 +419,10 @@ const AutomationPage = () => {
       }
 
       if (runId) completeAutomationRun(runId, true, `Created review draft${pipeline?.hasImage ? " with image" : ""}`, id);
-      toast.success(`${automation.name} created a draft for review`);
+      toast.success(t("automation.draftCreatedForReview", { name: automation.name }));
     } catch (err: any) {
       if (runId) completeAutomationRun(runId, false, err.message, id);
-      toast.error(`Run failed: ${err.message}`);
+      toast.error(t("automation.runFailed", { error: err.message }));
     } finally {
       setRunningId(null);
     }
@@ -439,18 +441,18 @@ const AutomationPage = () => {
         {/* Simple Header */}
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="page-title mb-2">Automation Console</h1>
+            <h1 className="page-title mb-2">{t("automation.console")}</h1>
             <p className="text-muted-foreground text-lg">
-              Manage your autonomous content distribution and weekly strategy.
+              {t("automation.consoleSubtitle")}
             </p>
           </div>
 
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={async () => {
                 try {
                   const { data: { user } } = await supabase.auth.getUser();
-                  if (!user) { toast.error("Not authenticated"); return; }
+                  if (!user) { toast.error(t("automation.notAuthenticated")); return; }
                   const allPlatforms = ["twitter","instagram","facebook","linkedin","tiktok","youtube","rumble","website"];
                   const { data: existing } = await supabase
                     .from("automations").select("id")
@@ -469,30 +471,30 @@ const AutomationPage = () => {
                       next_run: new Date().toISOString(),
                     });
                   }
-                  toast.success("Weekly schedule activated. First batch arrives in <15 min.");
+                  toast.success(t("automation.weeklyActivated"));
                   queryClient.invalidateQueries({ queryKey: ["automations"] });
                 } catch (e: any) { toast.error(e.message); }
               }}
               className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 transition-all font-bold text-sm"
             >
               <Zap className="w-4 h-4" />
-              Activate Weekly Schedule
+              {t("automation.activateWeekly")}
             </button>
-            <button 
+            <button
               onClick={handleRunPipeline}
               disabled={isProcessingPipeline}
               className="flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-xl hover:bg-secondary/80 transition-all font-bold text-sm"
             >
               <RefreshCcw className={`w-4 h-4 ${isProcessingPipeline ? 'animate-spin' : ''}`} />
-              Run Master Pipeline
+              {t("automation.runMasterPipeline")}
             </button>
-            
+
             <button
               onClick={() => { setEditingAutomation(null); setPresetData(null); setDialogOpen(true); }}
               className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all font-bold text-sm"
             >
               <Plus className="w-4 h-4" />
-              New Automation
+              {t("automation.newAutomationBtn")}
             </button>
           </div>
         </div>
@@ -522,13 +524,13 @@ const AutomationPage = () => {
           <div className="bg-card border border-border rounded-3xl p-6">
             <div className="flex items-start justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-xl font-bold text-white uppercase tracking-tight">Weekly Schedule</h2>
+                <h2 className="text-xl font-bold text-white uppercase tracking-tight">{t("automation.weeklyScheduleTitle")}</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  This is the active source of truth used by Automation and Calendar.
+                  {t("automation.weeklyScheduleDesc")}
                 </p>
               </div>
               <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${weeklyScheduleActive ? "bg-emerald-500/10 text-emerald-400" : "bg-primary/10 text-primary"}`}>
-                {weeklyScheduleActive ? "Active" : "Ready"}
+                {weeklyScheduleActive ? t("automation.active") : t("automation.ready")}
               </span>
             </div>
 
@@ -547,21 +549,21 @@ const AutomationPage = () => {
                         <div className="flex items-center justify-between gap-2">
                           <h3 className="text-sm font-bold text-white">{stream.label}</h3>
                           <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${active ? "bg-emerald-500/10 text-emerald-400" : "bg-muted text-muted-foreground"}`}>
-                            {active ? "Active" : "Configured"}
+                            {active ? t("automation.active") : t("automation.configured")}
                           </span>
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">{stream.summary}</p>
                         <div className="mt-3 grid grid-cols-1 gap-2 text-xs">
                           <div>
-                            <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Frequency</span>
+                            <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("automation.frequency")}</span>
                             <span className="font-bold text-white">{stream.frequency}</span>
                           </div>
                           <div>
-                            <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Slots</span>
+                            <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("automation.slots")}</span>
                             <span className="font-medium text-white/80">{stream.slots}</span>
                           </div>
                           <div>
-                            <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Publishing</span>
+                            <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("automation.publishing")}</span>
                             <span className="font-medium text-white/80">{stream.publishing}</span>
                           </div>
                         </div>
@@ -569,7 +571,7 @@ const AutomationPage = () => {
                           onClick={() => handleConfigureStream(stream)}
                           className="mt-4 rounded-lg bg-foreground px-3 py-2 text-xs font-bold text-background transition-all hover:bg-primary hover:text-primary-foreground"
                         >
-                          Configure
+                          {t("automation.configure")}
                         </button>
                       </div>
                     </div>
@@ -581,8 +583,8 @@ const AutomationPage = () => {
 
           <div className="bg-card border border-border rounded-3xl p-6">
             <div className="mb-5">
-              <h2 className="text-xl font-bold text-white uppercase tracking-tight">Next 10 Slots</h2>
-              <p className="text-sm text-muted-foreground mt-1">Upcoming items generated into review first.</p>
+              <h2 className="text-xl font-bold text-white uppercase tracking-tight">{t("automation.next10Slots")}</h2>
+              <p className="text-sm text-muted-foreground mt-1">{t("automation.upcomingItemsDesc")}</p>
             </div>
             <div className="space-y-3">
               {upcomingSlots.map((slot, index) => {
@@ -616,9 +618,9 @@ const AutomationPage = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-white uppercase tracking-tight">My Automations</h2>
+              <h2 className="text-xl font-bold text-white uppercase tracking-tight">{t("automation.myAutomations")}</h2>
               <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">
-                {automations.length} configured · {automations.filter(a => a.status === "active").length} active
+                {t("automation.configuredActiveCount", { total: automations.length, active: automations.filter(a => a.status === "active").length })}
               </p>
             </div>
           </div>
@@ -626,7 +628,7 @@ const AutomationPage = () => {
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground border-2 border-dashed border-border rounded-2xl bg-muted/10">
               <Zap className="w-10 h-10 mb-3 opacity-20" />
               <p className="text-xs font-bold tracking-[0.2em] uppercase opacity-60">
-                No automations yet — click "New Automation" or "Configure" a stream above.
+                {t("automation.noAutomationsYet")}
               </p>
             </div>
           ) : (
@@ -655,22 +657,22 @@ const AutomationPage = () => {
                 <Clock className="w-5 h-5 text-orange-400" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white uppercase tracking-tight">Master Review Hub</h2>
-                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">Weekly Strategy Staging Area</p>
+                <h2 className="text-xl font-bold text-white uppercase tracking-tight">{t("automation.masterReviewHub")}</h2>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">{t("automation.weeklyStagingArea")}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="px-4 py-2 bg-muted rounded-lg">
-                <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">{pendingPosts.length} Items Pending</span>
+                <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">{t("automation.itemsPending", { count: pendingPosts.length })}</span>
               </div>
-              <button 
+              <button
                 onClick={handleApproveAll}
                 disabled={isProcessingPipeline || pendingPosts.length === 0}
                 className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-xl hover:bg-primary hover:text-white disabled:opacity-30 transition-all font-bold text-sm"
               >
                 <Check className="w-4 h-4" />
-                Approve Strategy
+                {t("automation.approveStrategy")}
               </button>
             </div>
           </div>
@@ -700,17 +702,17 @@ const AutomationPage = () => {
                       <h4 className="text-sm font-bold text-white mb-0.5">{post.title}</h4>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
-                          {post.scheduledAt ? new Date(post.scheduledAt).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : 'No Date'}
+                          {post.scheduledAt ? new Date(post.scheduledAt).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : t("automation.noDate")}
                         </span>
                         <span className="text-white/20">•</span>
-                        <span className="text-[10px] text-primary font-bold uppercase tracking-wider">{post.platforms?.[0]?.platform || 'multi'}</span>
+                        <span className="text-[10px] text-primary font-bold uppercase tracking-wider">{post.platforms?.[0]?.platform || t("automation.multi")}</span>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase block">Status</span>
-                      <span className="text-[10px] font-bold text-orange-400 uppercase">Reviewing</span>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase block">{t("automation.status")}</span>
+                      <span className="text-[10px] font-bold text-orange-400 uppercase">{t("automation.reviewing")}</span>
                     </div>
                     <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
                   </div>
@@ -721,7 +723,7 @@ const AutomationPage = () => {
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground border-2 border-dashed border-border rounded-2xl bg-muted/10">
               <RefreshCcw className="w-10 h-10 mb-3 opacity-20" />
               <p className="text-xs font-bold tracking-[0.2em] uppercase opacity-40 italic">
-                Strategy drafts will appear here for Sunday review.
+                {t("automation.draftsAppearHere")}
               </p>
             </div>
           )}
@@ -734,7 +736,7 @@ const AutomationPage = () => {
               <div className="p-6 border-b border-border flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <Zap className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-bold">Strategy Pipeline</h3>
+                  <h3 className="text-lg font-bold">{t("automation.strategyPipeline")}</h3>
                 </div>
                 {pipelineStep === 3 && (
                   <button onClick={() => setPipelineOpen(false)} className="text-muted-foreground hover:text-white">
@@ -774,7 +776,7 @@ const AutomationPage = () => {
                   }`}
                   disabled={pipelineStep !== 3}
                 >
-                  Close
+                  {t("automation.close")}
                 </button>
               </div>
             </div>
