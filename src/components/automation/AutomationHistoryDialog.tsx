@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Automation, AutomationRun } from "@/hooks/useAutomations";
-
+import { useTranslation } from "react-i18next";
 
 interface AutomationHistoryDialogProps {
   open: boolean;
@@ -24,6 +24,7 @@ export function AutomationHistoryDialog({
   automation,
   runs,
 }: AutomationHistoryDialogProps) {
+  const { t } = useTranslation();
   if (!automation) return null;
 
   const automationRuns = runs.filter((r) => r.automationId === automation.id);
@@ -32,13 +33,13 @@ export function AutomationHistoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Run History</DialogTitle>
+          <DialogTitle>{t("automation.historyTitle")}</DialogTitle>
           <DialogDescription>{automation.name}</DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-[300px] pr-4">
           {automationRuns.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
-              No runs yet
+              {t("automation.noRunsYet")}
             </div>
           ) : (
             <div className="space-y-3">
@@ -69,7 +70,7 @@ export function AutomationHistoryDialog({
                             : "secondary"
                         }
                       >
-                        {run.status}
+                        {run.status === "success" ? t("automation.success") : run.status === "failed" ? t("automation.failed") : run.status}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
                         {new Date(run.startedAt).toLocaleString()}

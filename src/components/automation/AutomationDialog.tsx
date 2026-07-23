@@ -21,6 +21,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { triggerOptions, scheduleOptions, platformOptions } from "./automationData";
 import { Automation, TriggerType } from "@/hooks/useAutomations";
+import { useTranslation } from "react-i18next";
 
 interface AutomationDialogProps {
   open: boolean;
@@ -35,6 +36,7 @@ export function AutomationDialog({
   automation,
   onSave,
 }: AutomationDialogProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [trigger, setTrigger] = useState<TriggerType>("scheduled");
@@ -90,37 +92,37 @@ export function AutomationDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>
-              {automation && automation.id ? "Edit Automation" : "Create Automation"}
+              {automation && automation.id ? t("automation.editAutomation") : t("automation.createAutomation")}
             </DialogTitle>
             <DialogDescription>
               {automation && automation.id
-                ? "Update your automation workflow"
-                : "Set up a new automated workflow"}
+                ? t("automation.updateWorkflow")
+                : t("automation.setUpWorkflow")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">{t("automation.name")}</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Enter automation name"
+                placeholder={t("automation.namePlaceholder")}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t("automation.description")}</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe what this automation does"
+                placeholder={t("automation.descriptionPlaceholder")}
                 rows={2}
               />
             </div>
             <div className="space-y-2">
-              <Label>Trigger</Label>
+              <Label>{t("automation.trigger")}</Label>
               <Select value={trigger} onValueChange={(v) => setTrigger(v as TriggerType)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -136,7 +138,7 @@ export function AutomationDialog({
             </div>
             {trigger === "scheduled" && (
               <div className="space-y-2">
-                <Label>Schedule</Label>
+                <Label>{t("automation.schedule")}</Label>
                 <Select value={schedule} onValueChange={setSchedule}>
                   <SelectTrigger>
                     <SelectValue />
@@ -153,18 +155,18 @@ export function AutomationDialog({
             )}
             {trigger === "engagement" && (
               <div className="space-y-2">
-                <Label htmlFor="threshold">Engagement Threshold</Label>
+                <Label htmlFor="threshold">{t("automation.engagementThreshold")}</Label>
                 <Input
                   id="threshold"
                   type="number"
                   value={threshold}
                   onChange={(e) => setThreshold(e.target.value)}
-                  placeholder="e.g., 1000"
+                  placeholder={t("automation.thresholdPlaceholder")}
                 />
               </div>
             )}
             <div className="space-y-2">
-              <Label>Platforms</Label>
+              <Label>{t("automation.platforms")}</Label>
               <div className="grid grid-cols-3 gap-2">
                 {platformOptions.map((platform) => (
                   <label
@@ -183,10 +185,10 @@ export function AutomationDialog({
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={!name || selectedPlatforms.length === 0}>
-              {automation && automation.id ? "Save Changes" : "Create Automation"}
+              {automation && automation.id ? t("automation.saveChanges") : t("automation.createAutomation")}
             </Button>
           </DialogFooter>
         </form>

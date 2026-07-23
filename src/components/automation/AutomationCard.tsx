@@ -12,6 +12,7 @@ import { Play, Pause, Clock, Zap, RefreshCw, MoreHorizontal, Pencil, Trash2, His
 import { triggerOptions } from "./automationData";
 import { Automation } from "@/hooks/useAutomations";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface AutomationCardProps {
   automation: Automation;
@@ -32,7 +33,8 @@ export function AutomationCard({
   onViewHistory,
   onDuplicate,
 }: AutomationCardProps) {
-  const triggerLabel = triggerOptions.find((t) => t.value === automation.trigger)?.label || automation.trigger;
+  const { t } = useTranslation();
+  const triggerLabel = triggerOptions.find((opt) => opt.value === automation.trigger)?.label || automation.trigger;
 
   const getPlatformIcon = (platform: string) => {
     const p = platform.toLowerCase();
@@ -86,7 +88,7 @@ export function AutomationCard({
                   : "border-muted-foreground/20 text-muted-foreground bg-muted/10 opacity-60"
               )}
             >
-              {automation.status}
+              {t(`automation.status${automation.status.charAt(0).toUpperCase()}${automation.status.slice(1)}`, automation.status)}
             </Badge>
           </div>
           
@@ -103,13 +105,13 @@ export function AutomationCard({
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/50 border border-border/50 shadow-sm">
               <Clock className="h-3.5 w-3.5 text-primary" />
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/90">
-                LAST: {automation.lastRun ? new Date(automation.lastRun).toLocaleDateString() : "NEVER"}
+                {automation.lastRun ? t("automation.last", { date: new Date(automation.lastRun).toLocaleDateString() }) : t("automation.never")}
               </span>
             </div>
 
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/50 border border-border/50 shadow-sm">
               <RefreshCw className="h-3.5 w-3.5 text-primary" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/90">{automation.runs} EXECUTIONS</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/90">{t("automation.executions", { count: automation.runs })}</span>
             </div>
           </div>
         </div>
@@ -153,20 +155,20 @@ export function AutomationCard({
                 <div className="p-2 bg-emerald-500/10 rounded-lg">
                    <Play className="h-4 w-4 text-emerald-500" />
                 </div>
-                Run Pipeline
+                {t("automation.runPipeline")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onViewHistory(automation)} className="rounded-xl h-12 font-black text-[11px] uppercase tracking-widest cursor-pointer gap-4">
                 <div className="p-2 bg-primary/10 rounded-lg">
                    <History className="h-4 w-4 text-primary" />
                 </div>
-                View Logs
+                {t("automation.viewLogs")}
               </DropdownMenuItem>
               {onDuplicate && (
                 <DropdownMenuItem onClick={() => onDuplicate(automation.id)} className="rounded-xl h-12 font-black text-[11px] uppercase tracking-widest cursor-pointer gap-4">
                   <div className="p-2 bg-blue-500/10 rounded-lg">
                     <Copy className="h-4 w-4 text-blue-500" />
                   </div>
-                  Clone Stream
+                  {t("automation.cloneStream")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator className="bg-border/30 my-2 mx-2" />
@@ -174,7 +176,7 @@ export function AutomationCard({
                 <div className="p-2 bg-amber-500/10 rounded-lg">
                    <Pencil className="h-4 w-4 text-amber-500" />
                 </div>
-                Modify
+                {t("automation.modify")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(automation.id)}
@@ -183,7 +185,7 @@ export function AutomationCard({
                 <div className="p-2 bg-destructive/10 rounded-lg">
                    <Trash2 className="h-4 w-4" />
                 </div>
-                Terminate
+                {t("automation.terminate")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
