@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { BrandIcon } from "@/components/platforms/BrandIcon";
 import { formatSlotTime, getSlotsForDate, getWebsiteCategoryForDate } from "@/utils/scheduling";
+import { useTranslation } from "react-i18next";
 
 /* ── helpers ────────────────────────────────────────────── */
 
@@ -134,14 +135,16 @@ function getEventsForDay(events: CalEvent[], day: Date) {
 
 /* ── filters ─────────────────────────────────────────────── */
 
-const FILTERS: { value: string; label: string; cat?: CatKey }[] = [
-  { value: "all",      label: "All" },
-  { value: "content",  label: "Content",   cat: "content" },
-  { value: "publish",  label: "Publish",   cat: "publish" },
-  { value: "meeting",  label: "Meetings",  cat: "meeting" },
-  { value: "deadline", label: "Deadlines", cat: "deadline" },
-  { value: "personal", label: "Personal",  cat: "personal" },
-];
+function getFilters(t: (key: string) => string): { value: string; label: string; cat?: CatKey }[] {
+  return [
+    { value: "all",      label: t("calendar.catAll") },
+    { value: "content",  label: t("calendar.catContent"),   cat: "content" },
+    { value: "publish",  label: t("calendar.catPublish"),   cat: "publish" },
+    { value: "meeting",  label: t("calendar.catMeetings"),  cat: "meeting" },
+    { value: "deadline", label: t("calendar.catDeadlines"), cat: "deadline" },
+    { value: "personal", label: t("calendar.catPersonal"),  cat: "personal" },
+  ];
+}
 
 /* ── mini calendar ───────────────────────────────────────── */
 
@@ -183,6 +186,8 @@ function MiniCal({ current, selected, events, onSelect, onNav }: { current: Date
 /* ── sidebar ─────────────────────────────────────────────── */
 
 function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth, onAddEvent, onClickEvent, filter, onFilter }: any) {
+  const { t } = useTranslation();
+  const FILTERS = getFilters(t);
   const todayEvents = getEventsForDay(events, new Date());
   const done = todayEvents.filter((e: CalEvent) => e.completed).length;
 
@@ -192,7 +197,7 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
 
       {/* Filter by type */}
       <div className="glass-card rounded-2xl p-4">
-        <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] mb-4 px-1">Filter Stream</h3>
+        <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] mb-4 px-1">{t("calendar.filterStream")}</h3>
         <div className="space-y-1.5">
           {FILTERS.map(f => {
             const active = filter === f.value;
@@ -223,8 +228,8 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
       {/* Today's agenda */}
       <div className="glass-card rounded-2xl p-4">
         <div className="flex items-center justify-between mb-4 px-1">
-          <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em]">Live Queue</h3>
-          <span className="text-[10px] text-muted-foreground font-bold">{done}/{todayEvents.length} READY</span>
+          <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em]">{t("calendar.liveQueue")}</h3>
+          <span className="text-[10px] text-muted-foreground font-bold">{done}/{todayEvents.length} {t("calendar.ready")}</span>
         </div>
         {todayEvents.length > 0 && (
           <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden mb-5">
@@ -238,7 +243,7 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
           {todayEvents.length === 0 && (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <Sprout className="w-10 h-10 text-white/[0.05] mb-3" />
-              <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-40 italic">Nothing queued</p>
+              <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-40 italic">{t("calendar.nothingQueued")}</p>
             </div>
           )}
           {todayEvents.map((evt: CalEvent) => {
@@ -281,6 +286,7 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
 /* ── month grid ──────────────────────────────────────────── */
 
 function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, onDropEvent }: any) {
+  const { t } = useTranslation();
   const days = getDaysInMonth(current.getFullYear(), current.getMonth());
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
@@ -360,7 +366,7 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                     onClick={(e) => { e.stopPropagation(); onClickDay(new Date(day)); }}
                     className="h-7 w-full rounded-md bg-muted/60 px-2 text-left text-[10px] font-bold text-muted-foreground hover:bg-muted hover:text-foreground"
                   >
-                    +{hiddenCount} more
+                    {t("calendar.moreCount", { count: hiddenCount })}
                   </button>
                 )}
               </div>
@@ -419,6 +425,7 @@ function WeekView({ current, events, onClickEvent }: any) {
 /* ── day view ────────────────────────────────────────────── */
 
 function DayView({ current, events, onClickEvent }: any) {
+  const { t } = useTranslation();
   const dayEvts = getEventsForDay(events, current);
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-8">
@@ -426,7 +433,7 @@ function DayView({ current, events, onClickEvent }: any) {
         <div className="flex items-center justify-between border-b border-white/5 pb-4">
           <div>
             <h2 className="text-2xl font-black text-white tracking-tighter">{format(current, "EEEE, MMMM do")}</h2>
-            <p className="text-gray-500 text-sm font-medium">Schedule for the day</p>
+            <p className="text-gray-500 text-sm font-medium">{t("calendar.scheduleForDay")}</p>
           </div>
           <span className="text-4xl font-black text-primary/20">{format(current, "dd")}</span>
         </div>
@@ -439,7 +446,7 @@ function DayView({ current, events, onClickEvent }: any) {
               onClick={() => { if (!evt.isTemplate) onClickEvent(evt); }}
               className={`flex gap-6 p-5 rounded-2xl transition-all border border-white/10 ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-pointer hover:brightness-110"} ${barColor}`}
             >
-              <div className="w-16 shrink-0 text-sm font-black text-white/40 tabular-nums">{evt.startTime ? fmt12(evt.startTime) : "All Day"}</div>
+              <div className="w-16 shrink-0 text-sm font-black text-white/40 tabular-nums">{evt.startTime ? fmt12(evt.startTime) : t("calendar.allDay")}</div>
               <div className="flex-1">
                 <h3 className="text-base font-black text-white tracking-tight">{evt.title}</h3>
                 {evt.description && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{evt.description}</p>}
@@ -449,7 +456,7 @@ function DayView({ current, events, onClickEvent }: any) {
           );
         }) : (
           <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-3xl">
-            <p className="text-gray-600 font-medium">No events for this day</p>
+            <p className="text-gray-600 font-medium">{t("calendar.noEventsDay")}</p>
           </div>
         )}
       </div>
@@ -460,6 +467,7 @@ function DayView({ current, events, onClickEvent }: any) {
 /* ── agenda view ─────────────────────────────────────────── */
 
 function AgendaView({ events, onClickEvent }: any) {
+  const { t } = useTranslation();
   const sorted = [...events].sort((a: CalEvent, b: CalEvent) => a.date.localeCompare(b.date));
   const dateGroups = Array.from(new Set(sorted.map(e => e.date)));
   return (
@@ -499,7 +507,7 @@ function AgendaView({ events, onClickEvent }: any) {
           );
         }) : (
           <div className="flex flex-col items-center justify-center py-20 text-gray-600">
-            <p className="text-lg font-medium">Nothing on your agenda</p>
+            <p className="text-lg font-medium">{t("calendar.nothingOnAgenda")}</p>
           </div>
         )}
       </div>
@@ -514,6 +522,7 @@ const INPUT_CLS  = "w-full bg-card border border-border rounded-xl px-3 py-2.5 t
 const LABEL_CLS  = "block text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1.5";
 
 function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }: any) {
+  const { t } = useTranslation();
   const [title,       setTitle]       = useState(event?.title       || "");
   const [date,        setDate]        = useState(event?.date        || (defaultDate ? fmtKey(defaultDate) : fmtKey(new Date())));
   const [startTime,   setStartTime]   = useState(event?.startTime   || "09:00");
@@ -551,10 +560,10 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
             </div>
             <div>
               <h2 className="text-base font-black text-foreground tracking-tight">
-                {isEditing ? "Edit Content" : "Schedule Content"}
+                {isEditing ? t("calendar.editContent") : t("calendar.scheduleContent")}
               </h2>
               <p className="text-[10px] text-muted-foreground font-medium">
-                {isEditing ? "Update your scheduled content" : "Plan and schedule a new piece of content"}
+                {isEditing ? t("calendar.updateScheduledContent") : t("calendar.planNewContent")}
               </p>
             </div>
           </div>
@@ -566,11 +575,11 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
 
           {/* Title */}
           <div>
-            <label className={LABEL_CLS}>Content Title *</label>
+            <label className={LABEL_CLS}>{t("calendar.contentTitle")}</label>
             <input
               value={title}
               onChange={e => setTitle(e.target.value)}
-              placeholder="e.g. 5 tips for growing on Instagram in 2025…"
+              placeholder={t("calendar.contentTitlePlaceholder")}
               className={INPUT_CLS}
             />
           </div>
@@ -578,10 +587,10 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
           {/* Caption / Main body */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className={LABEL_CLS}>Caption / Content Body</label>
+              <label className={LABEL_CLS}>{t("calendar.captionLabel")}</label>
               {limit && (
                 <span className={`text-[10px] font-mono font-bold tabular-nums ${captionOver ? "text-destructive" : captionPct > 85 ? "text-amber-400" : "text-muted-foreground"}`}>
-                  {captionLen.toLocaleString()} / {captionMax.toLocaleString()} chars · {limit.label}
+                  {t("calendar.charsOf", { current: captionLen.toLocaleString(), max: captionMax.toLocaleString(), platform: limit.label })}
                 </span>
               )}
             </div>
@@ -589,7 +598,7 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
               value={caption}
               onChange={e => setCaption(e.target.value)}
               rows={4}
-              placeholder="Write your post caption, article intro, or video script hook here…"
+              placeholder={t("calendar.captionPlaceholder")}
               className={`${INPUT_CLS} resize-none leading-relaxed ${captionOver ? "border-destructive focus:border-destructive" : ""}`}
             />
             {limit && (
@@ -602,7 +611,7 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
             )}
             {captionOver && (
               <p className="mt-1 text-[10px] text-destructive font-bold">
-                Exceeds {limit?.label} limit by {(captionLen - captionMax).toLocaleString()} characters
+                {t("calendar.exceedsLimit", { platform: limit?.label, count: (captionLen - captionMax).toLocaleString() })}
               </p>
             )}
           </div>
@@ -610,17 +619,17 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
           {/* Hashtags */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className={LABEL_CLS}>Hashtags</label>
+              <label className={LABEL_CLS}>{t("calendar.hashtagsLabel")}</label>
               {hashtagMax && (
                 <span className={`text-[10px] font-mono font-bold tabular-nums ${hashtagOver ? "text-destructive" : "text-muted-foreground"}`}>
-                  {hashtagCount} / {hashtagMax} tags
+                  {t("calendar.tagsOf", { current: hashtagCount, max: hashtagMax })}
                 </span>
               )}
             </div>
             <input
               value={hashtags}
               onChange={e => setHashtags(e.target.value)}
-              placeholder="#contentmarketing #socialmedia #growthhacking"
+              placeholder={t("calendar.hashtagsPlaceholder")}
               className={`${INPUT_CLS} ${hashtagOver ? "border-destructive focus:border-destructive" : ""}`}
             />
           </div>
@@ -628,13 +637,13 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
           {/* Row: Date + Time */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={LABEL_CLS} htmlFor="modal-date">Scheduled Date</label>
-              <input id="modal-date" type="date" title="Scheduled Date" aria-label="Scheduled Date" value={date} onChange={e => setDate(e.target.value)}
+              <label className={LABEL_CLS} htmlFor="modal-date">{t("calendar.scheduledDate")}</label>
+              <input id="modal-date" type="date" title={t("calendar.scheduledDate")} aria-label={t("calendar.scheduledDate")} value={date} onChange={e => setDate(e.target.value)}
                 className={`${INPUT_CLS} input-dark-scheme`} />
             </div>
             <div>
-              <label className={LABEL_CLS} htmlFor="modal-time">Scheduled Time</label>
-              <input id="modal-time" type="time" title="Scheduled Time" aria-label="Scheduled Time" value={startTime} onChange={e => setStartTime(e.target.value)}
+              <label className={LABEL_CLS} htmlFor="modal-time">{t("calendar.scheduledTime")}</label>
+              <input id="modal-time" type="time" title={t("calendar.scheduledTime")} aria-label={t("calendar.scheduledTime")} value={startTime} onChange={e => setStartTime(e.target.value)}
                 className={`${INPUT_CLS} input-dark-scheme`} />
             </div>
           </div>
@@ -642,18 +651,18 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
           {/* Row: Platform + Content Type */}
           <div className="grid grid-cols-2 gap-4">
             <div className="relative">
-              <label className={LABEL_CLS} htmlFor="modal-platform">Platform</label>
-              <select id="modal-platform" title="Platform" aria-label="Platform" value={platform} onChange={e => setPlatform(e.target.value)} className={`${SELECT_CLS} select-no-arrow`}>
-                <option value="none">No Platform</option>
+              <label className={LABEL_CLS} htmlFor="modal-platform">{t("calendar.platform")}</label>
+              <select id="modal-platform" title={t("calendar.platform")} aria-label={t("calendar.platform")} value={platform} onChange={e => setPlatform(e.target.value)} className={`${SELECT_CLS} select-no-arrow`}>
+                <option value="none">{t("calendar.noPlatform")}</option>
                 {Object.keys(PLAT).map(k => (
                   <option key={k} value={k}>{PLAT[k].label}</option>
                 ))}
               </select>
             </div>
             <div className="relative">
-              <label className={LABEL_CLS} htmlFor="modal-content-type">Content Type</label>
-              <select id="modal-content-type" title="Content Type" aria-label="Content Type" value={contentType} onChange={e => setContentType(e.target.value)} className={`${SELECT_CLS} select-no-arrow`}>
-                {[["post","Feed Post"],["reel","Reel / Short"],["story","Story"],["article","Article / Blog"],["video","Long-form Video"],["podcast","Podcast Episode"],["newsletter","Newsletter"],["thread","Thread / Carousel"]].map(([v,l]) => (
+              <label className={LABEL_CLS} htmlFor="modal-content-type">{t("calendar.contentType")}</label>
+              <select id="modal-content-type" title={t("calendar.contentType")} aria-label={t("calendar.contentType")} value={contentType} onChange={e => setContentType(e.target.value)} className={`${SELECT_CLS} select-no-arrow`}>
+                {[["post",t("calendar.typeFeedPost")],["reel",t("calendar.typeReel")],["story",t("calendar.typeStory")],["article",t("calendar.typeArticle")],["video",t("calendar.typeVideo")],["podcast",t("calendar.typePodcast")],["newsletter",t("calendar.typeNewsletter")],["thread",t("calendar.typeThread")]].map(([v,l]) => (
                   <option key={v} value={v}>{l}</option>
                 ))}
               </select>
@@ -663,17 +672,17 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
           {/* Row: Category + Status */}
           <div className="grid grid-cols-2 gap-4">
             <div className="relative">
-              <label className={LABEL_CLS} htmlFor="modal-category">Category</label>
-              <select id="modal-category" title="Category" aria-label="Category" value={category} onChange={e => setCategory(e.target.value)} className={`${SELECT_CLS} select-no-arrow`}>
-                {[["content","Content"],["publish","Publish"],["meeting","Meeting"],["deadline","Deadline"],["research","Research"],["personal","Personal"]].map(([v,l]) => (
+              <label className={LABEL_CLS} htmlFor="modal-category">{t("calendar.category")}</label>
+              <select id="modal-category" title={t("calendar.category")} aria-label={t("calendar.category")} value={category} onChange={e => setCategory(e.target.value)} className={`${SELECT_CLS} select-no-arrow`}>
+                {[["content",t("calendar.catContent")],["publish",t("calendar.catPublish")],["meeting",t("calendar.catMeetings")],["deadline",t("calendar.catDeadlines")],["research",t("calendar.catResearch")],["personal",t("calendar.catPersonal")]].map(([v,l]) => (
                   <option key={v} value={v}>{l}</option>
                 ))}
               </select>
             </div>
             <div className="relative">
-              <label className={LABEL_CLS} htmlFor="modal-status">Publish Status</label>
-              <select id="modal-status" title="Publish Status" aria-label="Publish Status" value={status} onChange={e => setStatus(e.target.value)} className={`${SELECT_CLS} select-no-arrow`}>
-                {[["draft","Draft"],["scheduled","Scheduled"],["published","Published"],["awaiting_review","Awaiting Review"]].map(([v,l]) => (
+              <label className={LABEL_CLS} htmlFor="modal-status">{t("calendar.publishStatus")}</label>
+              <select id="modal-status" title={t("calendar.publishStatus")} aria-label={t("calendar.publishStatus")} value={status} onChange={e => setStatus(e.target.value)} className={`${SELECT_CLS} select-no-arrow`}>
+                {[["draft",t("calendar.statusDraft")],["scheduled",t("calendar.statusScheduled")],["published",t("calendar.statusPublished")],["awaiting_review",t("calendar.statusAwaitingReview")]].map(([v,l]) => (
                   <option key={v} value={v}>{l}</option>
                 ))}
               </select>
@@ -682,24 +691,24 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
 
           {/* Notes */}
           <div>
-            <label className={LABEL_CLS}>Internal Notes</label>
+            <label className={LABEL_CLS}>{t("calendar.internalNotes")}</label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={2}
-              placeholder="Private notes, reminders, or brief for this post…"
+              placeholder={t("calendar.internalNotesPlaceholder")}
               className={`${INPUT_CLS} resize-none`}
             />
           </div>
 
           {/* Media */}
           <div>
-            <label className={LABEL_CLS}>Media / Cover Image</label>
+            <label className={LABEL_CLS}>{t("calendar.mediaLabel")}</label>
             {!imageUrl ? (
               <label className="flex flex-col items-center justify-center w-full h-24 bg-muted/20 border-2 border-dashed border-border hover:border-primary/40 rounded-xl cursor-pointer hover:bg-muted/30 transition-all group">
                 <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">📷</span>
-                <span className="text-[11px] font-bold text-muted-foreground">Click to attach image</span>
-                <span className="text-[10px] text-muted-foreground/50">PNG, JPG, GIF, WebP</span>
+                <span className="text-[11px] font-bold text-muted-foreground">{t("calendar.clickToAttach")}</span>
+                <span className="text-[10px] text-muted-foreground/50">{t("calendar.imageFormats")}</span>
                 <input type="file" accept="image/*" className="hidden" onChange={e => {
                   const f = e.target.files?.[0];
                   if (f) setImageUrl(URL.createObjectURL(f));
@@ -711,7 +720,7 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <button onClick={() => setImageUrl("")}
                     className="px-3 py-1.5 bg-destructive text-destructive-foreground text-xs font-black rounded-lg">
-                    Remove
+                    {t("calendar.remove")}
                   </button>
                 </div>
               </div>
@@ -724,15 +733,15 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
               <div className="flex items-center gap-3">
                 <span className="text-xl">⚠️</span>
                 <div>
-                  <p className="text-sm font-bold text-amber-400">Needs Approval</p>
-                  <p className="text-[10px] text-amber-300/60">AI-generated content awaiting review</p>
+                  <p className="text-sm font-bold text-amber-400">{t("calendar.needsApproval")}</p>
+                  <p className="text-[10px] text-amber-300/60">{t("calendar.aiAwaitingReview")}</p>
                 </div>
               </div>
               <button
                 onClick={() => { if (onApprove) onApprove(event.id); onClose(); }}
                 className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-black rounded-xl transition-colors"
               >
-                🚀 Approve
+                🚀 {t("calendar.approve")}
               </button>
             </div>
           )}
@@ -746,13 +755,13 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
                 onClick={() => { onDelete(event.originalId || event.id); onClose(); }}
                 className="px-4 py-2 text-xs font-black text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
               >
-                Delete
+                {t("calendar.delete")}
               </button>
             )}
           </div>
           <div className="flex items-center gap-2">
             <button onClick={onClose} className="px-4 py-2 text-xs font-black text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors">
-              Cancel
+              {t("calendar.cancel")}
             </button>
             <button
               onClick={() => {
@@ -767,7 +776,7 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
               disabled={!title.trim()}
               className="px-6 py-2 bg-primary hover:opacity-90 disabled:opacity-40 text-primary-foreground text-xs font-black rounded-xl transition-all"
             >
-              {isEditing ? "Save Changes" : "Schedule Content"}
+              {isEditing ? t("calendar.saveChanges") : t("calendar.scheduleContent")}
             </button>
           </div>
         </div>
@@ -779,6 +788,7 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
 /* ── main calendar ───────────────────────────────────────── */
 
 export default function ContentCalendar() {
+  const { t } = useTranslation();
   const { posts, addPost, updatePost, deletePost, schedulePost } = usePosts();
   const { processUJT } = useUJT();
 
@@ -920,7 +930,7 @@ export default function ContentCalendar() {
         : `${MONTHS[start.getMonth()]} ${start.getDate()} – ${MONTHS[end.getMonth()]} ${end.getDate()}`;
     }
     if (viewMode === "day") return current.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
-    return `Agenda · ${MONTHS[current.getMonth()]} ${current.getFullYear()}`;
+    return `${t("calendar.agendaPrefix")} · ${MONTHS[current.getMonth()]} ${current.getFullYear()}`;
   })();
 
   return (
@@ -936,20 +946,20 @@ export default function ContentCalendar() {
               <button
                 onClick={() => setSidebarOpen(p => !p)}
                 className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-muted-foreground transition-all"
-                aria-label="Toggle sidebar"
+                aria-label={t("calendar.toggleSidebar")}
               >
                 {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </button>
-              <h1 className="page-title mb-0">Calendar</h1>
+              <h1 className="page-title mb-0">{t("calendar.title")}</h1>
             </div>
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 w-3.5 h-3.5" />
                 <input
-                  aria-label="Search"
+                  aria-label={t("common.search")}
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search strategy..."
+                  placeholder={t("calendar.searchPlaceholder")}
                   className="w-64 bg-white/[0.02] border border-white/[0.05] rounded-xl pl-10 pr-4 py-2 text-xs text-foreground placeholder-muted-foreground/40 focus:outline-none focus:border-primary/30 transition-all"
                 />
               </div>
@@ -991,7 +1001,7 @@ export default function ContentCalendar() {
                       onClick={() => { setCurrent(new Date()); setSelectedDate(new Date()); }}
                       className={`px-6 py-1 rounded-xl text-[10px] font-black tracking-[0.1em] uppercase transition-all ${isToday(current) ? "bg-primary text-white shadow-lg shadow-primary/30" : "text-muted-foreground hover:text-white"}`}
                     >
-                      Today
+                      {t("calendar.today")}
                     </button>
                     <button onClick={() => navigate(1)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/5 text-muted-foreground hover:text-white transition-all group">
                       <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -1008,14 +1018,14 @@ export default function ContentCalendar() {
                         onClick={() => setViewMode(m)}
                         className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === m ? "bg-white/10 text-white shadow-xl shadow-white/5" : "text-muted-foreground hover:text-white hover:bg-white/[0.02]"}`}
                       >
-                        {m}
+                        {t(`calendar.view${m.charAt(0).toUpperCase()}${m.slice(1)}`)}
                       </button>
                     ))}
                   </div>
                   <button
                     onClick={() => { setEditingEvent(null); setDefaultDate(undefined); setModalOpen(true); }}
-                    title="Add new event"
-                    aria-label="Add new event"
+                    title={t("calendar.addNewEvent")}
+                    aria-label={t("calendar.addNewEvent")}
                     className="w-11 h-11 flex items-center justify-center rounded-[1.25rem] bg-primary text-white hover:brightness-110 transition-all shadow-2xl shadow-primary/40 active:scale-95 group"
                   >
                     <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
