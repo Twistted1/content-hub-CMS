@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface ExportJob {
   id: string;
@@ -68,6 +69,7 @@ const recentExports: ExportJob[] = [
 ];
 
 export function DataSettings() {
+  const { t } = useTranslation();
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -105,7 +107,7 @@ export function DataSettings() {
           };
           
           setJobs([newJob, ...jobs]);
-          toast.success("Export completed! Your download is ready.");
+          toast.success(t("settings.data.toastExportCompleted"));
           return 100;
         }
         return prev + 10;
@@ -114,12 +116,12 @@ export function DataSettings() {
   };
 
   const handleImport = () => {
-    toast.success("Import started. This may take a few minutes.");
+    toast.success(t("settings.data.toastImportStarted"));
     setShowImportDialog(false);
   };
 
   const handleDeleteData = () => {
-    toast.success("Data deletion request submitted. This action cannot be undone.");
+    toast.success(t("settings.data.toastDeleteSubmitted"));
     setShowDeleteDialog(false);
   };
 
@@ -127,10 +129,10 @@ export function DataSettings() {
     used: 2.4,
     total: 10,
     breakdown: [
-      { label: "Media files", size: 1.2, color: "bg-primary" },
-      { label: "Analytics data", size: 0.8, color: "bg-blue-500" },
-      { label: "Posts & content", size: 0.3, color: "bg-green-500" },
-      { label: "Other", size: 0.1, color: "bg-orange-500" },
+      { labelKey: "mediaFiles", size: 1.2, color: "bg-primary" },
+      { labelKey: "analyticsData", size: 0.8, color: "bg-blue-500" },
+      { labelKey: "postsContent", size: 0.3, color: "bg-green-500" },
+      { labelKey: "other", size: 0.1, color: "bg-orange-500" },
     ],
   };
 
@@ -141,25 +143,25 @@ export function DataSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
-            Storage Usage
+            {t("settings.data.storageTitle")}
           </CardTitle>
           <CardDescription>
-            Monitor your data storage across all categories
+            {t("settings.data.storageDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span>{storageData.used} GB used</span>
-              <span className="text-muted-foreground">{storageData.total} GB total</span>
+              <span>{storageData.used} GB {t("settings.data.used")}</span>
+              <span className="text-muted-foreground">{storageData.total} GB {t("settings.data.total")}</span>
             </div>
             <Progress value={(storageData.used / storageData.total) * 100} className="h-2" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             {storageData.breakdown.map((item) => (
-              <div key={item.label} className="flex items-center gap-2">
+              <div key={item.labelKey} className="flex items-center gap-2">
                 <div className={`h-3 w-3 rounded-full ${item.color}`} />
-                <span className="text-sm">{item.label}</span>
+                <span className="text-sm">{t(`settings.data.storageLabels.${item.labelKey}`)}</span>
                 <span className="text-sm text-muted-foreground ml-auto">
                   {item.size} GB
                 </span>
@@ -176,23 +178,23 @@ export function DataSettings() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Download className="h-5 w-5" />
-                Export Data
+                {t("settings.data.exportTitle")}
               </CardTitle>
               <CardDescription>
-                Download a copy of your data in various formats
+                {t("settings.data.exportDesc")}
               </CardDescription>
             </div>
             <Button onClick={() => setShowExportDialog(true)}>
               <Download className="h-4 w-4 mr-2" />
-              Export Data
+              {t("settings.data.exportButton")}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <p className="text-sm font-medium">Recent Exports</p>
+            <p className="text-sm font-medium">{t("settings.data.recentExports")}</p>
             {jobs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No recent exports</p>
+              <p className="text-sm text-muted-foreground">{t("settings.data.noRecentExports")}</p>
             ) : (
               jobs.map((job) => (
                 <div
@@ -207,7 +209,7 @@ export function DataSettings() {
                     )}
                     <div>
                       <p className="text-sm font-medium">
-                        {job.type === "full" ? "Full Export" : "Partial Export"} - {job.format}
+                        {job.type === "full" ? t("settings.data.fullExport") : t("settings.data.partialExport")} - {job.format}
                       </p>
                       <p className="text-xs text-muted-foreground">{job.createdAt}</p>
                     </div>
@@ -221,7 +223,7 @@ export function DataSettings() {
                       ) : (
                         <Clock className="h-3 w-3 mr-1" />
                       )}
-                      {job.status}
+                      {t(`settings.data.jobStatus.${job.status}`)}
                     </Badge>
                     {job.downloadUrl && (
                       <Button variant="ghost" size="sm">
@@ -243,21 +245,21 @@ export function DataSettings() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Upload className="h-5 w-5" />
-                Import Data
+                {t("settings.data.importTitle")}
               </CardTitle>
               <CardDescription>
-                Import data from another platform or backup
+                {t("settings.data.importDesc")}
               </CardDescription>
             </div>
             <Button variant="outline" onClick={() => setShowImportDialog(true)}>
               <Upload className="h-4 w-4 mr-2" />
-              Import Data
+              {t("settings.data.importButton")}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Supported formats: JSON, CSV, ZIP archives from compatible platforms
+            {t("settings.data.supportedFormats")}
           </p>
         </CardContent>
       </Card>
@@ -267,33 +269,33 @@ export function DataSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Archive className="h-5 w-5" />
-            Backup & Sync
+            {t("settings.data.backupTitle")}
           </CardTitle>
           <CardDescription>
-            Configure automatic backups and sync settings
+            {t("settings.data.backupDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Automatic Backups</Label>
+              <Label>{t("settings.data.automaticBackups")}</Label>
               <p className="text-sm text-muted-foreground">
-                Daily automatic backup of your data
+                {t("settings.data.automaticBackupsDesc")}
               </p>
             </div>
-            <Badge variant="secondary">Enabled</Badge>
+            <Badge variant="secondary">{t("settings.data.enabledBadge")}</Badge>
           </div>
           <Separator />
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Last Backup</Label>
+              <Label>{t("settings.data.lastBackup")}</Label>
               <p className="text-sm text-muted-foreground">
-                January 15, 2026 at 3:00 AM
+                {t("settings.data.lastBackupDate")}
               </p>
             </div>
             <Button variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
-              Backup Now
+              {t("settings.data.backupNow")}
             </Button>
           </div>
         </CardContent>
@@ -304,23 +306,23 @@ export function DataSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-destructive">
             <Trash2 className="h-5 w-5" />
-            Delete Data
+            {t("settings.data.deleteTitle")}
           </CardTitle>
           <CardDescription>
-            Permanently delete selected data from your account
+            {t("settings.data.deleteDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Clear All Data</Label>
+              <Label>{t("settings.data.clearAllData")}</Label>
               <p className="text-sm text-muted-foreground">
-                This will permanently delete all your posts, analytics, and settings
+                {t("settings.data.clearAllDataDesc")}
               </p>
             </div>
             <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete All Data
+              {t("settings.data.deleteAllData")}
             </Button>
           </div>
         </CardContent>
@@ -330,27 +332,27 @@ export function DataSettings() {
       <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Export Your Data</DialogTitle>
+            <DialogTitle>{t("settings.data.exportDialogTitle")}</DialogTitle>
             <DialogDescription>
-              Choose what data to export and the format
+              {t("settings.data.exportDialogDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Export Format</Label>
+              <Label>{t("settings.data.exportFormat")}</Label>
               <Select value={exportFormat} onValueChange={setExportFormat}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="json">JSON (Recommended)</SelectItem>
-                  <SelectItem value="csv">CSV (Spreadsheet)</SelectItem>
-                  <SelectItem value="zip">ZIP Archive</SelectItem>
+                  <SelectItem value="json">{t("settings.data.formatJson")}</SelectItem>
+                  <SelectItem value="csv">{t("settings.data.formatCsv")}</SelectItem>
+                  <SelectItem value="zip">{t("settings.data.formatZip")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-3">
-              <Label>Data to Export</Label>
+              <Label>{t("settings.data.dataToExport")}</Label>
               {Object.entries(exportOptions).map(([key, value]) => (
                 <div key={key} className="flex items-center gap-2">
                   <Checkbox
@@ -369,7 +371,7 @@ export function DataSettings() {
             {isExporting && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Exporting...</span>
+                  <span>{t("settings.data.exporting")}</span>
                   <span>{exportProgress}%</span>
                 </div>
                 <Progress value={exportProgress} />
@@ -378,10 +380,10 @@ export function DataSettings() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowExportDialog(false)}>
-              Cancel
+              {t("settings.data.cancel")}
             </Button>
             <Button onClick={handleExport} disabled={isExporting}>
-              {isExporting ? "Exporting..." : "Start Export"}
+              {isExporting ? t("settings.data.exporting") : t("settings.data.startExport")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -391,28 +393,28 @@ export function DataSettings() {
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Import Data</DialogTitle>
+            <DialogTitle>{t("settings.data.importDialogTitle")}</DialogTitle>
             <DialogDescription>
-              Upload a file to import data into your account
+              {t("settings.data.importDialogDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="border-2 border-dashed rounded-lg p-8 text-center">
               <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-              <p className="text-sm font-medium">Drop your file here or click to browse</p>
+              <p className="text-sm font-medium">{t("settings.data.dropFileHere")}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                JSON, CSV, or ZIP up to 100MB
+                {t("settings.data.importFileHint")}
               </p>
               <Button variant="outline" className="mt-4">
-                Select File
+                {t("settings.data.selectFile")}
               </Button>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowImportDialog(false)}>
-              Cancel
+              {t("settings.data.cancel")}
             </Button>
-            <Button onClick={handleImport}>Import</Button>
+            <Button onClick={handleImport}>{t("settings.data.import")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -423,28 +425,28 @@ export function DataSettings() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="h-5 w-5" />
-              Confirm Data Deletion
+              {t("settings.data.confirmDeleteTitle")}
             </DialogTitle>
             <DialogDescription>
-              This action cannot be undone. All your data will be permanently deleted.
+              {t("settings.data.confirmDeleteDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm">
-              Please type <span className="font-mono font-bold">DELETE</span> to confirm:
+              {t("settings.data.typeDeletePrefix")} <span className="font-mono font-bold">DELETE</span> {t("settings.data.typeDeleteSuffix")}
             </p>
             <input
               type="text"
               className="mt-2 w-full px-3 py-2 border rounded-md bg-background"
-              placeholder="Type DELETE to confirm"
+              placeholder={t("settings.data.typeDeletePlaceholder")}
             />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              Cancel
+              {t("settings.data.cancel")}
             </Button>
             <Button variant="destructive" onClick={handleDeleteData}>
-              Delete All Data
+              {t("settings.data.deleteAllData")}
             </Button>
           </DialogFooter>
         </DialogContent>

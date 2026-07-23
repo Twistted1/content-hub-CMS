@@ -450,7 +450,19 @@
       "typeDeletePlaceholder": "Type DELETE to confirm",
       "toastExportCompleted": "Export completed! Your download is ready.",
       "toastImportStarted": "Import started. This may take a few minutes.",
-      "toastDeleteSubmitted": "Data deletion request submitted. This action cannot be undone."
+      "toastDeleteSubmitted": "Data deletion request submitted. This action cannot be undone.",
+      "storageLabels": {
+        "mediaFiles": "Media files",
+        "analyticsData": "Analytics data",
+        "postsContent": "Posts & content",
+        "other": "Other"
+      },
+      "jobStatus": {
+        "pending": "pending",
+        "processing": "processing",
+        "completed": "completed",
+        "failed": "failed"
+      }
     },
     "appearance": "Appearance",
     "theme": {

@@ -450,7 +450,19 @@
       "typeDeletePlaceholder": "Digite DELETE para confirmar",
       "toastExportCompleted": "Exportação concluída! Seu download está pronto.",
       "toastImportStarted": "Importação iniciada. Isso pode levar alguns minutos.",
-      "toastDeleteSubmitted": "Solicitação de exclusão de dados enviada. Esta ação não pode ser desfeita."
+      "toastDeleteSubmitted": "Solicitação de exclusão de dados enviada. Esta ação não pode ser desfeita.",
+      "storageLabels": {
+        "mediaFiles": "Arquivos de mídia",
+        "analyticsData": "Dados de análise",
+        "postsContent": "Postagens e conteúdo",
+        "other": "Outros"
+      },
+      "jobStatus": {
+        "pending": "pendente",
+        "processing": "processando",
+        "completed": "concluído",
+        "failed": "falhou"
+      }
     },
     "appearance": "Aparência",
     "theme": {
