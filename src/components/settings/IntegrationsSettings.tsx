@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface APIKey {
   id: string;
@@ -125,6 +126,7 @@ const connectedApps: ConnectedApp[] = [
 ];
 
 export function IntegrationsSettings() {
+  const { t } = useTranslation();
   const [apiKeys, setAPIKeys] = useState<APIKey[]>(initialAPIKeys);
   const [apps, setApps] = useState<ConnectedApp[]>(connectedApps);
   const [showAPIKeyDialog, setShowAPIKeyDialog] = useState(false);
@@ -146,12 +148,12 @@ export function IntegrationsSettings() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard");
+    toast.success(t("settings.integrations.toastCopied"));
   };
 
   const handleCreateAPIKey = () => {
     if (!newKeyForm.name) {
-      toast.error("Please enter a name for the API key");
+      toast.error(t("settings.integrations.toastEnterKeyName"));
       return;
     }
 
@@ -167,12 +169,12 @@ export function IntegrationsSettings() {
     setAPIKeys([...apiKeys, newKey]);
     setNewKeyForm({ name: "", permissions: "read" });
     setShowAPIKeyDialog(false);
-    toast.success("API key created successfully");
+    toast.success(t("settings.integrations.toastKeyCreated"));
   };
 
   const handleRevokeKey = (id: string) => {
     setAPIKeys(apiKeys.filter((key) => key.id !== id));
-    toast.success("API key revoked");
+    toast.success(t("settings.integrations.toastKeyRevoked"));
   };
 
   const handleConnectApp = (id: string) => {
@@ -183,7 +185,7 @@ export function IntegrationsSettings() {
           : app
       )
     );
-    toast.success("App connected successfully");
+    toast.success(t("settings.integrations.toastAppConnected"));
   };
 
   const handleDisconnectApp = (id: string) => {
@@ -194,7 +196,7 @@ export function IntegrationsSettings() {
           : app
       )
     );
-    toast.success("App disconnected");
+    toast.success(t("settings.integrations.toastAppDisconnected"));
   };
 
   return (
@@ -206,15 +208,15 @@ export function IntegrationsSettings() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Link2 className="h-5 w-5" />
-                API Keys
+                {t("settings.integrations.apiKeysTitle")}
               </CardTitle>
               <CardDescription>
-                Manage API keys for programmatic access to your account
+                {t("settings.integrations.apiKeysDesc")}
               </CardDescription>
             </div>
             <Button onClick={() => setShowAPIKeyDialog(true)} size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              Create Key
+              {t("settings.integrations.createKey")}
             </Button>
           </div>
         </CardHeader>
@@ -264,7 +266,7 @@ export function IntegrationsSettings() {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Created {apiKey.createdAt} • Last used {apiKey.lastUsed}
+                    {t("settings.integrations.createdOn")} {apiKey.createdAt} • {t("settings.integrations.lastUsed")} {apiKey.lastUsed}
                   </p>
                 </div>
                 <Button
@@ -283,9 +285,9 @@ export function IntegrationsSettings() {
       {/* Connected Apps */}
       <Card>
         <CardHeader>
-          <CardTitle>Connected Apps</CardTitle>
+          <CardTitle>{t("settings.integrations.connectedAppsTitle")}</CardTitle>
           <CardDescription>
-            Manage your connected social media accounts and integrations
+            {t("settings.integrations.connectedAppsDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -308,7 +310,7 @@ export function IntegrationsSettings() {
                             {app.status === "active" ? (
                               <>
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
-                                Connected
+                                {t("settings.integrations.connected")}
                               </>
                             ) : (
                               <>
@@ -319,10 +321,10 @@ export function IntegrationsSettings() {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">{app.description}</p>
+                      <p className="text-sm text-muted-foreground">{t(`settings.integrations.appDescriptions.${app.id}`)}</p>
                       {app.connected && app.connectedAt && (
                         <p className="text-xs text-muted-foreground">
-                          Connected on {app.connectedAt}
+                          {t("settings.integrations.connectedOn")} {app.connectedAt}
                         </p>
                       )}
                     </div>
@@ -333,7 +335,7 @@ export function IntegrationsSettings() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => toast.info("Refreshing connection...")}
+                          onClick={() => toast.info(t("settings.integrations.refresh"))}
                         >
                           <RefreshCw className="h-4 w-4" />
                         </Button>
@@ -342,13 +344,13 @@ export function IntegrationsSettings() {
                           size="sm"
                           onClick={() => handleDisconnectApp(app.id)}
                         >
-                          Disconnect
+                          {t("settings.integrations.disconnect")}
                         </Button>
                       </>
                     ) : (
                       <Button size="sm" onClick={() => handleConnectApp(app.id)}>
                         <ExternalLink className="h-4 w-4 mr-2" />
-                        Connect
+                        {t("settings.integrations.connect")}
                       </Button>
                     )}
                   </div>
@@ -363,26 +365,26 @@ export function IntegrationsSettings() {
       {/* Webhooks */}
       <Card>
         <CardHeader>
-          <CardTitle>Webhooks</CardTitle>
+          <CardTitle>{t("settings.integrations.webhooksTitle")}</CardTitle>
           <CardDescription>
-            Configure webhooks to receive real-time notifications
+            {t("settings.integrations.webhooksDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Enable Webhooks</Label>
+              <Label>{t("settings.integrations.enableWebhooks")}</Label>
               <p className="text-sm text-muted-foreground">
-                Receive HTTP callbacks when events occur
+                {t("settings.integrations.enableWebhooksDesc")}
               </p>
             </div>
-            <Switch onCheckedChange={(checked) => toast.success(checked ? "Webhooks enabled" : "Webhooks disabled")} />
+            <Switch onCheckedChange={(checked) => toast.success(checked ? t("settings.integrations.toastWebhooksEnabled") : t("settings.integrations.toastWebhooksDisabled"))} />
           </div>
           <div className="space-y-2">
-            <Label>Webhook URL</Label>
+            <Label>{t("settings.integrations.webhookUrl")}</Label>
             <div className="flex gap-2">
               <Input placeholder="https://your-server.com/webhook" />
-              <Button variant="outline">Test</Button>
+              <Button variant="outline">{t("settings.integrations.test")}</Button>
             </div>
           </div>
         </CardContent>
@@ -392,17 +394,17 @@ export function IntegrationsSettings() {
       <Dialog open={showAPIKeyDialog} onOpenChange={setShowAPIKeyDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create API Key</DialogTitle>
+            <DialogTitle>{t("settings.integrations.createApiKeyTitle")}</DialogTitle>
             <DialogDescription>
-              Create a new API key for programmatic access
+              {t("settings.integrations.createApiKeyDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="key-name">Key Name</Label>
+              <Label htmlFor="key-name">{t("settings.integrations.keyName")}</Label>
               <Input
                 id="key-name"
-                placeholder="e.g., Production API Key"
+                placeholder={t("settings.integrations.keyNamePlaceholder")}
                 value={newKeyForm.name}
                 onChange={(e) =>
                   setNewKeyForm({ ...newKeyForm, name: e.target.value })
@@ -410,7 +412,7 @@ export function IntegrationsSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="permissions">Permissions</Label>
+              <Label htmlFor="permissions">{t("settings.integrations.permissions")}</Label>
               <Select
                 value={newKeyForm.permissions}
                 onValueChange={(value) =>
@@ -421,17 +423,17 @@ export function IntegrationsSettings() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="read">Read only</SelectItem>
-                  <SelectItem value="write">Read & Write</SelectItem>
+                  <SelectItem value="read">{t("settings.integrations.readOnly")}</SelectItem>
+                  <SelectItem value="write">{t("settings.integrations.readWrite")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAPIKeyDialog(false)}>
-              Cancel
+              {t("settings.integrations.cancel")}
             </Button>
-            <Button onClick={handleCreateAPIKey}>Create Key</Button>
+            <Button onClick={handleCreateAPIKey}>{t("settings.integrations.createKey")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

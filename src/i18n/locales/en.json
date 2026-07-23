@@ -388,7 +388,15 @@
       "toastAppConnected": "App connected successfully",
       "toastAppDisconnected": "App disconnected",
       "toastWebhooksEnabled": "Webhooks enabled",
-      "toastWebhooksDisabled": "Webhooks disabled"
+      "toastWebhooksDisabled": "Webhooks disabled",
+      "appDescriptions": {
+        "twitter": "Post and schedule tweets",
+        "facebook": "Manage pages and post content",
+        "instagram": "Share photos and stories",
+        "linkedin": "Connect to share professional content",
+        "tiktok": "Short-form video content",
+        "youtube": "Video uploads and community posts"
+      }
     },
     "data": {
       "storageTitle": "Storage Usage",

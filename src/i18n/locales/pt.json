@@ -388,7 +388,15 @@
       "toastAppConnected": "Aplicativo conectado com sucesso",
       "toastAppDisconnected": "Aplicativo desconectado",
       "toastWebhooksEnabled": "Webhooks ativados",
-      "toastWebhooksDisabled": "Webhooks desativados"
+      "toastWebhooksDisabled": "Webhooks desativados",
+      "appDescriptions": {
+        "twitter": "Publique e agende tweets",
+        "facebook": "Gerencie páginas e publique conteúdo",
+        "instagram": "Compartilhe fotos e stories",
+        "linkedin": "Conecte-se para compartilhar conteúdo profissional",
+        "tiktok": "Conteúdo em vídeo curto",
+        "youtube": "Uploads de vídeo e postagens da comunidade"
+      }
     },
     "data": {
       "storageTitle": "Uso de Armazenamento",
