@@ -1766,5 +1766,43 @@
     "newsletterDesc": "Subscribe for product updates and tips.",
     "copyright": "Content Hub. All rights reserved.",
     "madeWith": "Made with ❤️ for content creators"
+  },
+  "workflowTest": {
+    "title": "Workflow Engine Test",
+    "subtitle": "Import JSON payload from AI Assistant and push it to the Calendar",
+    "viewUI": "View UI",
+    "viewPayloadDetails": "View Payload Details",
+    "approveAndSchedule": "Approve & Schedule to Calendar",
+    "importTitle": "Import Strategy Payload",
+    "importDesc": "Trigger the \"Weekly Social Strategy\" in your AI Assistant, copy the JSON response, and paste it here to automatically populate your review board.",
+    "pastePlaceholder": "Paste JSON payload here...",
+    "importButton": "Import JSON Strategy",
+    "totalPosts": "Total Posts",
+    "tweetsIgSuffix": "Tweets, {{ig}} IG",
+    "avgCharsPerPost": "Avg Chars/Post",
+    "maintainsReadability": "Maintains readability",
+    "totalHashtagsStrategy": "Total Hashtags Strategy",
+    "seoOptimized": "SEO Optimized",
+    "scheduleVolume": "Schedule Volume",
+    "oneWeek": "1 Week",
+    "forwardPlanned": "Forward-planned content",
+    "instagram": "Instagram",
+    "twitter": "Twitter / X",
+    "thread": "Thread",
+    "charsOf280": "{{count}} / 280 chars",
+    "toastStrategyLoaded": "Social Strategy loaded successfully!",
+    "toastInvalidJson": "Invalid JSON format. Please ensure it matches the AI template output.",
+    "toastMissingPlatforms": "Missing required platform arrays",
+    "toastPushedPosts": "Successfully pushed {{count}} posts to your Calendar backend!",
+    "days": {
+      "All": "All",
+      "Sunday": "Sunday",
+      "Monday": "Monday",
+      "Tuesday": "Tuesday",
+      "Wednesday": "Wednesday",
+      "Thursday": "Thursday",
+      "Friday": "Friday",
+      "Saturday": "Saturday"
+    }
   }
 }

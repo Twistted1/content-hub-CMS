@@ -2,11 +2,13 @@ import { useState, useMemo } from 'react';
 import { Twitter, Instagram, Calendar, Filter, Hash, Type, BarChart, FileJson, UploadCloud, Send } from 'lucide-react';
 import { usePosts } from '@/hooks/usePosts';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 type Platform = 'twitter' | 'instagram';
 type DayFilter = 'All' | 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
 
 const WorkflowTest = () => {
+  const { t } = useTranslation();
   const { addPost } = usePosts();
   const [platform, setPlatform] = useState<Platform>('instagram');
   const [dayFilter, setDayFilter] = useState<DayFilter>('All');
@@ -19,13 +21,13 @@ const WorkflowTest = () => {
     try {
       const parsed = JSON.parse(jsonInput);
       if (!parsed.instagram || !parsed.twitter) {
-        throw new Error("Missing required platform arrays");
+        throw new Error(t("workflowTest.toastMissingPlatforms"));
       }
       setWorkflowData(parsed);
-      toast.success("Social Strategy loaded successfully!");
+      toast.success(t("workflowTest.toastStrategyLoaded"));
       setJsonInput(''); // clear input
     } catch (e) {
-      toast.error("Invalid JSON format. Please ensure it matches the AI template output.");
+      toast.error(t("workflowTest.toastInvalidJson"));
     }
   };
 
@@ -63,7 +65,7 @@ const WorkflowTest = () => {
       });
     });
 
-    toast.success(`Successfully pushed ${count} posts to your Calendar backend!`);
+    toast.success(t("workflowTest.toastPushedPosts", { count }));
   };
 
   // Compute Stats
@@ -117,27 +119,27 @@ const WorkflowTest = () => {
     <div className="p-6 max-w-7xl mx-auto space-y-8 animate-in fade-in zoom-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <h1 className="page-title mb-2">Workflow Engine Test</h1>
+            <h1 className="page-title mb-2">{t("workflowTest.title")}</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Import JSON payload from AI Assistant and push it to the Calendar
+            {t("workflowTest.subtitle")}
           </p>
         </div>
         <div className="flex gap-2">
           {workflowData && (
             <>
-              <button 
+              <button
                 onClick={() => setShowJson(!showJson)}
                 className="flex items-center gap-2 px-4 py-2 border border-muted rounded-md hover:bg-muted transition-colors text-sm font-medium"
               >
                 <FileJson className="w-4 h-4" />
-                {showJson ? 'View UI' : 'View Payload Details'}
+                {showJson ? t("workflowTest.viewUI") : t("workflowTest.viewPayloadDetails")}
               </button>
-              <button 
+              <button
                 onClick={handlePushToCalendar}
                 className="flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-md shadow hover:bg-primary/90 transition-all text-sm font-semibold"
               >
                 <Send className="w-4 h-4" />
-                Approve & Schedule to Calendar
+                {t("workflowTest.approveAndSchedule")}
               </button>
             </>
           )}
@@ -147,22 +149,22 @@ const WorkflowTest = () => {
       {!workflowData ? (
         <div className="flex flex-col gap-4 border-2 border-dashed rounded-xl p-8 bg-muted/20 items-center justify-center max-w-3xl mx-auto mt-12">
           <UploadCloud className="w-12 h-12 text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold">Import Strategy Payload</h2>
+          <h2 className="text-xl font-semibold">{t("workflowTest.importTitle")}</h2>
           <p className="text-muted-foreground text-center text-sm mb-4">
-            Trigger the "Weekly Social Strategy" in your AI Assistant, copy the JSON response, and paste it here to automatically populate your review board.
+            {t("workflowTest.importDesc")}
           </p>
-          <textarea 
+          <textarea
             className="w-full h-40 p-4 font-mono text-sm bg-background border rounded-lg focus:ring-2 outline-none"
-            placeholder="Paste JSON payload here..."
+            placeholder={t("workflowTest.pastePlaceholder")}
             value={jsonInput}
             onChange={(e) => setJsonInput(e.target.value)}
           />
-          <button 
+          <button
             onClick={handleImport}
             disabled={!jsonInput.trim()}
             className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition"
           >
-            Import JSON Strategy
+            {t("workflowTest.importButton")}
           </button>
         </div>
       ) : (
@@ -171,24 +173,24 @@ const WorkflowTest = () => {
           {stats && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 border rounded-xl bg-card text-card-foreground shadow-sm flex flex-col gap-2">
-                <div className="flex items-center text-muted-foreground gap-2"><BarChart className="w-4 h-4"/> Total Posts</div>
+                <div className="flex items-center text-muted-foreground gap-2"><BarChart className="w-4 h-4"/> {t("workflowTest.totalPosts")}</div>
                 <div className="text-2xl font-semibold">{stats.totalPosts}</div>
-                <div className="text-xs text-muted-foreground">{stats.twBaseCount} Tweets, {stats.igBaseCount} IG</div>
+                <div className="text-xs text-muted-foreground">{t("workflowTest.tweetsIgSuffix", { ig: stats.igBaseCount, count: stats.twBaseCount })}</div>
               </div>
               <div className="p-4 border rounded-xl bg-card text-card-foreground shadow-sm flex flex-col gap-2">
-                <div className="flex items-center text-muted-foreground gap-2"><Type className="w-4 h-4"/> Avg Chars/Post</div>
+                <div className="flex items-center text-muted-foreground gap-2"><Type className="w-4 h-4"/> {t("workflowTest.avgCharsPerPost")}</div>
                 <div className="text-2xl font-semibold">{stats.avgCharsPerPost}</div>
-                <div className="text-xs text-muted-foreground">Maintains readability</div>
+                <div className="text-xs text-muted-foreground">{t("workflowTest.maintainsReadability")}</div>
               </div>
               <div className="p-4 border rounded-xl bg-card text-card-foreground shadow-sm flex flex-col gap-2">
-                <div className="flex items-center text-muted-foreground gap-2"><Hash className="w-4 h-4"/> Total Hashtags Strategy</div>
+                <div className="flex items-center text-muted-foreground gap-2"><Hash className="w-4 h-4"/> {t("workflowTest.totalHashtagsStrategy")}</div>
                 <div className="text-2xl font-semibold">{stats.totalHashtags}</div>
-                <div className="text-xs text-muted-foreground">SEO Optimized</div>
+                <div className="text-xs text-muted-foreground">{t("workflowTest.seoOptimized")}</div>
               </div>
               <div className="p-4 border rounded-xl bg-card text-card-foreground shadow-sm flex flex-col gap-2">
-                <div className="flex items-center text-muted-foreground gap-2"><Calendar className="w-4 h-4"/> Schedule Volume</div>
-                <div className="text-2xl font-semibold">1 Week</div>
-                <div className="text-xs text-muted-foreground">Forward-planned content</div>
+                <div className="flex items-center text-muted-foreground gap-2"><Calendar className="w-4 h-4"/> {t("workflowTest.scheduleVolume")}</div>
+                <div className="text-2xl font-semibold">{t("workflowTest.oneWeek")}</div>
+                <div className="text-xs text-muted-foreground">{t("workflowTest.forwardPlanned")}</div>
               </div>
             </div>
           )}
@@ -206,16 +208,16 @@ const WorkflowTest = () => {
                     onClick={() => setPlatform('instagram')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${platform === 'instagram' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                   >
-                    <Instagram className="w-4 h-4" /> Instagram ({stats?.igBaseCount})
+                    <Instagram className="w-4 h-4" /> {t("workflowTest.instagram")} ({stats?.igBaseCount})
                   </button>
                   <button
                     onClick={() => setPlatform('twitter')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${platform === 'twitter' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                   >
-                    <Twitter className="w-4 h-4" /> Twitter / X ({stats?.twBaseCount})
+                    <Twitter className="w-4 h-4" /> {t("workflowTest.twitter")} ({stats?.twBaseCount})
                   </button>
                 </div>
-                
+
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 hide-scrollbar">
                   <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
                   {days.map(day => (
@@ -224,7 +226,7 @@ const WorkflowTest = () => {
                       onClick={() => setDayFilter(day)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border ${dayFilter === day ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:bg-muted'}`}
                     >
-                      {day}
+                      {t(`workflowTest.days.${day}`)}
                     </button>
                   ))}
                 </div>
@@ -255,7 +257,7 @@ const WorkflowTest = () => {
                 {platform === 'twitter' && filteredTwitter.map((dayGroup: any, idx: number) => (
                   <div key={idx} className="border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
                     <div className="px-5 py-3 border-b bg-muted/30 flex justify-between items-center">
-                      <span className="font-semibold">{dayGroup.day} Thread</span>
+                      <span className="font-semibold">{dayGroup.day} {t("workflowTest.thread")}</span>
                       <Twitter className="w-4 h-4 text-[#1DA1F2]" />
                     </div>
                     <div className="h-32 bg-muted relative border-b overflow-hidden">
@@ -267,7 +269,7 @@ const WorkflowTest = () => {
                           <p className="text-sm leading-relaxed">{tweet}</p>
                           <div className="flex justify-end items-center text-xs text-muted-foreground mt-1">
                             <span className={`${tweet.length > 250 ? 'text-orange-500' : ''} ${tweet.length > 280 ? 'text-red-500 font-bold' : ''}`}>
-                              {tweet.length} / 280 chars
+                              {t("workflowTest.charsOf280", { count: tweet.length })}
                             </span>
                           </div>
                         </div>

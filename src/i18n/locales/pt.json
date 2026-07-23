@@ -1766,5 +1766,43 @@
     "newsletterDesc": "Assine para receber atualizações e dicas do produto.",
     "copyright": "Content Hub. Todos os direitos reservados.",
     "madeWith": "Feito com ❤️ para criadores de conteúdo"
+  },
+  "workflowTest": {
+    "title": "Teste do Motor de Fluxo de Trabalho",
+    "subtitle": "Importe o payload JSON do Assistente de IA e envie-o para o Calendário",
+    "viewUI": "Ver Interface",
+    "viewPayloadDetails": "Ver Detalhes do Payload",
+    "approveAndSchedule": "Aprovar e Agendar no Calendário",
+    "importTitle": "Importar Payload de Estratégia",
+    "importDesc": "Acione a \"Estratégia Social Semanal\" no seu Assistente de IA, copie a resposta JSON e cole aqui para popular automaticamente seu painel de revisão.",
+    "pastePlaceholder": "Cole o payload JSON aqui...",
+    "importButton": "Importar Estratégia JSON",
+    "totalPosts": "Total de Postagens",
+    "tweetsIgSuffix": "Tweets, {{ig}} IG",
+    "avgCharsPerPost": "Média de Caracteres/Post",
+    "maintainsReadability": "Mantém a legibilidade",
+    "totalHashtagsStrategy": "Total de Hashtags da Estratégia",
+    "seoOptimized": "Otimizado para SEO",
+    "scheduleVolume": "Volume Agendado",
+    "oneWeek": "1 Semana",
+    "forwardPlanned": "Conteúdo planejado com antecedência",
+    "instagram": "Instagram",
+    "twitter": "Twitter / X",
+    "thread": "Thread",
+    "charsOf280": "{{count}} / 280 caracteres",
+    "toastStrategyLoaded": "Estratégia Social carregada com sucesso!",
+    "toastInvalidJson": "Formato JSON inválido. Verifique se corresponde à saída do modelo de IA.",
+    "toastMissingPlatforms": "Faltam os arrays de plataforma necessários",
+    "toastPushedPosts": "{{count}} postagens enviadas com sucesso para o seu Calendário!",
+    "days": {
+      "All": "Todos",
+      "Sunday": "Domingo",
+      "Monday": "Segunda",
+      "Tuesday": "Terça",
+      "Wednesday": "Quarta",
+      "Thursday": "Quinta",
+      "Friday": "Sexta",
+      "Saturday": "Sábado"
+    }
   }
 }
