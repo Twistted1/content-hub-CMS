@@ -19,6 +19,7 @@ import {
 } from "./notificationsData";
 
 import { usePersistentNotifications } from "./usePersistentNotifications";
+import { useTranslation } from "react-i18next";
 
 const iconMap = {
   FileText,
@@ -47,6 +48,7 @@ function getIcon(type: Notification["type"]) {
 }
 
 export function NotificationsDropdown() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     notifications,
@@ -93,19 +95,19 @@ export function NotificationsDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Notifications</span>
+          <span>{t("header.notifications")}</span>
           {unreadCount > 0 && (
             <Badge variant="secondary" className="text-xs">
-              {unreadCount} new
+              {unreadCount} {t("header.newCount")}
             </Badge>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
+
         {notifications.length === 0 ? (
           <div className="py-8 text-center text-muted-foreground">
             <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No notifications</p>
+            <p className="text-sm">{t("header.noNotifications")}</p>
           </div>
         ) : (
           <>
@@ -171,7 +173,7 @@ export function NotificationsDropdown() {
                 disabled={unreadCount === 0}
               >
                 <Check className="h-3 w-3 mr-1" />
-                Mark all read
+                {t("header.markAllRead")}
               </Button>
               <Button
                 variant="outline"
@@ -180,7 +182,7 @@ export function NotificationsDropdown() {
                 onClick={clearAll}
               >
                 <Trash2 className="h-3 w-3 mr-1" />
-                Clear all
+                {t("header.clearAll")}
               </Button>
             </div>
           </>

@@ -14,6 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useGlobalSearch, SearchResult } from "@/hooks/useGlobalSearch";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 const iconMap: Record<string, React.ElementType> = {
   Folder,
@@ -32,6 +33,7 @@ const typeColors: Record<SearchResult["type"], string> = {
 };
 
 export function SearchCommand() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const results = useGlobalSearch(query);
@@ -57,11 +59,11 @@ export function SearchCommand() {
   };
 
   const quickLinks = [
-    { label: "Dashboard", link: "/", icon: "Folder" },
-    { label: "Platforms", link: "/platforms", icon: "FileText" },
-    { label: "Automation", link: "/automation", icon: "Zap" },
-    { label: "Strategies", link: "/strategies", icon: "Target" },
-    { label: "Users", link: "/users", icon: "User" },
+    { label: t("header.navDashboard"), link: "/", icon: "Folder" },
+    { label: t("header.navPlatforms"), link: "/platforms", icon: "FileText" },
+    { label: t("header.navAutomation"), link: "/automation", icon: "Zap" },
+    { label: t("header.navStrategies"), link: "/strategies", icon: "Target" },
+    { label: t("header.navUsers"), link: "/users", icon: "User" },
   ];
 
   // Group results by type
@@ -80,7 +82,7 @@ export function SearchCommand() {
       >
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search anything..."
+          placeholder={t("header.searchPlaceholder")}
           className="w-80 pl-10 bg-secondary border-border cursor-pointer"
           readOnly
         />
@@ -93,15 +95,15 @@ export function SearchCommand() {
       {/* Command dialog */}
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput
-          placeholder="Search projects, posts, users, automations..."
+          placeholder={t("header.searchDialogPlaceholder")}
           value={query}
           onValueChange={setQuery}
         />
         <CommandList>
           {query.length < 2 ? (
             <>
-              <CommandEmpty>Start typing to search...</CommandEmpty>
-              <CommandGroup heading="Quick Links">
+              <CommandEmpty>{t("header.startTyping")}</CommandEmpty>
+              <CommandGroup heading={t("header.quickLinks")}>
                 {quickLinks.map((link) => {
                   const Icon = iconMap[link.icon] || Folder;
                   return (
@@ -121,7 +123,7 @@ export function SearchCommand() {
               </CommandGroup>
             </>
           ) : results.length === 0 ? (
-            <CommandEmpty>No results found for "{query}"</CommandEmpty>
+            <CommandEmpty>{t("header.noResultsFor")} "{query}"</CommandEmpty>
           ) : (
             <>
               {Object.entries(groupedResults).map(([type, items]) => (
@@ -154,10 +156,10 @@ export function SearchCommand() {
             </>
           )}
           <CommandSeparator />
-          <CommandGroup heading="Tips">
+          <CommandGroup heading={t("header.tips")}>
             <div className="px-2 py-2 text-xs text-muted-foreground">
-              <p>Press <kbd className="px-1 py-0.5 bg-muted rounded">↵</kbd> to select</p>
-              <p>Press <kbd className="px-1 py-0.5 bg-muted rounded">esc</kbd> to close</p>
+              <p>{t("header.press")} <kbd className="px-1 py-0.5 bg-muted rounded">↵</kbd> {t("header.tipSelect")}</p>
+              <p>{t("header.press")} <kbd className="px-1 py-0.5 bg-muted rounded">esc</kbd> {t("header.tipClose")}</p>
             </div>
           </CommandGroup>
         </CommandList>

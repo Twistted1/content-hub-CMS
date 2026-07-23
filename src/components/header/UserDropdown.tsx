@@ -28,8 +28,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useUserPreferencesStore } from "@/stores/useUserPreferencesStore";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 
 export function UserDropdown() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { profile, appearance, updateAppearance } = useUserPreferencesStore();
   const { signOut } = useAuth();
@@ -38,16 +40,16 @@ export function UserDropdown() {
   const toggleDarkMode = () => {
     const newTheme = appearance.theme === "dark" ? "light" : "dark";
     updateAppearance({ theme: newTheme });
-    toast.success(`${newTheme === "dark" ? "Dark" : "Light"} mode enabled`);
+    toast.success(newTheme === "dark" ? t("header.toastDarkEnabled") : t("header.toastLightEnabled"));
   };
 
   const handleLogout = async () => {
     const { error } = await signOut();
     setOpen(false);
     if (error) {
-      toast.error("Failed to log out");
+      toast.error(t("header.toastLogoutFailed"));
     } else {
-      toast.success("Logged out successfully");
+      toast.success(t("header.toastLoggedOut"));
       navigate("/");
     }
   };
@@ -58,12 +60,12 @@ export function UserDropdown() {
   };
 
   const handleKeyboardShortcuts = () => {
-    toast.info("Keyboard shortcuts: ⌘K to search, ⌘/ for help");
+    toast.info(t("header.toastKeyboardShortcuts"));
     setOpen(false);
   };
 
   const handleHelp = () => {
-    toast.info("Help center coming soon");
+    toast.info(t("header.toastHelpComingSoon"));
     setOpen(false);
   };
 
@@ -106,23 +108,23 @@ export function UserDropdown() {
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={() => handleNavigate("/settings", "profile")}>
             <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+            <span>{t("header.profile")}</span>
             <Badge variant="secondary" className="ml-auto text-xs">
-              Pro
+              {t("header.pro")}
             </Badge>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleNavigate("/settings")}>
             <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+            <span>{t("header.settings")}</span>
             <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleNavigate("/settings", "notifications")}>
             <Bell className="mr-2 h-4 w-4" />
-            <span>Notifications</span>
+            <span>{t("header.notifications")}</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleNavigate("/settings", "security")}>
             <Shield className="mr-2 h-4 w-4" />
-            <span>Security</span>
+            <span>{t("header.security")}</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
 
@@ -131,12 +133,12 @@ export function UserDropdown() {
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={handleKeyboardShortcuts}>
             <Keyboard className="mr-2 h-4 w-4" />
-            <span>Keyboard shortcuts</span>
+            <span>{t("header.keyboardShortcuts")}</span>
             <DropdownMenuShortcut>⌘/</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleHelp}>
             <HelpCircle className="mr-2 h-4 w-4" />
-            <span>Help & Support</span>
+            <span>{t("header.helpSupport")}</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
 
@@ -149,7 +151,7 @@ export function UserDropdown() {
             ) : (
               <Sun className="mr-2 h-4 w-4" />
             )}
-            <span>Dark mode</span>
+            <span>{t("header.darkMode")}</span>
           </div>
           <Switch
             checked={appearance.theme === "dark"}
@@ -165,7 +167,7 @@ export function UserDropdown() {
           className="text-destructive focus:text-destructive"
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>{t("header.logOut")}</span>
           <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>

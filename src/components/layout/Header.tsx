@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { NotificationsDropdown } from "@/components/header/NotificationsDropdown";
 import { UserDropdown } from "@/components/header/UserDropdown";
 import { SearchCommand } from "@/components/header/SearchCommand";
+import { useTranslation } from "react-i18next";
 const formatTime = () =>
   new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 export function Header() {
+  const { t } = useTranslation();
   const [time, setTime] = useState(formatTime);
 
   useEffect(() => {
@@ -20,8 +22,8 @@ export function Header() {
       {/* Workspace Selector */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
-          <span className="text-xs uppercase tracking-wide">Workspace</span>
-          <span className="font-medium text-foreground">My Workspace</span>
+          <span className="text-xs uppercase tracking-wide">{t("header.workspace")}</span>
+          <span className="font-medium text-foreground">{t("header.myWorkspace")}</span>
           <ChevronDown className="h-4 w-4" />
         </Button>
       </div>
@@ -32,7 +34,7 @@ export function Header() {
 
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>{time}</span>
-          <span className="text-xs uppercase">Local</span>
+          <span className="text-xs uppercase">{t("header.local")}</span>
         </div>
 
         <NotificationsDropdown />
