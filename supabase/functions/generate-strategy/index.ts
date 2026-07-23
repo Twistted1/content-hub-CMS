@@ -49,6 +49,7 @@ serve(async (req) => {
     }
     // Sanitize: strip control chars, collapse whitespace, enforce length cap
     const sanitizedTopic = topic
+      // eslint-disable-next-line no-control-regex -- intentional: stripping control characters from user input
       .replace(/[\u0000-\u001F\u007F]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()

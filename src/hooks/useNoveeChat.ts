@@ -125,7 +125,7 @@ Use this schedule to advise the user on when and where to post. Always adapt rec
 
       // Flush remaining buffer
       if (buffer.trim()) {
-        for (let raw of buffer.split('\n')) {
+        for (const raw of buffer.split('\n')) {
           if (!raw || raw.startsWith(':') || raw.trim() === '') continue;
           if (!raw.startsWith('data: ')) continue;
           const jsonStr = raw.slice(6).trim();

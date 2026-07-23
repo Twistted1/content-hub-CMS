@@ -284,7 +284,7 @@ Return ONLY JSON.`;
         .eq("user_id", targetUserId)
         .eq("is_active", true);
 
-      let webhookResults: any[] = [];
+      const webhookResults: any[] = [];
       if (webhooks && webhooks.length > 0) {
         for (const webhook of webhooks) {
           // Check if webhook matches any of the target platforms

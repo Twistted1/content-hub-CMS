@@ -52,7 +52,7 @@ export function usePosts() {
   const postsQuery = useQuery({
     queryKey: ["posts", user?.id],
     queryFn: async () => {
-      let query = supabase
+      const query = supabase
         .from("posts")
         .select(`
           *,

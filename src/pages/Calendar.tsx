@@ -798,7 +798,7 @@ export default function ContentCalendar() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      try { const json = JSON.parse(ev.target?.result as string); if (json.version === "1.0") processUJT(json); } catch {}
+      try { const json = JSON.parse(ev.target?.result as string); if (json.version === "1.0") processUJT(json); } catch { /* ignore invalid/unrecognized file */ }
     };
     reader.readAsText(file);
     e.target.value = "";

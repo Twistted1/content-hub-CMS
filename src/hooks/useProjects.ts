@@ -36,51 +36,46 @@ export function useProjects() {
   const addProject = useMutation({
     mutationFn: async (newProject: Omit<Project, "id" | "createdAt">) => {
       // First try inserting with all fields
-      try {
-        const { data, error } = await supabase
+      const { data, error } = await supabase
+        .from("projects")
+        .insert({
+          name: newProject.title,
+          description: newProject.description,
+          status: newProject.status,
+          priority: newProject.priority,
+          end_date: newProject.dueDate || null,
+          progress: newProject.progress,
+          tags: newProject.tags,
+          assignees: newProject.assignees.map(a => a.name),
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+        })
+        .select()
+        .single();
+
+      if (!error) return data;
+
+      // If error relates to missing columns, retry with minimal fields
+      if (error.code === "42703" || error.message?.includes("priority") || error.message?.includes("progress") || error.message?.includes("tags") || error.message?.includes("assignees")) {
+         console.warn("Extended columns missing, retrying with minimal fields");
+         const { data: retryData, error: retryError } = await supabase
           .from("projects")
           .insert({
             name: newProject.title,
             description: newProject.description,
             status: newProject.status,
-            priority: newProject.priority,
             end_date: newProject.dueDate || null,
-            progress: newProject.progress,
-            tags: newProject.tags,
-            assignees: newProject.assignees.map(a => a.name),
             user_id: (await supabase.auth.getUser()).data.user?.id,
           })
           .select()
           .single();
 
-        if (!error) return data;
+         if (retryError) throw retryError;
 
-        // If error relates to missing columns, retry with minimal fields
-        if (error.code === "42703" || error.message?.includes("priority") || error.message?.includes("progress") || error.message?.includes("tags") || error.message?.includes("assignees")) {
-           console.warn("Extended columns missing, retrying with minimal fields");
-           const { data: retryData, error: retryError } = await supabase
-            .from("projects")
-            .insert({
-              name: newProject.title,
-              description: newProject.description,
-              status: newProject.status,
-              end_date: newProject.dueDate || null,
-              user_id: (await supabase.auth.getUser()).data.user?.id,
-            })
-            .select()
-            .single();
-            
-           if (retryError) throw retryError;
-           
-           toast.warning("Project created. Some fields (priority, tags, progress, assignees) were not saved because the database schema is outdated.");
-           return retryData;
-        }
-        
-        throw error;
-      } catch (error: any) {
-        // If the error was thrown above, rethrow it
-        throw error;
+         toast.warning("Project created. Some fields (priority, tags, progress, assignees) were not saved because the database schema is outdated.");
+         return retryData;
       }
+
+      throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });

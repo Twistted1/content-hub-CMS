@@ -267,9 +267,9 @@ export function PlatformDetailSheet({ platform, open, onOpenChange, getPlatformC
               variant="outline"
               className="flex-1 gap-2"
               onClick={() => {
-                // @ts-ignore - url property might not be in type definition yet
+                // @ts-expect-error - url property might not be in type definition yet
                 if (platform.url) {
-                   // @ts-ignore
+                   // @ts-expect-error - url property might not be in type definition yet
                    window.open(platform.url, "_blank");
                 } else {
                    window.open(`https://${platform.id === "twitter" ? "x" : platform.id}.com`, "_blank");
