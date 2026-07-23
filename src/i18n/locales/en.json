@@ -1623,5 +1623,130 @@
         "answer": "Free users can connect up to 3 platforms, Starter up to 6, and Pro users have unlimited connections."
       }
     ]
+  },
+  "landing": {
+    "navBrand": "Content Hub",
+    "navFeatures": "Features",
+    "navPricing": "Pricing",
+    "navTestimonials": "Testimonials",
+    "login": "Login",
+    "signUp": "Sign Up",
+    "heroBadge": "AI-Powered Content Management",
+    "heroTitlePrefix": "The All-in-One CMS for",
+    "heroTitleHighlight": "Modern Creators",
+    "heroSubtitle": "Manage, schedule, and optimize your content across all platforms with AI-powered automation and real-time analytics.",
+    "startFreeTrial": "Start Free Trial",
+    "statUsers": "Active Users",
+    "statPosts": "Posts Published",
+    "statUptime": "Uptime",
+    "statSupport": "Support",
+    "featuresTitle": "Everything You Need to Succeed",
+    "featuresSubtitle": "From content creation to analytics, Content Hub provides all the tools you need to grow your audience and streamline your workflow.",
+    "features": [
+      {
+        "title": "AI-Powered Automation",
+        "description": "Automate content scheduling, publishing, and optimization with intelligent AI workflows."
+      },
+      {
+        "title": "Advanced Analytics",
+        "description": "Track performance across all platforms with real-time insights and detailed reports."
+      },
+      {
+        "title": "Content Calendar",
+        "description": "Plan and schedule content across multiple channels with our visual calendar."
+      },
+      {
+        "title": "Team Collaboration",
+        "description": "Work together seamlessly with role-based access and approval workflows."
+      },
+      {
+        "title": "Novee AI Assistant",
+        "description": "Get intelligent content suggestions, writing assistance, and optimization tips."
+      },
+      {
+        "title": "Enterprise Security",
+        "description": "Bank-level encryption, SSO, and compliance certifications for peace of mind."
+      }
+    ],
+    "pricingTitle": "Simple, Transparent Pricing",
+    "pricingSubtitle": "Choose the plan that fits your needs. Start free, upgrade as you grow.",
+    "mostPopular": "Most Popular",
+    "viewFullPricing": "View full pricing details and FAQ →",
+    "plans": {
+      "free": {
+        "name": "Free",
+        "description": "Perfect for individuals getting started",
+        "period": "forever",
+        "features": [
+          "3 connected platforms",
+          "50 scheduled posts/month",
+          "Basic analytics",
+          "1 team member",
+          "Novee AI (10 requests/day)"
+        ],
+        "cta": "Get Started Free"
+      },
+      "starter": {
+        "name": "Starter",
+        "description": "For solo creators ready to scale",
+        "period": "/month",
+        "features": [
+          "6 connected platforms",
+          "300 scheduled posts/month",
+          "Standard analytics",
+          "Up to 2 team members",
+          "Novee AI (100 requests/day)",
+          "Basic automation workflows",
+          "Email support"
+        ],
+        "cta": "Start with Starter"
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "For growing creators and small teams",
+        "period": "/month",
+        "features": [
+          "Unlimited platforms",
+          "Unlimited scheduled posts",
+          "Advanced analytics & reports",
+          "Unlimited team members",
+          "Novee AI (unlimited)",
+          "Custom automation workflows",
+          "Priority support"
+        ],
+        "cta": "Start Free Trial"
+      }
+    },
+    "testimonialsTitle": "Loved by Content Creators",
+    "testimonialsSubtitle": "See what our users have to say about transforming their content workflow.",
+    "testimonials": [
+      {
+        "name": "Sarah Chen",
+        "role": "Content Director",
+        "company": "TechFlow Inc.",
+        "quote": "Novee has transformed how we manage content. The AI suggestions alone have saved us 10+ hours per week.",
+        "avatar": "SC"
+      },
+      {
+        "name": "Marcus Johnson",
+        "role": "Social Media Manager",
+        "company": "Bloom Agency",
+        "quote": "The automation workflows are incredible. We've doubled our output without adding headcount.",
+        "avatar": "MJ"
+      },
+      {
+        "name": "Emily Rodriguez",
+        "role": "Marketing Lead",
+        "company": "StartupXYZ",
+        "quote": "Finally, a CMS that actually understands modern content needs. The analytics are game-changing.",
+        "avatar": "ER"
+      }
+    ],
+    "ctaTitle": "Ready to Transform Your Content Strategy?",
+    "ctaSubtitle": "Join thousands of creators and businesses who trust Content Hub to manage their content. Start your free trial today — no credit card required.",
+    "getStartedFree": "Get Started for Free",
+    "trial14day": "14-day free trial",
+    "noCreditCard": "No credit card required",
+    "cancelAnytime": "Cancel anytime"
   }
 }

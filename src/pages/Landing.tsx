@@ -2,13 +2,13 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Zap, 
-  BarChart3, 
-  Calendar, 
-  Users, 
-  Bot, 
-  Shield, 
+import {
+  Zap,
+  BarChart3,
+  Calendar,
+  Users,
+  Bot,
+  Shield,
   ArrowRight,
   CheckCircle2,
   Play,
@@ -19,127 +19,45 @@ import {
 } from 'lucide-react';
 
 import { Footer } from '@/components/layout/Footer';
+import { useTranslation } from 'react-i18next';
 
-const features = [
-  {
-    icon: Zap,
-    title: "AI-Powered Automation",
-    description: "Automate content scheduling, publishing, and optimization with intelligent AI workflows."
-  },
-  {
-    icon: BarChart3,
-    title: "Advanced Analytics",
-    description: "Track performance across all platforms with real-time insights and detailed reports."
-  },
-  {
-    icon: Calendar,
-    title: "Content Calendar",
-    description: "Plan and schedule content across multiple channels with our visual calendar."
-  },
-  {
-    icon: Users,
-    title: "Team Collaboration",
-    description: "Work together seamlessly with role-based access and approval workflows."
-  },
-  {
-    icon: Bot,
-    title: "Novee AI Assistant",
-    description: "Get intelligent content suggestions, writing assistance, and optimization tips."
-  },
-  {
-    icon: Shield,
-    title: "Enterprise Security",
-    description: "Bank-level encryption, SSO, and compliance certifications for peace of mind."
-  }
-];
+const featureIcons = [Zap, BarChart3, Calendar, Users, Bot, Shield];
+const planIcons = { free: Rocket, starter: Building2, pro: Zap } as const;
+const planKeys = ['free', 'starter', 'pro'] as const;
 
-const stats = [
-  { value: "10K+", label: "Active Users" },
-  { value: "50M+", label: "Posts Published" },
-  { value: "99.9%", label: "Uptime" },
-  { value: "24/7", label: "Support" }
-];
+interface FeatureTranslation {
+  title: string;
+  description: string;
+}
 
-const plans = [
-  {
-    name: "Free",
-    description: "Perfect for individuals getting started",
-    price: "$0",
-    period: "forever",
-    icon: Rocket,
-    features: [
-      "3 connected platforms",
-      "50 scheduled posts/month",
-      "Basic analytics",
-      "1 team member",
-      "Novee AI (10 requests/day)"
-    ],
-    cta: "Get Started Free",
-    popular: false
-  },
-  {
-    name: "Starter",
-    description: "For solo creators ready to scale",
-    price: "$10",
-    period: "/month",
-    icon: Building2,
-    features: [
-      "6 connected platforms",
-      "300 scheduled posts/month",
-      "Standard analytics",
-      "Up to 2 team members",
-      "Novee AI (100 requests/day)",
-      "Basic automation workflows",
-      "Email support"
-    ],
-    cta: "Start with Starter",
-    popular: false
-  },
-  {
-    name: "Pro",
-    description: "For growing creators and small teams",
-    price: "$20",
-    period: "/month",
-    icon: Zap,
-    features: [
-      "Unlimited platforms",
-      "Unlimited scheduled posts",
-      "Advanced analytics & reports",
-      "Unlimited team members",
-      "Novee AI (unlimited)",
-      "Custom automation workflows",
-      "Priority support"
-    ],
-    cta: "Start Free Trial",
-    popular: true
-  }
-];
+interface PlanTranslation {
+  name: string;
+  description: string;
+  period: string;
+  features: string[];
+  cta: string;
+}
 
-const testimonials = [
-  {
-    name: "Sarah Chen",
-    role: "Content Director",
-    company: "TechFlow Inc.",
-    quote: "Novee has transformed how we manage content. The AI suggestions alone have saved us 10+ hours per week.",
-    avatar: "SC"
-  },
-  {
-    name: "Marcus Johnson",
-    role: "Social Media Manager",
-    company: "Bloom Agency",
-    quote: "The automation workflows are incredible. We've doubled our output without adding headcount.",
-    avatar: "MJ"
-  },
-  {
-    name: "Emily Rodriguez",
-    role: "Marketing Lead",
-    company: "StartupXYZ",
-    quote: "Finally, a CMS that actually understands modern content needs. The analytics are game-changing.",
-    avatar: "ER"
-  }
-];
+interface TestimonialTranslation {
+  name: string;
+  role: string;
+  company: string;
+  quote: string;
+  avatar: string;
+}
 
 export default function Landing() {
+  const { t } = useTranslation();
+  const features = t('landing.features', { returnObjects: true }) as FeatureTranslation[];
+  const testimonials = t('landing.testimonials', { returnObjects: true }) as TestimonialTranslation[];
+  const stats = [
+    { value: '10K+', label: t('landing.statUsers') },
+    { value: '50M+', label: t('landing.statPosts') },
+    { value: '99.9%', label: t('landing.statUptime') },
+    { value: '24/7', label: t('landing.statSupport') },
+  ];
+  const planPrices: Record<(typeof planKeys)[number], string> = { free: '$0', starter: '$10', pro: '$20' };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -149,25 +67,25 @@ export default function Landing() {
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">CH</span>
             </div>
-            <span className="font-bold text-xl text-foreground">Content Hub</span>
+            <span className="font-bold text-xl text-foreground">{t('landing.navBrand')}</span>
           </Link>
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
-              Features
+              {t('landing.navFeatures')}
             </a>
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-              Pricing
+              {t('landing.navPricing')}
             </a>
             <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">
-              Testimonials
+              {t('landing.navTestimonials')}
             </a>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" asChild>
-              <Link to="/auth?tab=signin">Login</Link>
+              <Link to="/auth?tab=signin">{t('landing.login')}</Link>
             </Button>
             <Button asChild>
-              <Link to="/auth?tab=signup">Sign Up</Link>
+              <Link to="/auth?tab=signup">{t('landing.signUp')}</Link>
             </Button>
           </div>
         </div>
@@ -178,27 +96,26 @@ export default function Landing() {
         <div className="container mx-auto text-center max-w-4xl">
           <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6">
             <Zap className="h-4 w-4 text-primary" />
-            <span className="text-sm text-primary">AI-Powered Content Management</span>
+            <span className="text-sm text-primary">{t('landing.heroBadge')}</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-            The All-in-One CMS for{' '}
-            <span className="text-primary">Modern Creators</span>
+            {t('landing.heroTitlePrefix')}{' '}
+            <span className="text-primary">{t('landing.heroTitleHighlight')}</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Manage, schedule, and optimize your content across all platforms with AI-powered 
-            automation and real-time analytics.
+            {t('landing.heroSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" asChild className="w-full sm:w-auto">
               <Link to="/auth?tab=signup">
-                Start Free Trial
+                {t('landing.startFreeTrial')}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild className="w-full sm:w-auto">
               <Link to="/auth?tab=signin">
                 <Play className="mr-2 h-4 w-4" />
-                Login
+                {t('landing.login')}
               </Link>
             </Button>
           </div>
@@ -224,25 +141,27 @@ export default function Landing() {
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Everything You Need to Succeed
+              {t('landing.featuresTitle')}
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              From content creation to analytics, Content Hub provides all the tools you need to 
-              grow your audience and streamline your workflow.
+              {t('landing.featuresSubtitle')}
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature) => (
+            {features.map((feature, index) => {
+              const Icon = featureIcons[index];
+              return (
               <Card key={feature.title} className="bg-card border-border hover:border-primary/50 transition-colors">
                 <CardContent className="p-6">
                   <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                    <feature.icon className="h-6 w-6 text-primary" />
+                    <Icon className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold text-foreground mb-2">{feature.title}</h3>
                   <p className="text-muted-foreground">{feature.description}</p>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -252,63 +171,68 @@ export default function Landing() {
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Simple, Transparent Pricing
+              {t('landing.pricingTitle')}
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Choose the plan that fits your needs. Start free, upgrade as you grow.
+              {t('landing.pricingSubtitle')}
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {plans.map((plan) => (
-              <Card 
-                key={plan.name} 
-                className={`relative flex flex-col ${
-                  plan.popular 
-                    ? 'border-primary shadow-lg shadow-primary/10 scale-105' 
-                    : 'border-border'
-                }`}
-              >
-                {plan.popular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    Most Popular
-                  </Badge>
-                )}
-                <CardHeader>
-                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                    <plan.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold text-foreground">{plan.price}</span>
-                    <span className="text-muted-foreground">{plan.period}</span>
-                  </div>
-                  <ul className="space-y-3">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-3">
-                        <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                        <span className="text-sm text-muted-foreground">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    className="w-full" 
-                    variant={plan.popular ? "default" : "outline"}
-                    asChild
-                  >
-                    <Link to="/auth?tab=signup">{plan.cta}</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+            {planKeys.map((key) => {
+              const plan = t(`landing.plans.${key}`, { returnObjects: true }) as PlanTranslation;
+              const Icon = planIcons[key];
+              const popular = key === 'pro';
+              return (
+                <Card
+                  key={key}
+                  className={`relative flex flex-col ${
+                    popular
+                      ? 'border-primary shadow-lg shadow-primary/10 scale-105'
+                      : 'border-border'
+                  }`}
+                >
+                  {popular && (
+                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      {t('landing.mostPopular')}
+                    </Badge>
+                  )}
+                  <CardHeader>
+                    <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                      <Icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <div className="mb-6">
+                      <span className="text-4xl font-bold text-foreground">{planPrices[key]}</span>
+                      <span className="text-muted-foreground">{plan.period}</span>
+                    </div>
+                    <ul className="space-y-3">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-3">
+                          <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                          <span className="text-sm text-muted-foreground">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      className="w-full"
+                      variant={popular ? "default" : "outline"}
+                      asChild
+                    >
+                      <Link to="/auth?tab=signup">{plan.cta}</Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })}
           </div>
           <div className="mt-8 text-center">
             <Link to="/pricing" className="text-primary hover:underline text-sm">
-              View full pricing details and FAQ →
+              {t('landing.viewFullPricing')}
             </Link>
           </div>
         </div>
@@ -319,10 +243,10 @@ export default function Landing() {
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Loved by Content Creators
+              {t('landing.testimonialsTitle')}
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              See what our users have to say about transforming their content workflow.
+              {t('landing.testimonialsSubtitle')}
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -355,35 +279,34 @@ export default function Landing() {
       <section className="py-20 px-4 bg-primary/5 border-y border-primary/20">
         <div className="container mx-auto text-center max-w-3xl">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Ready to Transform Your Content Strategy?
+            {t('landing.ctaTitle')}
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Join thousands of creators and businesses who trust Content Hub to manage their content.
-            Start your free trial today — no credit card required.
+            {t('landing.ctaSubtitle')}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" asChild>
               <Link to="/auth?tab=signup">
-                Get Started for Free
+                {t('landing.getStartedFree')}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link to="/auth?tab=signin">Login</Link>
+              <Link to="/auth?tab=signin">{t('landing.login')}</Link>
             </Button>
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-primary" />
-              14-day free trial
+              {t('landing.trial14day')}
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-primary" />
-              No credit card required
+              {t('landing.noCreditCard')}
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-primary" />
-              Cancel anytime
+              {t('landing.cancelAnytime')}
             </div>
           </div>
         </div>

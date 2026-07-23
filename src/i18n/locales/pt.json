@@ -1623,5 +1623,130 @@
         "answer": "Usuários do plano Gratuito podem conectar até 3 plataformas, o Inicial até 6, e usuários Pro têm conexões ilimitadas."
       }
     ]
+  },
+  "landing": {
+    "navBrand": "Content Hub",
+    "navFeatures": "Recursos",
+    "navPricing": "Preços",
+    "navTestimonials": "Depoimentos",
+    "login": "Entrar",
+    "signUp": "Cadastrar",
+    "heroBadge": "Gerenciamento de Conteúdo com IA",
+    "heroTitlePrefix": "O CMS Completo para",
+    "heroTitleHighlight": "Criadores Modernos",
+    "heroSubtitle": "Gerencie, agende e otimize seu conteúdo em todas as plataformas com automação de IA e análises em tempo real.",
+    "startFreeTrial": "Iniciar Teste Grátis",
+    "statUsers": "Usuários Ativos",
+    "statPosts": "Postagens Publicadas",
+    "statUptime": "Disponibilidade",
+    "statSupport": "Suporte",
+    "featuresTitle": "Tudo que Você Precisa para Ter Sucesso",
+    "featuresSubtitle": "Da criação de conteúdo às análises, a Content Hub oferece todas as ferramentas necessárias para crescer seu público e otimizar seu fluxo de trabalho.",
+    "features": [
+      {
+        "title": "Automação com IA",
+        "description": "Automatize o agendamento, a publicação e a otimização de conteúdo com fluxos de trabalho inteligentes de IA."
+      },
+      {
+        "title": "Análises Avançadas",
+        "description": "Acompanhe o desempenho em todas as plataformas com insights em tempo real e relatórios detalhados."
+      },
+      {
+        "title": "Calendário de Conteúdo",
+        "description": "Planeje e agende conteúdo em vários canais com nosso calendário visual."
+      },
+      {
+        "title": "Colaboração em Equipe",
+        "description": "Trabalhe em conjunto de forma integrada com acesso baseado em funções e fluxos de aprovação."
+      },
+      {
+        "title": "Assistente Novee AI",
+        "description": "Obtenha sugestões inteligentes de conteúdo, assistência de escrita e dicas de otimização."
+      },
+      {
+        "title": "Segurança Empresarial",
+        "description": "Criptografia de nível bancário, SSO e certificações de conformidade para sua tranquilidade."
+      }
+    ],
+    "pricingTitle": "Preços Simples e Transparentes",
+    "pricingSubtitle": "Escolha o plano que atende às suas necessidades. Comece grátis e faça upgrade conforme cresce.",
+    "mostPopular": "Mais Popular",
+    "viewFullPricing": "Ver detalhes completos de preços e FAQ →",
+    "plans": {
+      "free": {
+        "name": "Gratuito",
+        "description": "Perfeito para quem está começando",
+        "period": "para sempre",
+        "features": [
+          "3 plataformas conectadas",
+          "50 postagens agendadas/mês",
+          "Análises básicas",
+          "1 membro da equipe",
+          "Novee AI (10 solicitações/dia)"
+        ],
+        "cta": "Começar Grátis"
+      },
+      "starter": {
+        "name": "Inicial",
+        "description": "Para criadores solo prontos para crescer",
+        "period": "/mês",
+        "features": [
+          "6 plataformas conectadas",
+          "300 postagens agendadas/mês",
+          "Análises padrão",
+          "Até 2 membros da equipe",
+          "Novee AI (100 solicitações/dia)",
+          "Fluxos de automação básicos",
+          "Suporte por e-mail"
+        ],
+        "cta": "Começar com o Inicial"
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "Para criadores em crescimento e pequenas equipes",
+        "period": "/mês",
+        "features": [
+          "Plataformas ilimitadas",
+          "Postagens agendadas ilimitadas",
+          "Análises e relatórios avançados",
+          "Membros de equipe ilimitados",
+          "Novee AI (ilimitado)",
+          "Fluxos de automação personalizados",
+          "Suporte prioritário"
+        ],
+        "cta": "Iniciar Teste Grátis"
+      }
+    },
+    "testimonialsTitle": "Aprovado por Criadores de Conteúdo",
+    "testimonialsSubtitle": "Veja o que nossos usuários dizem sobre a transformação do fluxo de trabalho de conteúdo.",
+    "testimonials": [
+      {
+        "name": "Sarah Chen",
+        "role": "Diretora de Conteúdo",
+        "company": "TechFlow Inc.",
+        "quote": "A Novee transformou a forma como gerenciamos conteúdo. Só as sugestões de IA já nos pouparam mais de 10 horas por semana.",
+        "avatar": "SC"
+      },
+      {
+        "name": "Marcus Johnson",
+        "role": "Gerente de Redes Sociais",
+        "company": "Bloom Agency",
+        "quote": "Os fluxos de automação são incríveis. Dobramos nossa produção sem aumentar a equipe.",
+        "avatar": "MJ"
+      },
+      {
+        "name": "Emily Rodriguez",
+        "role": "Líder de Marketing",
+        "company": "StartupXYZ",
+        "quote": "Finalmente, um CMS que realmente entende as necessidades modernas de conteúdo. As análises são revolucionárias.",
+        "avatar": "ER"
+      }
+    ],
+    "ctaTitle": "Pronto para Transformar sua Estratégia de Conteúdo?",
+    "ctaSubtitle": "Junte-se a milhares de criadores e empresas que confiam na Content Hub para gerenciar seu conteúdo. Comece seu teste grátis hoje — sem necessidade de cartão de crédito.",
+    "getStartedFree": "Começar Gratuitamente",
+    "trial14day": "Teste grátis de 14 dias",
+    "noCreditCard": "Sem necessidade de cartão de crédito",
+    "cancelAnytime": "Cancele quando quiser"
   }
 }
