@@ -16,7 +16,8 @@
     "close": "Close",
     "logout": "Logout",
     "login": "Login",
-    "signup": "Sign Up"
+    "signup": "Sign Up",
+    "change": "Change"
   },
   "nav": {
     "main": "Main",
@@ -314,7 +315,44 @@
       "toastCancelFlow": "Subscription cancellation flow would open here",
       "statusPaid": "Paid",
       "statusPending": "Pending",
-      "statusFailed": "Failed"
+      "statusFailed": "Failed",
+      "plansData": {
+        "free": {
+          "name": "Free",
+          "description": "Perfect for individuals getting started",
+          "features": [
+            "3 connected platforms",
+            "50 scheduled posts/month",
+            "Basic analytics",
+            "Community support"
+          ]
+        },
+        "starter": {
+          "name": "Starter",
+          "description": "For solo creators ready to scale",
+          "features": [
+            "6 connected platforms",
+            "300 scheduled posts/month",
+            "Standard analytics",
+            "Up to 2 team members",
+            "Email support",
+            "Basic automation workflows"
+          ]
+        },
+        "pro": {
+          "name": "Pro",
+          "description": "For growing teams and businesses",
+          "features": [
+            "Unlimited platforms",
+            "Unlimited scheduled posts",
+            "Advanced analytics & reports",
+            "Unlimited Novee AI",
+            "Full automation workflows",
+            "API access",
+            "Priority support"
+          ]
+        }
+      }
     },
     "integrations": {
       "apiKeysTitle": "API Keys",

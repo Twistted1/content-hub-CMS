@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface Plan {
   id: string;
@@ -134,6 +135,7 @@ const initialInvoices: Invoice[] = [
 ];
 
 export function BillingSettings() {
+  const { t } = useTranslation();
   const [currentPlan, setCurrentPlan] = useState("pro");
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(initialPaymentMethods);
@@ -157,13 +159,13 @@ export function BillingSettings() {
     if (selectedPlan) {
       setCurrentPlan(selectedPlan.id);
       setShowUpgradeDialog(false);
-      toast.success(`Successfully upgraded to ${selectedPlan.name} plan!`);
+      toast.success(t("settings.billing.toastUpgraded", { plan: t(`settings.billing.plansData.${selectedPlan.id}.name`) }));
     }
   };
 
   const handleAddCard = () => {
     if (!newCard.number || !newCard.expiry || !newCard.cvc || !newCard.name) {
-      toast.error("Please fill in all card details");
+      toast.error(t("settings.billing.toastFillCardDetails"));
       return;
     }
 
@@ -180,7 +182,7 @@ export function BillingSettings() {
     setPaymentMethods([...paymentMethods, newPaymentMethod]);
     setNewCard({ number: "", expiry: "", cvc: "", name: "" });
     setShowAddCardDialog(false);
-    toast.success("Payment method added successfully!");
+    toast.success(t("settings.billing.toastPaymentMethodAdded"));
   };
 
   const handleSetDefault = (id: string) => {
@@ -190,17 +192,17 @@ export function BillingSettings() {
         isDefault: pm.id === id,
       }))
     );
-    toast.success("Default payment method updated!");
+    toast.success(t("settings.billing.toastDefaultUpdated"));
   };
 
   const handleRemoveCard = (id: string) => {
     const method = paymentMethods.find((pm) => pm.id === id);
     if (method?.isDefault) {
-      toast.error("Cannot remove default payment method");
+      toast.error(t("settings.billing.toastCannotRemoveDefault"));
       return;
     }
     setPaymentMethods(paymentMethods.filter((pm) => pm.id !== id));
-    toast.success("Payment method removed!");
+    toast.success(t("settings.billing.toastPaymentMethodRemoved"));
   };
 
   const getYearlyPrice = (monthlyPrice: number) => {
@@ -214,40 +216,40 @@ export function BillingSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Crown className="h-5 w-5 text-primary" />
-            Current Plan
+            {t("settings.billing.currentPlanTitle")}
           </CardTitle>
           <CardDescription>
-            You are currently on the{" "}
+            {t("settings.billing.currentPlanDescPrefix")}{" "}
             <span className="font-medium text-foreground">
-              {plans.find((p) => p.id === currentPlan)?.name}
+              {t(`settings.billing.plansData.${currentPlan}.name`)}
             </span>{" "}
-            plan
+            {t("settings.billing.currentPlanDescSuffix")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-bold">
-                ${billingPeriod === "monthly" 
-                  ? plans.find((p) => p.id === currentPlan)?.price 
+                ${billingPeriod === "monthly"
+                  ? plans.find((p) => p.id === currentPlan)?.price
                   : getYearlyPrice(plans.find((p) => p.id === currentPlan)?.price || 0)}
                 <span className="text-sm font-normal text-muted-foreground">
-                  /{billingPeriod === "monthly" ? "month" : "year"}
+                  /{billingPeriod === "monthly" ? t("settings.billing.month") : t("settings.billing.year")}
                 </span>
               </p>
               <p className="text-sm text-muted-foreground">
-                Next billing date: February 1, 2026
+                {t("settings.billing.nextBillingDate")}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Label htmlFor="billing-period" className="text-sm">Monthly</Label>
+              <Label htmlFor="billing-period" className="text-sm">{t("settings.billing.monthly")}</Label>
               <Switch
                 id="billing-period"
                 checked={billingPeriod === "yearly"}
                 onCheckedChange={(checked) => setBillingPeriod(checked ? "yearly" : "monthly")}
               />
               <Label htmlFor="billing-period" className="text-sm">
-                Yearly <Badge variant="secondary" className="ml-1">Save 20%</Badge>
+                {t("settings.billing.yearly")} <Badge variant="secondary" className="ml-1">{t("settings.billing.save20")}</Badge>
               </Label>
             </div>
           </div>
@@ -257,8 +259,8 @@ export function BillingSettings() {
       {/* Plan Comparison */}
       <Card>
         <CardHeader>
-          <CardTitle>Compare Plans</CardTitle>
-          <CardDescription>Choose the plan that best fits your needs</CardDescription>
+          <CardTitle>{t("settings.billing.compareTitle")}</CardTitle>
+          <CardDescription>{t("settings.billing.compareDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
@@ -276,20 +278,20 @@ export function BillingSettings() {
                 {plan.popular && (
                   <Badge className="absolute -top-2 left-1/2 -translate-x-1/2">
                     <Star className="h-3 w-3 mr-1" />
-                    Most Popular
+                    {t("settings.billing.mostPopular")}
                   </Badge>
                 )}
                 {plan.id === currentPlan && (
                   <Badge variant="secondary" className="absolute -top-2 right-4">
-                    Current
+                    {t("settings.billing.current")}
                   </Badge>
                 )}
                 <CardHeader className="text-center pb-2">
                   <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                     {plan.icon}
                   </div>
-                  <CardTitle className="text-lg">{plan.name}</CardTitle>
-                  <CardDescription className="text-xs">{plan.description}</CardDescription>
+                  <CardTitle className="text-lg">{t(`settings.billing.plansData.${plan.id}.name`)}</CardTitle>
+                  <CardDescription className="text-xs">{t(`settings.billing.plansData.${plan.id}.description`)}</CardDescription>
                 </CardHeader>
                 <CardContent className="text-center">
                   <div className="mb-4">
@@ -297,11 +299,11 @@ export function BillingSettings() {
                       ${billingPeriod === "monthly" ? plan.price : getYearlyPrice(plan.price)}
                     </span>
                     <span className="text-muted-foreground">
-                      /{billingPeriod === "monthly" ? "mo" : "yr"}
+                      /{billingPeriod === "monthly" ? t("settings.billing.mo") : t("settings.billing.yr")}
                     </span>
                   </div>
                   <ul className="space-y-2 text-sm text-left mb-4">
-                    {plan.features.map((feature, index) => (
+                    {(t(`settings.billing.plansData.${plan.id}.features`, { returnObjects: true }) as string[]).map((feature, index) => (
                       <li key={index} className="flex items-start gap-2">
                         <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                         <span>{feature}</span>
@@ -315,10 +317,10 @@ export function BillingSettings() {
                     onClick={() => handleUpgrade(plan)}
                   >
                     {plan.id === currentPlan
-                      ? "Current Plan"
+                      ? t("settings.billing.currentPlanButton")
                       : plan.price > (plans.find((p) => p.id === currentPlan)?.price || 0)
-                      ? "Upgrade"
-                      : "Downgrade"}
+                      ? t("settings.billing.upgrade")
+                      : t("settings.billing.downgrade")}
                   </Button>
                 </CardContent>
               </Card>
@@ -334,13 +336,13 @@ export function BillingSettings() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
-                Payment Methods
+                {t("settings.billing.paymentMethodsTitle")}
               </CardTitle>
-              <CardDescription>Manage your payment methods</CardDescription>
+              <CardDescription>{t("settings.billing.paymentMethodsDesc")}</CardDescription>
             </div>
             <Button onClick={() => setShowAddCardDialog(true)} size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              Add Card
+              {t("settings.billing.addCard")}
             </Button>
           </div>
         </CardHeader>
@@ -359,11 +361,11 @@ export function BillingSettings() {
                     <p className="font-medium">
                       {method.brand} •••• {method.last4}
                       {method.isDefault && (
-                        <Badge variant="secondary" className="ml-2">Default</Badge>
+                        <Badge variant="secondary" className="ml-2">{t("settings.billing.default")}</Badge>
                       )}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Expires {method.expiryMonth}/{method.expiryYear}
+                      {t("settings.billing.expires")} {method.expiryMonth}/{method.expiryYear}
                     </p>
                   </div>
                 </div>
@@ -374,7 +376,7 @@ export function BillingSettings() {
                       size="sm"
                       onClick={() => handleSetDefault(method.id)}
                     >
-                      Set Default
+                      {t("settings.billing.setDefault")}
                     </Button>
                   )}
                   <Button
@@ -395,19 +397,19 @@ export function BillingSettings() {
       {/* Billing History */}
       <Card>
         <CardHeader>
-          <CardTitle>Billing History</CardTitle>
-          <CardDescription>View your past invoices and payments</CardDescription>
+          <CardTitle>{t("settings.billing.historyTitle")}</CardTitle>
+          <CardDescription>{t("settings.billing.historyDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Invoice</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("settings.billing.invoice")}</TableHead>
+                <TableHead>{t("settings.billing.date")}</TableHead>
+                <TableHead>{t("settings.billing.description")}</TableHead>
+                <TableHead>{t("settings.billing.amount")}</TableHead>
+                <TableHead>{t("settings.billing.status")}</TableHead>
+                <TableHead className="text-right">{t("settings.billing.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -427,12 +429,16 @@ export function BillingSettings() {
                           : "destructive"
                       }
                     >
-                      {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                      {invoice.status === "paid"
+                        ? t("settings.billing.statusPaid")
+                        : invoice.status === "pending"
+                        ? t("settings.billing.statusPending")
+                        : t("settings.billing.statusFailed")}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm">
-                      Download
+                      {t("settings.billing.download")}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -445,14 +451,14 @@ export function BillingSettings() {
       {/* Cancel Subscription */}
       <Card className="border-destructive/20">
         <CardHeader>
-          <CardTitle className="text-destructive">Cancel Subscription</CardTitle>
+          <CardTitle className="text-destructive">{t("settings.billing.cancelSubTitle")}</CardTitle>
           <CardDescription>
-            Once you cancel, you'll lose access to premium features at the end of your billing period.
+            {t("settings.billing.cancelSubDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="destructive" onClick={() => toast.info("Subscription cancellation flow would open here")}>
-            Cancel Subscription
+          <Button variant="destructive" onClick={() => toast.info(t("settings.billing.toastCancelFlow"))}>
+            {t("settings.billing.cancelSubscription")}
           </Button>
         </CardContent>
       </Card>
@@ -461,12 +467,12 @@ export function BillingSettings() {
       <Dialog open={showAddCardDialog} onOpenChange={setShowAddCardDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Payment Method</DialogTitle>
-            <DialogDescription>Add a new card to your account</DialogDescription>
+            <DialogTitle>{t("settings.billing.addPaymentMethodTitle")}</DialogTitle>
+            <DialogDescription>{t("settings.billing.addPaymentMethodDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="card-name">Cardholder Name</Label>
+              <Label htmlFor="card-name">{t("settings.billing.cardholderName")}</Label>
               <Input
                 id="card-name"
                 placeholder="John Doe"
@@ -475,7 +481,7 @@ export function BillingSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="card-number">Card Number</Label>
+              <Label htmlFor="card-number">{t("settings.billing.cardNumber")}</Label>
               <Input
                 id="card-number"
                 placeholder="4242 4242 4242 4242"
@@ -485,7 +491,7 @@ export function BillingSettings() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="card-expiry">Expiry Date</Label>
+                <Label htmlFor="card-expiry">{t("settings.billing.expiryDate")}</Label>
                 <Input
                   id="card-expiry"
                   placeholder="MM/YY"
@@ -494,7 +500,7 @@ export function BillingSettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="card-cvc">CVC</Label>
+                <Label htmlFor="card-cvc">{t("settings.billing.cvc")}</Label>
                 <Input
                   id="card-cvc"
                   placeholder="123"
@@ -506,9 +512,9 @@ export function BillingSettings() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddCardDialog(false)}>
-              Cancel
+              {t("settings.billing.cancel")}
             </Button>
-            <Button onClick={handleAddCard}>Add Card</Button>
+            <Button onClick={handleAddCard}>{t("settings.billing.addCardButton")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -519,22 +525,22 @@ export function BillingSettings() {
           <DialogHeader>
             <DialogTitle>
               {selectedPlan && selectedPlan.price > (plans.find((p) => p.id === currentPlan)?.price || 0)
-                ? "Upgrade"
-                : "Change"}{" "}
-              to {selectedPlan?.name}
+                ? t("settings.billing.upgrade")
+                : t("common.change")}{" "}
+              {t("settings.billing.upgradeDialogTo")} {selectedPlan && t(`settings.billing.plansData.${selectedPlan.id}.name`)}
             </DialogTitle>
             <DialogDescription>
-              You'll be charged ${billingPeriod === "monthly" 
-                ? selectedPlan?.price 
-                : getYearlyPrice(selectedPlan?.price || 0)}/{billingPeriod === "monthly" ? "month" : "year"} starting today.
+              {t("settings.billing.upgradeDialogChargeNotice")} ${billingPeriod === "monthly"
+                ? selectedPlan?.price
+                : getYearlyPrice(selectedPlan?.price || 0)}/{billingPeriod === "monthly" ? t("settings.billing.month") : t("settings.billing.year")} {t("settings.billing.startingToday")}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm text-muted-foreground">
-              Your new plan includes:
+              {t("settings.billing.newPlanIncludes")}
             </p>
             <ul className="mt-2 space-y-1">
-              {selectedPlan?.features.map((feature, index) => (
+              {selectedPlan && (t(`settings.billing.plansData.${selectedPlan.id}.features`, { returnObjects: true }) as string[]).map((feature, index) => (
                 <li key={index} className="flex items-center gap-2 text-sm">
                   <Check className="h-4 w-4 text-primary" />
                   {feature}
@@ -544,9 +550,9 @@ export function BillingSettings() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowUpgradeDialog(false)}>
-              Cancel
+              {t("settings.billing.cancel")}
             </Button>
-            <Button onClick={confirmUpgrade}>Confirm Change</Button>
+            <Button onClick={confirmUpgrade}>{t("settings.billing.confirmChange")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -16,7 +16,8 @@
     "close": "Fechar",
     "logout": "Sair",
     "login": "Entrar",
-    "signup": "Cadastrar"
+    "signup": "Cadastrar",
+    "change": "Alterar"
   },
   "nav": {
     "main": "Principal",
@@ -314,7 +315,44 @@
       "toastCancelFlow": "O fluxo de cancelamento de assinatura abriria aqui",
       "statusPaid": "Pago",
       "statusPending": "Pendente",
-      "statusFailed": "Falhou"
+      "statusFailed": "Falhou",
+      "plansData": {
+        "free": {
+          "name": "Gratuito",
+          "description": "Perfeito para quem está começando",
+          "features": [
+            "3 plataformas conectadas",
+            "50 postagens agendadas/mês",
+            "Análises básicas",
+            "Suporte da comunidade"
+          ]
+        },
+        "starter": {
+          "name": "Inicial",
+          "description": "Para criadores solo prontos para crescer",
+          "features": [
+            "6 plataformas conectadas",
+            "300 postagens agendadas/mês",
+            "Análises padrão",
+            "Até 2 membros da equipe",
+            "Suporte por e-mail",
+            "Fluxos de automação básicos"
+          ]
+        },
+        "pro": {
+          "name": "Pro",
+          "description": "Para equipes e empresas em crescimento",
+          "features": [
+            "Plataformas ilimitadas",
+            "Postagens agendadas ilimitadas",
+            "Análises e relatórios avançados",
+            "Novee AI ilimitado",
+            "Fluxos de automação completos",
+            "Acesso à API",
+            "Suporte prioritário"
+          ]
+        }
+      }
     },
     "integrations": {
       "apiKeysTitle": "Chaves de API",
