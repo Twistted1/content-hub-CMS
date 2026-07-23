@@ -5,6 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Clock, Send, Edit, Trash2, MoreVertical, Image, Video, FileText, Globe } from "lucide-react";
 import { Post, PlatformType } from "@/types";
 import { LucideIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Platform {
   id: string;
@@ -22,6 +23,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, platforms, getPlatformColor, onEdit, onDelete, onPublish }: PostCardProps) {
+  const { t } = useTranslation();
   const getPostTypeIcon = (type: string) => {
     switch (type) {
       case "image": return Image;
@@ -83,7 +85,7 @@ export function PostCard({ post, platforms, getPlatformColor, onEdit, onDelete, 
                   variant={post.status === "published" ? "default" : post.status === "scheduled" ? "secondary" : "outline"}
                   className="text-[10px] ml-2"
                 >
-                  {post.status}
+                  {t(`calendar.status${post.status.charAt(0).toUpperCase()}${post.status.slice(1)}`, { defaultValue: post.status })}
                 </Badge>
                 {scheduledDate && (
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -108,7 +110,7 @@ export function PostCard({ post, platforms, getPlatformColor, onEdit, onDelete, 
                 onClick={() => onPublish(post.id)}
               >
                 <Send className="h-3 w-3" />
-                Publish
+                {t("platforms.postPublish")}
               </Button>
             )}
             <DropdownMenu>
@@ -120,14 +122,14 @@ export function PostCard({ post, platforms, getPlatformColor, onEdit, onDelete, 
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => onEdit(post)}>
                   <Edit className="h-4 w-4 mr-2" />
-                  Edit
+                  {t("platforms.postEdit")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive"
                   onClick={() => onDelete(post.id)}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
+                  {t("platforms.postDelete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -3,12 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { CONTENT_SCHEDULE, DAYS, getCurrentPeriod } from "@/utils/scheduling";
 import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface ScheduleCalendarProps {
   platforms: any[];
 }
 
 export function ScheduleCalendar({ platforms }: ScheduleCalendarProps) {
+  const { t } = useTranslation();
   const period = getCurrentPeriod();
   const schedule = CONTENT_SCHEDULE[period];
   
@@ -30,9 +32,9 @@ export function ScheduleCalendar({ platforms }: ScheduleCalendarProps) {
           </div>
           <div>
             <h2 className="text-xl font-outfit font-bold text-white flex items-center gap-2">
-              Automated Operations <Badge variant="secondary" className="bg-primary/20 text-primary border-none ml-2">Period {period}</Badge>
+              {t("platforms.automatedOperations")} <Badge variant="secondary" className="bg-primary/20 text-primary border-none ml-2">{t("platforms.period")} {period}</Badge>
             </h2>
-            <p className="text-sm text-muted-foreground/80 mt-1">AI content templates are mapped directly to these distribution slots.</p>
+            <p className="text-sm text-muted-foreground/80 mt-1">{t("platforms.scheduleSubtitle")}</p>
           </div>
         </div>
       </div>
@@ -45,7 +47,7 @@ export function ScheduleCalendar({ platforms }: ScheduleCalendarProps) {
             return (
               <div key={day} className="flex flex-col border border-white/10 rounded-2xl overflow-hidden bg-white/5 backdrop-blur-md transition-all duration-300 hover:border-primary/40 hover:bg-white/10 hover:shadow-[0_8px_30px_rgba(45,212,191,0.15)] group">
                 <div className="bg-gradient-to-b from-black/40 to-transparent px-4 py-3 border-b border-white/10 text-center flex items-center justify-center">
-                  <span className="font-outfit font-bold tracking-widest text-sm text-white/90 uppercase">{day}</span>
+                  <span className="font-outfit font-bold tracking-widest text-sm text-white/90 uppercase">{t(`workflowTest.days.${day}`, { defaultValue: day })}</span>
                 </div>
                 <div className="p-3 flex-grow flex flex-col gap-2.5 min-h-[140px]">
                   {slots.length === 0 ? (
@@ -53,7 +55,7 @@ export function ScheduleCalendar({ platforms }: ScheduleCalendarProps) {
                       <div className="w-8 h-8 rounded-full border border-dashed border-white/20 flex items-center justify-center mb-2">
                         <span className="text-white/30 text-xs">-</span>
                       </div>
-                      <span className="text-[10px] uppercase tracking-widest text-muted-foreground/50">Rest</span>
+                      <span className="text-[10px] uppercase tracking-widest text-muted-foreground/50">{t("platforms.rest")}</span>
                     </div>
                   ) : (
                     slots.map((slot, idx) => {
@@ -71,7 +73,7 @@ export function ScheduleCalendar({ platforms }: ScheduleCalendarProps) {
                             </div>
                           </div>
                           <div className="flex items-center justify-between mt-0.5">
-                            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Time</span>
+                            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">{t("platforms.time")}</span>
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20 font-mono">
                               {slot.time}
                             </Badge>

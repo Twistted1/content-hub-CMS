@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus } from "lucide-react";
 import { PostType, PlatformType } from "@/types";
 import { LucideIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import React from "react";
 
@@ -47,65 +48,66 @@ export function PostDialog({
   getPlatformColor,
   togglePlatformSelection,
 }: PostDialogProps) {
+  const { t } = useTranslation();
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button className="gap-2 bg-primary hover:bg-primary/90">
           <Plus className="h-4 w-4" />
-          Create Post
+          {t("platforms.createPost")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Create New Post</DialogTitle>
+          <DialogTitle>{t("platforms.createPostDialogTitle")}</DialogTitle>
           <DialogDescription>
-            Schedule a post to be published across your connected platforms.
+            {t("platforms.createPostDialogDesc")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">{t("platforms.postTitle")}</Label>
             <Input
               id="title"
-              placeholder="Enter post title..."
+              placeholder={t("platforms.postTitlePlaceholder")}
               value={newPost.title}
               onChange={(e) => onNewPostChange({ ...newPost, title: e.target.value })}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="content">Content</Label>
+            <Label htmlFor="content">{t("platforms.postContent")}</Label>
             <Textarea
               id="content"
-              placeholder="Write your post content..."
+              placeholder={t("platforms.postContentPlaceholder")}
               rows={4}
               value={newPost.content}
               onChange={(e) => onNewPostChange({ ...newPost, content: e.target.value })}
             />
           </div>
           <div className="space-y-2">
-            <Label>Content Type</Label>
+            <Label>{t("platforms.contentType")}</Label>
             <Select
               value={newPost.type}
-              onValueChange={(value: PostType) => 
+              onValueChange={(value: PostType) =>
                 onNewPostChange({ ...newPost, type: value })
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select content type" />
+                <SelectValue placeholder={t("platforms.selectContentType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="text">Text Post</SelectItem>
-                <SelectItem value="image">Image Post</SelectItem>
-                <SelectItem value="video">Video Post</SelectItem>
-                <SelectItem value="carousel">Carousel</SelectItem>
-                <SelectItem value="reel">Reel</SelectItem>
-                <SelectItem value="thread">Thread</SelectItem>
-                <SelectItem value="article">Article</SelectItem>
+                <SelectItem value="text">{t("platforms.typeText")}</SelectItem>
+                <SelectItem value="image">{t("platforms.typeImage")}</SelectItem>
+                <SelectItem value="video">{t("platforms.typeVideo")}</SelectItem>
+                <SelectItem value="carousel">{t("platforms.typeCarousel")}</SelectItem>
+                <SelectItem value="reel">{t("platforms.typeReel")}</SelectItem>
+                <SelectItem value="thread">{t("platforms.typeThread")}</SelectItem>
+                <SelectItem value="article">{t("platforms.typeArticle")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Platforms</Label>
+            <Label>{t("platforms.postPlatforms")}</Label>
             <div className="flex flex-wrap gap-2">
               {connectedPlatforms.map((platform) => (
                 <div
@@ -132,7 +134,7 @@ export function PostDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="date">Schedule Date</Label>
+              <Label htmlFor="date">{t("platforms.scheduleDate")}</Label>
               <Input
                 id="date"
                 type="date"
@@ -141,7 +143,7 @@ export function PostDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="time">Schedule Time</Label>
+              <Label htmlFor="time">{t("platforms.scheduleTime")}</Label>
               <Input
                 id="time"
                 type="time"
@@ -153,10 +155,10 @@ export function PostDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("platforms.cancel")}
           </Button>
           <Button onClick={onCreatePost}>
-            {newPost.scheduledDate && newPost.scheduledTime ? "Schedule Post" : "Save as Draft"}
+            {newPost.scheduledDate && newPost.scheduledTime ? t("platforms.schedulePost") : t("platforms.saveAsDraft")}
           </Button>
         </DialogFooter>
       </DialogContent>

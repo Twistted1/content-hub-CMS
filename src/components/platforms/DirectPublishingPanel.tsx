@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { usePlatformOAuth, DirectPlatform } from "@/hooks/usePlatformOAuth";
 import { Linkedin, Twitter, CheckCircle2, Loader2, Plug, Unplug } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const PROVIDERS: { id: DirectPlatform; name: string; icon: any; bg: string }[] = [
   { id: "linkedin", name: "LinkedIn", icon: Linkedin, bg: "bg-[#0A66C2]/10 text-[#0A66C2]" },
@@ -10,6 +11,7 @@ const PROVIDERS: { id: DirectPlatform; name: string; icon: any; bg: string }[] =
 ];
 
 export function DirectPublishingPanel() {
+  const { t } = useTranslation();
   const { accounts, connect, disconnect, connecting, isConnected, isLoading } = usePlatformOAuth();
 
   return (
@@ -19,10 +21,10 @@ export function DirectPublishingPanel() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Plug className="h-5 w-5 text-primary" />
-              Direct Publishing
+              {t("platforms.directPublishing")}
             </CardTitle>
             <CardDescription>
-              Connect LinkedIn or X to publish posts directly via their official APIs (no webhooks needed).
+              {t("platforms.directPublishingDesc")}
             </CardDescription>
           </div>
           <Badge variant="outline" className="hidden sm:inline-flex">OAuth 2.0</Badge>
@@ -46,19 +48,19 @@ export function DirectPublishingPanel() {
                 <div className="min-w-0">
                   <p className="font-medium leading-none">{p.name}</p>
                   <p className="text-xs text-muted-foreground truncate mt-1">
-                    {connected ? account?.handle || "Connected" : "Not connected"}
+                    {connected ? account?.handle || t("platforms.connectedStatus") : t("platforms.notConnectedStatus")}
                   </p>
                 </div>
               </div>
               {connected ? (
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="gap-1">
-                    <CheckCircle2 className="h-3 w-3" /> Live
+                    <CheckCircle2 className="h-3 w-3" /> {t("platforms.live")}
                   </Badge>
                   <Button
                     size="sm" variant="ghost"
                     onClick={() => disconnect(p.id)}
-                    title="Disconnect"
+                    title={t("platforms.disconnectTitle")}
                   >
                     <Unplug className="h-4 w-4" />
                   </Button>
@@ -70,9 +72,9 @@ export function DirectPublishingPanel() {
                   disabled={isThisConnecting || isLoading}
                 >
                   {isThisConnecting ? (
-                    <><Loader2 className="h-4 w-4 animate-spin mr-1" /> Connecting…</>
+                    <><Loader2 className="h-4 w-4 animate-spin mr-1" /> {t("platforms.connecting")}</>
                   ) : (
-                    "Connect"
+                    t("platforms.connect")
                   )}
                 </Button>
               )}
