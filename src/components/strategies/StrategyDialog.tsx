@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { X, Plus, Trash2 } from "lucide-react";
 import { platformOptions, teamMemberOptions } from "./strategiesData";
 import type { Strategy, StrategyStatus, StrategyGoal, StrategyInsert } from "@/hooks/useStrategies";
+import { useTranslation } from "react-i18next";
 
 interface StrategyDialogProps {
   open: boolean;
@@ -37,6 +38,7 @@ interface FormGoal {
 }
 
 export function StrategyDialog({ open, onOpenChange, strategy, onSave }: StrategyDialogProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -158,65 +160,65 @@ export function StrategyDialog({ open, onOpenChange, strategy, onSave }: Strateg
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{strategy ? "Edit Strategy" : "New Strategy"}</DialogTitle>
+          <DialogTitle>{strategy ? t("strategies.editStrategyTitle") : t("strategies.newStrategyTitle")}</DialogTitle>
           <DialogDescription>
-            {strategy ? "Update strategy details" : "Create a new marketing strategy"}
+            {strategy ? t("strategies.updateDetails") : t("strategies.createNew")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Strategy Name</Label>
+              <Label htmlFor="name">{t("strategies.strategyName")}</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Enter strategy name"
+                placeholder={t("strategies.strategyNamePlaceholder")}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t("strategies.description")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe the strategy objectives"
+                placeholder={t("strategies.descriptionPlaceholder")}
                 rows={3}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">{t("strategies.status")}</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value: StrategyStatus) => setFormData({ ...formData, status: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
+                    <SelectValue placeholder={t("strategies.selectStatus")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="planning">Planning</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="paused">Paused</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="planning">{t("strategies.planning")}</SelectItem>
+                    <SelectItem value="active">{t("strategies.active")}</SelectItem>
+                    <SelectItem value="paused">{t("strategies.paused")}</SelectItem>
+                    <SelectItem value="completed">{t("strategies.completed")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label>Progress</Label>
+                <Label>{t("strategies.progress")}</Label>
                 <div className="h-10 flex items-center text-sm text-muted-foreground">
-                  Calculated from goals ({formData.goalItems.filter(g => g.completed).length}/{formData.goalItems.length})
+                  {t("strategies.calculatedFromGoals", { done: formData.goalItems.filter(g => g.completed).length, total: formData.goalItems.length })}
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="start_date">Start Date</Label>
+                <Label htmlFor="start_date">{t("strategies.startDate")}</Label>
                 <Input
                   id="start_date"
                   type="date"
@@ -226,7 +228,7 @@ export function StrategyDialog({ open, onOpenChange, strategy, onSave }: Strateg
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="end_date">End Date</Label>
+                <Label htmlFor="end_date">{t("strategies.endDate")}</Label>
                 <Input
                   id="end_date"
                   type="date"
@@ -237,7 +239,7 @@ export function StrategyDialog({ open, onOpenChange, strategy, onSave }: Strateg
             </div>
 
             <div className="space-y-2">
-              <Label>Goals</Label>
+              <Label>{t("strategies.goals")}</Label>
               <div className="space-y-2">
                 {formData.goalItems.map((goal) => (
                   <div
@@ -246,7 +248,7 @@ export function StrategyDialog({ open, onOpenChange, strategy, onSave }: Strateg
                   >
                     <span className="flex-1 text-sm">{goal.title}</span>
                     <Badge variant={goal.completed ? "default" : "outline"} className="text-xs">
-                      {goal.completed ? "Done" : "Pending"}
+                      {goal.completed ? t("strategies.done") : t("strategies.pending")}
                     </Badge>
                     <Button
                       type="button"
@@ -264,7 +266,7 @@ export function StrategyDialog({ open, onOpenChange, strategy, onSave }: Strateg
                     value={newGoalTitle}
                     onChange={(e) => setNewGoalTitle(e.target.value)}
                     onKeyDown={handleGoalKeyDown}
-                    placeholder="Add a new goal..."
+                    placeholder={t("strategies.addGoalPlaceholder")}
                     className="flex-1"
                   />
                   <Button type="button" variant="outline" size="icon" onClick={addGoal}>
@@ -275,7 +277,7 @@ export function StrategyDialog({ open, onOpenChange, strategy, onSave }: Strateg
             </div>
 
             <div className="space-y-2">
-              <Label>Platforms</Label>
+              <Label>{t("strategies.platforms")}</Label>
               <div className="flex flex-wrap gap-2">
                 {platformOptions.map((platform) => (
                   <Badge
@@ -294,7 +296,7 @@ export function StrategyDialog({ open, onOpenChange, strategy, onSave }: Strateg
             </div>
 
             <div className="space-y-2">
-              <Label>Team Members</Label>
+              <Label>{t("strategies.teamMembersLabel")}</Label>
               <div className="flex flex-wrap gap-2">
                 {teamMemberOptions.map((member) => (
                   <Badge
@@ -315,10 +317,10 @@ export function StrategyDialog({ open, onOpenChange, strategy, onSave }: Strateg
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit">
-              {strategy ? "Save Changes" : "Create Strategy"}
+              {strategy ? t("strategies.saveChanges") : t("strategies.createStrategy")}
             </Button>
           </DialogFooter>
         </form>

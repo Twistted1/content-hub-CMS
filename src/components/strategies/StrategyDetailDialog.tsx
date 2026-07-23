@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Target, Users } from "lucide-react";
 import { statusConfig } from "./strategiesData";
 import { useStrategies, Strategy } from "@/hooks/useStrategies";
+import { useTranslation } from "react-i18next";
 
 interface StrategyDetailDialogProps {
   open: boolean;
@@ -19,8 +20,9 @@ interface StrategyDetailDialogProps {
 }
 
 export function StrategyDetailDialog({ open, onOpenChange, strategy }: StrategyDetailDialogProps) {
+  const { t } = useTranslation();
   const { strategies, toggleStrategyGoal } = useStrategies();
-  
+
   // Get fresh strategy data from store
   const currentStrategy = strategy ? strategies.find(s => s.id === strategy.id) : null;
   
@@ -35,7 +37,7 @@ export function StrategyDetailDialog({ open, onOpenChange, strategy }: StrategyD
   };
 
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return 'Not set';
+    if (!dateStr) return t("strategies.notSet");
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -55,13 +57,13 @@ export function StrategyDetailDialog({ open, onOpenChange, strategy }: StrategyD
           <div className="flex items-center gap-2">
             <Badge variant={statusConfig[currentStrategy.status].variant}>
               <StatusIcon className="h-3 w-3 mr-1" />
-              {statusConfig[currentStrategy.status].label}
+              {t(`strategies.${currentStrategy.status}`)}
             </Badge>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Progress</span>
+              <span className="text-muted-foreground">{t("strategies.progress")}</span>
               <span className="font-medium">{currentStrategy.progress}%</span>
             </div>
             <Progress value={currentStrategy.progress} className="h-3" />
@@ -71,7 +73,7 @@ export function StrategyDetailDialog({ open, onOpenChange, strategy }: StrategyD
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                Timeline
+                {t("strategies.timelineHeading")}
               </div>
               <p className="text-sm font-medium">
                 {formatDate(currentStrategy.start_date)} - {formatDate(currentStrategy.end_date)}
@@ -81,17 +83,17 @@ export function StrategyDetailDialog({ open, onOpenChange, strategy }: StrategyD
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Target className="h-4 w-4" />
-                Goals
+                {t("strategies.viewGoals")}
               </div>
               <p className="text-sm font-medium">
-                {completedGoals} / {totalGoals} completed
+                {t("strategies.goalsCompleted", { done: completedGoals, total: totalGoals })}
               </p>
             </div>
           </div>
 
           {/* Goal Items */}
           <div className="space-y-3">
-            <p className="text-sm font-medium">Goal Checklist</p>
+            <p className="text-sm font-medium">{t("strategies.goalChecklist")}</p>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {currentStrategy.goalItems.map((goal) => (
                 <div
@@ -115,7 +117,7 @@ export function StrategyDetailDialog({ open, onOpenChange, strategy }: StrategyD
               ))}
               {currentStrategy.goalItems.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  No goals defined for this strategy
+                  {t("strategies.noGoalsDefined")}
                 </p>
               )}
             </div>
@@ -124,7 +126,7 @@ export function StrategyDetailDialog({ open, onOpenChange, strategy }: StrategyD
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Users className="h-4 w-4" />
-              Team Members
+              {t("strategies.teamMembersLabel")}
             </div>
             <div className="flex -space-x-2">
               {currentStrategy.assignees.map((assignee, idx) => (
@@ -140,7 +142,7 @@ export function StrategyDetailDialog({ open, onOpenChange, strategy }: StrategyD
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Platforms</p>
+            <p className="text-sm text-muted-foreground">{t("strategies.platformsHeading")}</p>
             <div className="flex flex-wrap gap-2">
               {currentStrategy.platforms.map((platform) => (
                 <Badge key={platform} variant="outline">

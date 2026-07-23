@@ -52,8 +52,10 @@ import { StrategyDetailDialog } from "@/components/strategies/StrategyDetailDial
 import { DragDropImport } from "@/components/common/DragDropImport";
 import { useUJT } from "@/hooks/useUJT";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const Strategies = () => {
+  const { t } = useTranslation();
   const {
     strategies,
     isLoading,
@@ -112,10 +114,10 @@ const Strategies = () => {
     try {
       if (editingStrategy) {
         await updateStrategy(editingStrategy.id, data);
-        toast.success("Strategy updated successfully");
+        toast.success(t("strategies.strategyUpdated"));
       } else {
         await addStrategy(data);
-        toast.success("Strategy created successfully");
+        toast.success(t("strategies.strategyCreated"));
       }
       setEditingStrategy(null);
     } catch {
@@ -125,24 +127,24 @@ const Strategies = () => {
 
   const handleDelete = async (id: string) => {
     await deleteStrategy(id);
-    toast.success("Strategy deleted");
+    toast.success(t("strategies.strategyDeleted"));
   };
 
   const handleBulkDelete = async () => {
     await deleteStrategies(selectedStrategies);
-    toast.success(`Deleted ${selectedStrategies.length} strategies`);
+    toast.success(t("strategies.strategiesDeleted", { count: selectedStrategies.length }));
     setSelectedStrategies([]);
   };
 
   const handleBulkStatusChange = async (status: StrategyStatus) => {
     await changeStrategiesStatus(selectedStrategies, status);
-    toast.success(`Updated ${selectedStrategies.length} strategies to ${status}`);
+    toast.success(t("strategies.strategiesStatusUpdated", { count: selectedStrategies.length, status }));
     setSelectedStrategies([]);
   };
 
   const handleDuplicate = async (id: string) => {
     await duplicateStrategy(id);
-    toast.success("Strategy duplicated");
+    toast.success(t("strategies.strategyDuplicated"));
   };
 
   const handleView = (strategy: Strategy) => {
@@ -207,14 +209,14 @@ const Strategies = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="page-title mb-2">Strategies</h1>
+            <h1 className="page-title mb-2">{t("strategies.title")}</h1>
             <p className="text-muted-foreground">
-              Plan and track your content marketing strategies
+              {t("strategies.subtitle")}
             </p>
           </div>
           <Button onClick={() => { setEditingStrategy(null); setDialogOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" />
-            New Strategy
+            {t("strategies.newStrategy")}
           </Button>
         </div>
 
@@ -222,20 +224,20 @@ const Strategies = () => {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Strategies</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("strategies.totalStrategies")}</CardTitle>
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{strategies.length}</div>
               <p className="text-xs text-muted-foreground">
-                {activeStrategies} currently active
+                {t("strategies.currentlyActive", { count: activeStrategies })}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Goals Progress</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("strategies.goalsProgress")}</CardTitle>
               <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -243,14 +245,14 @@ const Strategies = () => {
                 {completedGoals}/{totalGoals}
               </div>
               <p className="text-xs text-muted-foreground">
-                {totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0}% completed
+                {t("strategies.percentCompleted", { pct: totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0 })}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Avg Progress</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("strategies.avgProgress")}</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -261,13 +263,13 @@ const Strategies = () => {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Team Members</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("strategies.teamMembers")}</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{uniqueAssignees}</div>
               <p className="text-xs text-muted-foreground">
-                Across all strategies
+                {t("strategies.acrossAllStrategies")}
               </p>
             </CardContent>
           </Card>
@@ -277,12 +279,12 @@ const Strategies = () => {
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <CardTitle>All Strategies</CardTitle>
+              <CardTitle>{t("strategies.allStrategies")}</CardTitle>
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search strategies..."
+                    placeholder={t("strategies.searchPlaceholder")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9 w-[200px]"
@@ -290,14 +292,14 @@ const Strategies = () => {
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="All Status" />
+                    <SelectValue placeholder={t("strategies.allStatus")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="planning">Planning</SelectItem>
-                    <SelectItem value="paused">Paused</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="all">{t("strategies.allStatus")}</SelectItem>
+                    <SelectItem value="active">{t("strategies.active")}</SelectItem>
+                    <SelectItem value="planning">{t("strategies.planning")}</SelectItem>
+                    <SelectItem value="paused">{t("strategies.paused")}</SelectItem>
+                    <SelectItem value="completed">{t("strategies.completed")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -306,7 +308,7 @@ const Strategies = () => {
             {selectedStrategies.length > 0 && (
               <div className="flex items-center gap-2 pt-4 border-t mt-4">
                 <span className="text-sm text-muted-foreground">
-                  {selectedStrategies.length} selected
+                  {t("strategies.selected", { count: selectedStrategies.length })}
                 </span>
                 <Button
                   size="sm"
@@ -314,7 +316,7 @@ const Strategies = () => {
                   onClick={() => handleBulkStatusChange("active")}
                 >
                   <Play className="h-4 w-4 mr-1" />
-                  Activate
+                  {t("strategies.activate")}
                 </Button>
                 <Button
                   size="sm"
@@ -322,7 +324,7 @@ const Strategies = () => {
                   onClick={() => handleBulkStatusChange("paused")}
                 >
                   <Pause className="h-4 w-4 mr-1" />
-                  Pause
+                  {t("strategies.pause")}
                 </Button>
                 <Button
                   size="sm"
@@ -330,7 +332,7 @@ const Strategies = () => {
                   onClick={handleBulkDelete}
                 >
                   <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
+                  {t("common.delete")}
                 </Button>
               </div>
             )}
@@ -348,12 +350,12 @@ const Strategies = () => {
                       onCheckedChange={handleSelectAll}
                     />
                   </TableHead>
-                  <TableHead>Strategy</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Progress</TableHead>
-                  <TableHead>Timeline</TableHead>
-                  <TableHead>Goals</TableHead>
-                  <TableHead>Team</TableHead>
+                  <TableHead>{t("strategies.strategyCol")}</TableHead>
+                  <TableHead>{t("strategies.statusCol")}</TableHead>
+                  <TableHead>{t("strategies.progressCol")}</TableHead>
+                  <TableHead>{t("strategies.timelineCol")}</TableHead>
+                  <TableHead>{t("strategies.goalsCol")}</TableHead>
+                  <TableHead>{t("strategies.teamCol")}</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -392,7 +394,7 @@ const Strategies = () => {
                       <TableCell>
                         <Badge variant={statusConfig[strategy.status].variant}>
                           <StatusIcon className="h-3 w-3 mr-1" />
-                          {statusConfig[strategy.status].label}
+                          {t(`strategies.${strategy.status}`)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -413,7 +415,7 @@ const Strategies = () => {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {strategy.goalItems.filter(g => g.completed).length}/{strategy.goalItems.length} completed
+                          {t("strategies.goalsCompleted", { done: strategy.goalItems.filter(g => g.completed).length, total: strategy.goalItems.length })}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -443,15 +445,15 @@ const Strategies = () => {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleView(strategy)}>
                               <Eye className="h-4 w-4 mr-2" />
-                              View Details
+                              {t("strategies.viewDetails")}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleEdit(strategy)}>
                               <Edit className="h-4 w-4 mr-2" />
-                              Edit Strategy
+                              {t("strategies.editStrategy")}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDuplicate(strategy.id)}>
                               <Copy className="h-4 w-4 mr-2" />
-                              Duplicate
+                              {t("strategies.duplicate")}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -459,7 +461,7 @@ const Strategies = () => {
                               onClick={() => handleDelete(strategy.id)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
+                              {t("common.delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -470,7 +472,7 @@ const Strategies = () => {
                 {filteredStrategies.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
-                      No strategies found
+                      {t("strategies.noStrategiesFound")}
                     </TableCell>
                   </TableRow>
                 )}
