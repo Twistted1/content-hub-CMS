@@ -19,6 +19,23 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { User, roles, permissions, rolePermissions } from "./usersData";
+import { useTranslation } from "react-i18next";
+
+const ROLE_KEYS: Record<string, { label: string; desc: string }> = {
+  admin: { label: "users.roleAdmin", desc: "users.roleAdminDesc" },
+  editor: { label: "users.roleEditor", desc: "users.roleEditorDesc" },
+  viewer: { label: "users.roleViewer", desc: "users.roleViewerDesc" },
+  member: { label: "users.roleMember", desc: "users.roleMemberDesc" },
+};
+
+const PERMISSION_KEYS: Record<string, { label: string; desc: string }> = {
+  manage_users: { label: "users.permManageUsers", desc: "users.permManageUsersDesc" },
+  manage_content: { label: "users.permManageContent", desc: "users.permManageContentDesc" },
+  manage_settings: { label: "users.permManageSettings", desc: "users.permManageSettingsDesc" },
+  view_analytics: { label: "users.permViewAnalytics", desc: "users.permViewAnalyticsDesc" },
+  view_content: { label: "users.permViewContent", desc: "users.permViewContentDesc" },
+  publish_content: { label: "users.permPublishContent", desc: "users.permPublishContentDesc" },
+};
 
 interface UserDialogProps {
   open: boolean;
@@ -35,6 +52,7 @@ export const UserDialog = ({
   onSave,
   mode,
 }: UserDialogProps) => {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<User["role"]>("member");
@@ -87,22 +105,22 @@ export const UserDialog = ({
   const getTitle = () => {
     switch (mode) {
       case "create":
-        return "Invite Team Member";
+        return t("users.inviteTeamMember");
       case "role":
-        return "Change Role";
+        return t("users.changeRole");
       default:
-        return "Edit User";
+        return t("users.editUser");
     }
   };
 
   const getDescription = () => {
     switch (mode) {
       case "create":
-        return "Send an invitation to join your team";
+        return t("users.sendInvitationDesc");
       case "role":
-        return `Update role and permissions for ${user?.name}`;
+        return t("users.updateRoleDesc", { name: user?.name });
       default:
-        return "Update user information and permissions";
+        return t("users.updateUserDesc");
     }
   };
 
@@ -119,7 +137,7 @@ export const UserDialog = ({
             <>
               {mode === "edit" && (
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">{t("users.name")}</Label>
                   <Input
                     id="name"
                     value={name}
@@ -129,7 +147,7 @@ export const UserDialog = ({
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">{t("users.emailAddress")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -144,18 +162,18 @@ export const UserDialog = ({
 
           {(mode === "create" || mode === "role") && (
             <div className="space-y-2">
-              <Label>Role</Label>
+              <Label>{t("users.role")}</Label>
               <Select value={role} onValueChange={(v) => handleRoleChange(v as User["role"])}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
+                  <SelectValue placeholder={t("users.selectRole")} />
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map((r) => (
                     <SelectItem key={r.value} value={r.value}>
                       <div>
-                        <div className="font-medium">{r.label}</div>
+                        <div className="font-medium">{t(ROLE_KEYS[r.value]?.label || r.label)}</div>
                         <div className="text-xs text-muted-foreground">
-                          {r.description}
+                          {t(ROLE_KEYS[r.value]?.desc || r.description)}
                         </div>
                       </div>
                     </SelectItem>
@@ -166,7 +184,7 @@ export const UserDialog = ({
           )}
 
           <div className="space-y-2">
-            <Label>Permissions</Label>
+            <Label>{t("users.permissions")}</Label>
             <div className="border rounded-lg p-3 space-y-3 max-h-48 overflow-y-auto">
               {permissions.map((permission) => (
                 <div key={permission.id} className="flex items-start space-x-3">
@@ -180,10 +198,10 @@ export const UserDialog = ({
                       htmlFor={permission.id}
                       className="text-sm font-medium cursor-pointer"
                     >
-                      {permission.label}
+                      {t(PERMISSION_KEYS[permission.id]?.label || permission.label)}
                     </label>
                     <p className="text-xs text-muted-foreground">
-                      {permission.description}
+                      {t(PERMISSION_KEYS[permission.id]?.desc || permission.description)}
                     </p>
                   </div>
                 </div>
@@ -194,10 +212,10 @@ export const UserDialog = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button onClick={handleSave} disabled={mode === "create" && !email}>
-            {mode === "create" ? "Send Invitation" : "Save Changes"}
+            {mode === "create" ? t("users.sendInvitation") : t("users.saveChanges")}
           </Button>
         </DialogFooter>
       </DialogContent>

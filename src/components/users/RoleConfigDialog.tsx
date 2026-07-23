@@ -10,6 +10,23 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { permissions } from "./usersData";
+import { useTranslation } from "react-i18next";
+
+const ROLE_KEYS: Record<string, string> = {
+  admin: "users.roleAdmin",
+  editor: "users.roleEditor",
+  viewer: "users.roleViewer",
+  member: "users.roleMember",
+};
+
+const PERMISSION_KEYS: Record<string, { label: string; desc: string }> = {
+  manage_users: { label: "users.permManageUsers", desc: "users.permManageUsersDesc" },
+  manage_content: { label: "users.permManageContent", desc: "users.permManageContentDesc" },
+  manage_settings: { label: "users.permManageSettings", desc: "users.permManageSettingsDesc" },
+  view_analytics: { label: "users.permViewAnalytics", desc: "users.permViewAnalyticsDesc" },
+  view_content: { label: "users.permViewContent", desc: "users.permViewContentDesc" },
+  publish_content: { label: "users.permPublishContent", desc: "users.permPublishContentDesc" },
+};
 
 interface RoleConfigDialogProps {
   open: boolean;
@@ -26,6 +43,8 @@ export const RoleConfigDialog = ({
   currentPermissions,
   onSave,
 }: RoleConfigDialogProps) => {
+  const { t } = useTranslation();
+  const roleLabel = t(ROLE_KEYS[role.value] || role.label);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>(currentPermissions);
 
   const handlePermissionToggle = (permissionId: string) => {
@@ -45,9 +64,9 @@ export const RoleConfigDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Configure {role.label} Role</DialogTitle>
+          <DialogTitle>{t("users.configureRole", { role: roleLabel })}</DialogTitle>
           <DialogDescription>
-            Set the default permissions for the {role.label.toLowerCase()} role
+            {t("users.configureRoleDesc", { role: roleLabel.toLowerCase() })}
           </DialogDescription>
         </DialogHeader>
 
@@ -65,10 +84,10 @@ export const RoleConfigDialog = ({
                     htmlFor={`role-${permission.id}`}
                     className="text-sm font-medium cursor-pointer"
                   >
-                    {permission.label}
+                    {t(PERMISSION_KEYS[permission.id]?.label || permission.label)}
                   </label>
                   <p className="text-xs text-muted-foreground">
-                    {permission.description}
+                    {t(PERMISSION_KEYS[permission.id]?.desc || permission.description)}
                   </p>
                 </div>
               </div>
@@ -78,9 +97,9 @@ export const RoleConfigDialog = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("common.cancel")}
           </Button>
-          <Button onClick={handleSave}>Save Configuration</Button>
+          <Button onClick={handleSave}>{t("users.saveConfiguration")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

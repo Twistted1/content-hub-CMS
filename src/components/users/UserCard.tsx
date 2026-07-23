@@ -20,6 +20,20 @@ import {
   Copy,
 } from "lucide-react";
 import { User, getStatusColor, getRoleColor } from "./usersData";
+import { useTranslation } from "react-i18next";
+
+const ROLE_LABEL_KEYS: Record<string, string> = {
+  admin: "users.roleAdmin",
+  editor: "users.roleEditor",
+  viewer: "users.roleViewer",
+  member: "users.roleMember",
+};
+
+const STATUS_LABEL_KEYS: Record<string, string> = {
+  active: "users.active",
+  inactive: "users.inactive",
+  pending: "users.pending",
+};
 
 interface UserCardProps {
   user: User;
@@ -40,6 +54,7 @@ export const UserCard = ({
   onToggleStatus,
   onDelete,
 }: UserCardProps) => {
+  const { t } = useTranslation();
   const statusColor = getStatusColor(user.status);
   const roleColor = getRoleColor(user.role);
 
@@ -48,7 +63,7 @@ export const UserCard = ({
       <Checkbox
         checked={selected}
         onCheckedChange={onSelect}
-        aria-label={`Select ${user.name}`}
+        aria-label={t("users.selectUser", { name: user.name })}
       />
       
       <Avatar className="h-10 w-10">
@@ -67,11 +82,11 @@ export const UserCard = ({
       </div>
 
       <Badge className={roleColor} variant={roleColor ? undefined : "outline"}>
-        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+        {t(ROLE_LABEL_KEYS[user.role] || user.role)}
       </Badge>
 
       <Badge className={statusColor} variant={statusColor ? undefined : "secondary"}>
-        {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+        {t(STATUS_LABEL_KEYS[user.status] || user.status)}
       </Badge>
 
       <div className="text-sm text-muted-foreground hidden md:block w-24">
@@ -85,30 +100,30 @@ export const UserCard = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuLabel>{t("users.actions")}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onEdit}>
             <Edit className="mr-2 h-4 w-4" />
-            Edit User
+            {t("users.editUser")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onChangeRole}>
             <Key className="mr-2 h-4 w-4" />
-            Change Role
+            {t("users.changeRole")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.email)}>
             <Copy className="mr-2 h-4 w-4" />
-            Copy Email
+            {t("users.copyEmail")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onToggleStatus}>
             {user.status === "active" ? (
               <>
                 <UserX className="mr-2 h-4 w-4" />
-                Deactivate
+                {t("users.deactivate")}
               </>
             ) : (
               <>
                 <UserCheck className="mr-2 h-4 w-4" />
-                Activate
+                {t("users.activate")}
               </>
             )}
           </DropdownMenuItem>
@@ -118,7 +133,7 @@ export const UserCard = ({
             onClick={onDelete}
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Remove User
+            {t("users.removeUser")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
