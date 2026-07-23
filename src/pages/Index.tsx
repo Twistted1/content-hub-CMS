@@ -22,6 +22,7 @@ import {
   PieChart, Pie, Cell, Legend,
 } from "recharts";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 // ── Platform config ────────────────────────────────────────────────────────────
 const PLATFORM_CFG: Record<string, { Icon: any; color: string; bar: string; hex: string; label: string }> = {
@@ -58,6 +59,7 @@ function buildHeatmap(posts: any[]) {
 
 // ── Mini Calendar ──────────────────────────────────────────────────────────────
 function MiniCalendar({ posts }: { posts: any[] }) {
+  const { t } = useTranslation();
   const [current, setCurrent] = useState(new Date());
   const calDays = eachDayOfInterval({
     start: startOfWeek(startOfMonth(current)),
@@ -80,7 +82,7 @@ function MiniCalendar({ posts }: { posts: any[] }) {
         >›</button>
       </div>
       <div className="grid grid-cols-7 mb-1">
-        {["S","M","T","W","T","F","S"].map((d, i) => (
+        {(t("dashboard.home.weekdayInitials", { returnObjects: true }) as string[]).map((d, i) => (
           <div key={i} className="text-center text-[9px] font-black text-muted-foreground py-1">{d}</div>
         ))}
       </div>
@@ -105,8 +107,8 @@ function MiniCalendar({ posts }: { posts: any[] }) {
         })}
       </div>
       <div className="flex items-center gap-3 mt-3 pt-2 border-t border-border/40 flex-wrap">
-        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /><span className="text-[9px] text-muted-foreground">Scheduled</span></div>
-        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /><span className="text-[9px] text-muted-foreground">High volume</span></div>
+        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /><span className="text-[9px] text-muted-foreground">{t("dashboard.home.calendarScheduled")}</span></div>
+        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /><span className="text-[9px] text-muted-foreground">{t("dashboard.home.highVolume")}</span></div>
       </div>
     </div>
   );
@@ -141,6 +143,7 @@ function StatCard({ title, value, badge, sub, trendUp, color }: {
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 const Index = () => {
+  const { t } = useTranslation();
   const stats      = useDashboardStats();
   const { posts }  = usePosts();
   const { user }   = useAuth();
@@ -155,7 +158,7 @@ const Index = () => {
   }, []);
 
   const hour     = now.getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const greeting = hour < 12 ? t("dashboard.greeting.morning") : hour < 17 ? t("dashboard.greeting.afternoon") : t("dashboard.greeting.evening");
   const userName = user?.email?.split("@")[0] ?? "Admin";
   const dayLabel = format(now, "EEEE, MMMM d, yyyy").toUpperCase();
 
@@ -205,20 +208,20 @@ const Index = () => {
 
   // Goals
   const goals = [
-    { label: "Follower Growth",  value: "2,840", target: "5,000",  pct: 57, change: "+12.4%", color: "bg-violet-500" },
-    { label: "Avg Engagement",   value: "6.2%",  target: "8%",     pct: 78, change: "+1.1%",  color: "bg-blue-500"   },
-    { label: "Monthly Output",   value: `${stats.publishedPosts}`,  target: "90 posts", pct: Math.min(100, Math.round((stats.publishedPosts / 90) * 100)), change: "+23%", color: "bg-emerald-500" },
-    { label: "Website Traffic",  value: "8,400", target: "15,000", pct: 56, change: "+18%",   color: "bg-amber-500"  },
+    { label: t("dashboard.home.goalFollowerGrowth"),  value: "2,840", target: "5,000",  pct: 57, change: "+12.4%", color: "bg-violet-500" },
+    { label: t("dashboard.home.goalAvgEngagement"),   value: "6.2%",  target: "8%",     pct: 78, change: "+1.1%",  color: "bg-blue-500"   },
+    { label: t("dashboard.home.goalMonthlyOutput"),   value: `${stats.publishedPosts}`,  target: `90 ${t("dashboard.home.postsLower")}`, pct: Math.min(100, Math.round((stats.publishedPosts / 90) * 100)), change: "+23%", color: "bg-emerald-500" },
+    { label: t("dashboard.home.goalWebsiteTraffic"),  value: "8,400", target: "15,000", pct: 56, change: "+18%",   color: "bg-amber-500"  },
   ];
 
   // Activity feed
   const activityFeed = posts.slice(0, 5).map((p, i) => ({
     text: p.status === "published"
-      ? `${(p as any).platforms?.[0]?.platform ?? "Post"} published successfully`
+      ? `${(p as any).platforms?.[0]?.platform ?? "Post"} ${t("dashboard.home.publishedSuccessfully")}`
       : p.status === "scheduled"
-      ? `${(p as any).platforms?.[0]?.platform ?? "Post"} scheduled`
-      : `${p.title.slice(0, 28)}… draft saved`,
-    ago:    `${i * 8 + 2}m ago`,
+      ? `${(p as any).platforms?.[0]?.platform ?? "Post"} ${t("dashboard.home.scheduledLower")}`
+      : `${p.title.slice(0, 28)}… ${t("dashboard.home.draftSaved")}`,
+    ago:    `${i * 8 + 2}${t("dashboard.home.minAgo")}`,
     status: p.status as string,
   }));
 
@@ -243,27 +246,27 @@ const Index = () => {
               </h1>
               <div className="flex items-center gap-6 mt-6">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-50">Today's Pulse</span>
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-50">{t("dashboard.home.todaysPulse")}</span>
                   <p className="text-sm text-white font-bold">
-                    <span className="text-primary">{todayQueue.length} items</span> in queue
+                    <span className="text-primary">{todayQueue.length}</span> {t("dashboard.home.itemsInQueueSuffix")}
                   </p>
                 </div>
                 <div className="w-[1px] h-8 bg-white/10" />
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-50">Strategy Health</span>
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-50">{t("dashboard.home.strategyHealth")}</span>
                   <p className="text-sm text-white font-bold">
-                    <span className="text-emerald-400">{stats.scheduledPosts} ready</span> to deploy
+                    <span className="text-emerald-400">{stats.scheduledPosts}</span> {t("dashboard.home.readyToDeploySuffix")}
                   </p>
                 </div>
               </div>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row items-stretch gap-4 shrink-0">
               <Button onClick={() => navigate("/calendar")} className="bg-primary hover:bg-primary/90 text-white font-black uppercase text-[11px] tracking-[0.2em] gap-3 px-8 py-7 rounded-2xl shadow-2xl shadow-primary/40 group active:scale-95 transition-all">
-                <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> NEW CAMPAIGN
+                <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> {t("dashboard.home.newCampaign")}
               </Button>
               <Button onClick={() => navigate("/pipeline")} variant="outline" className="bg-white/[0.03] border-white/[0.1] hover:bg-white/[0.06] text-white font-black uppercase text-[11px] tracking-[0.2em] gap-3 px-8 py-7 rounded-2xl backdrop-blur-xl active:scale-95 transition-all">
-                <Eye className="w-5 h-5" /> REVISE QUEUE
+                <Eye className="w-5 h-5" /> {t("dashboard.home.reviseQueue")}
               </Button>
             </div>
           </div>
@@ -271,12 +274,12 @@ const Index = () => {
 
         {/* ── 6 Stat Cards ────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
-          <StatCard title="Total Posts"  value={stats.totalPosts}    badge="All time"   sub="vs last month" trendUp  color="text-foreground" />
-          <StatCard title="Scheduled"    value={stats.scheduledPosts} badge="Upcoming"  sub={`${todayQueue.length} today`} trendUp color="text-blue-400" />
-          <StatCard title="Drafts"       value={stats.draftPosts}    badge="In progress" sub={stats.draftPosts > 0 ? `${stats.draftPosts} need review` : "All clear"} color="text-amber-400" />
-          <StatCard title="Published"    value={stats.publishedPosts} badge="This week" sub="vs last week" trendUp color="text-emerald-400" />
-          <StatCard title="Engagement"   value="6.2%"                badge="Avg rate"   sub="1.1% this week" trendUp color="text-violet-400" />
-          <StatCard title="Auto Success" value="98.5%"               badge="Live"       sub="0.3% this week" trendUp color="text-primary" />
+          <StatCard title={t("dashboard.stats.totalPosts")}  value={stats.totalPosts}    badge={t("dashboard.home.totalPostsBadge")}   sub={t("dashboard.home.vsLastMonth")} trendUp  color="text-foreground" />
+          <StatCard title={t("dashboard.home.scheduled")}    value={stats.scheduledPosts} badge={t("dashboard.home.scheduledBadge")}  sub={t("dashboard.home.todayCount", { count: todayQueue.length })} trendUp color="text-blue-400" />
+          <StatCard title={t("dashboard.home.drafts")}       value={stats.draftPosts}    badge={t("dashboard.home.draftsBadge")} sub={stats.draftPosts > 0 ? t("dashboard.home.needReview", { count: stats.draftPosts }) : t("dashboard.home.allClear")} color="text-amber-400" />
+          <StatCard title={t("dashboard.stats.publishedPosts")}    value={stats.publishedPosts} badge={t("dashboard.home.publishedBadge")} sub={t("dashboard.home.vsLastWeek")} trendUp color="text-emerald-400" />
+          <StatCard title={t("dashboard.stats.engagement")}   value="6.2%"                badge={t("dashboard.home.engagementBadge")}   sub="1.1%" trendUp color="text-violet-400" />
+          <StatCard title={t("dashboard.home.autoSuccess")} value="98.5%"               badge={t("dashboard.home.liveBadge")}       sub="0.3%" trendUp color="text-primary" />
         </div>
 
         {/* ── Activity Chart + Platform Health ────────────────────────── */}
@@ -284,12 +287,12 @@ const Index = () => {
           <div className="xl:col-span-2 glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-xl font-black text-white tracking-tight uppercase head-neon">Velocity Insights</h2>
-                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">Growth Trajectory — Last 30 Cycles</p>
+                <h2 className="text-xl font-black text-white tracking-tight uppercase head-neon">{t("dashboard.home.velocityInsights")}</h2>
+                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">{t("dashboard.home.growthTrajectory")}</p>
               </div>
             </div>
             <div className="flex items-center gap-4 mb-3">
-              {[["Published","bg-emerald-400"],["Scheduled","bg-blue-400"],["Drafts","bg-violet-400"]].map(([l,c]) => (
+              {[[t("dashboard.home.published"),"bg-emerald-400"],[t("dashboard.home.scheduled"),"bg-blue-400"],[t("dashboard.home.drafts"),"bg-violet-400"]].map(([l,c]) => (
                 <div key={l} className="flex items-center gap-1.5">
                   <span className={cn("w-3 h-1 rounded-full inline-block", c)} />
                   <span className="text-[10px] text-muted-foreground">{l}</span>
@@ -324,7 +327,7 @@ const Index = () => {
 
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-lg font-black text-white tracking-tight uppercase">Platform Health</h2>
+              <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.platformHealth")}</h2>
               <button onClick={() => navigate("/platforms")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
@@ -341,7 +344,7 @@ const Index = () => {
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[11px] font-bold text-foreground">{cfg.label}</span>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[9px] text-muted-foreground">{queued} queued</span>
+                          <span className="text-[9px] text-muted-foreground">{t("dashboard.home.queued", { count: queued })}</span>
                           <span className={cn("text-[10px] font-black", pct >= 90 ? "text-emerald-400" : pct >= 70 ? "text-amber-400" : "text-rose-400")}>{pct}%</span>
                         </div>
                       </div>
@@ -361,7 +364,7 @@ const Index = () => {
           {/* Distribution donut */}
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-lg font-black text-white tracking-tight uppercase">Distribution</h2>
+              <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.distribution")}</h2>
               <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
@@ -390,7 +393,7 @@ const Index = () => {
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/30">
                 <BarChart3 className="w-12 h-12 mb-4 opacity-10" />
-                <p className="text-[10px] font-black uppercase tracking-widest">No spectral data</p>
+                <p className="text-[10px] font-black uppercase tracking-widest">{t("dashboard.home.noData")}</p>
               </div>
             )}
           </div>
@@ -402,7 +405,7 @@ const Index = () => {
                 <div className="p-2 rounded-xl bg-primary/10">
                   <Clock className="w-5 h-5 text-primary" />
                 </div>
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">Today's Pulse</h2>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.todaysQueueTitle")}</h2>
               </div>
               <button onClick={() => navigate("/pipeline")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
@@ -411,8 +414,8 @@ const Index = () => {
             {todayQueue.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/30">
                 <Calendar className="w-12 h-12 mb-4 opacity-10" />
-                <p className="text-[10px] font-black uppercase tracking-widest">Quiet cycles</p>
-                <button onClick={() => navigate("/calendar")} className="mt-4 text-[10px] font-black text-primary hover:underline uppercase tracking-widest">Initialize →</button>
+                <p className="text-[10px] font-black uppercase tracking-widest">{t("dashboard.home.quietCycles")}</p>
+                <button onClick={() => navigate("/calendar")} className="mt-4 text-[10px] font-black text-primary hover:underline uppercase tracking-widest">{t("dashboard.home.initialize")}</button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -432,7 +435,7 @@ const Index = () => {
                       </div>
                       <span className="text-xs text-white flex-1 truncate font-bold group-hover:text-primary transition-colors">{post.title}</span>
                       <span className={cn("text-[8px] font-black uppercase px-2 py-1 rounded-lg border shrink-0 tracking-widest", sc)}>
-                        {post.status === "scheduled" ? "DEPLOY" : post.status.toUpperCase()}
+                        {post.status === "scheduled" ? t("dashboard.home.scheduled") : post.status.toUpperCase()}
                       </span>
                     </div>
                   );
@@ -447,7 +450,7 @@ const Index = () => {
               <div className="p-2 rounded-xl bg-blue-500/10">
                 <Calendar className="w-5 h-5 text-blue-400" />
               </div>
-              <h2 className="text-lg font-black text-white tracking-tight uppercase">Orchestrator</h2>
+              <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.orchestrator")}</h2>
             </div>
             <MiniCalendar posts={posts} />
           </div>
@@ -458,22 +461,22 @@ const Index = () => {
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">Deployment Intensity</h2>
-                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">Publishing Matrix — 84 Day Cycle</p>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.deploymentIntensity")}</h2>
+                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">{t("dashboard.home.publishingMatrix")}</p>
               </div>
               <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
-                <span>Low</span>
+                <span>{t("dashboard.home.low")}</span>
                 <div className="flex gap-1 px-2">
                   {HEAT_COLORS.map((c, i) => <span key={i} className={cn("w-3 h-3 rounded-[3px] inline-block", c)} />)}
                 </div>
-                <span>Peak</span>
+                <span>{t("dashboard.home.peak")}</span>
               </div>
             </div>
             <div className="flex gap-1.5 overflow-x-auto pb-2 custom-scrollbar">
               {heatWeeks.map((week, wi) => (
                 <div key={wi} className="flex flex-col gap-1.5 shrink-0">
                   {week.map((day, di) => (
-                    <div key={di} title={`${format(day.date, "MMM d")}: ${day.count} deployments`}
+                    <div key={di} title={`${format(day.date, "MMM d")}: ${day.count} ${t("dashboard.home.postsLower")}`}
                       className={cn("w-4 h-4 rounded-[4px] hover:ring-2 hover:ring-primary/50 transition-all cursor-crosshair", heatColor(day.count))} />
                   ))}
                 </div>
@@ -483,15 +486,15 @@ const Index = () => {
 
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-lg font-black text-white tracking-tight uppercase">Live Stream</h2>
+              <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.liveStream")}</h2>
               <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_15px_rgba(52,211,153,0.1)]">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">Live Status</span>
+                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">{t("dashboard.home.liveStatus")}</span>
               </div>
             </div>
             <div className="space-y-6">
               {activityFeed.length === 0 ? (
-                <p className="text-xs text-muted-foreground/30 text-center py-10 uppercase tracking-widest font-black">No recent transmissions</p>
+                <p className="text-xs text-muted-foreground/30 text-center py-10 uppercase tracking-widest font-black">{t("dashboard.home.noRecentActivity")}</p>
               ) : activityFeed.map((item, i) => (
                 <div key={i} className="flex items-start gap-5 group">
                   <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border transition-all",
@@ -516,21 +519,21 @@ const Index = () => {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <div className="bg-card border border-border rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-black text-foreground">Recent Posts</h2>
-              <button onClick={() => navigate("/articles")} className="text-[10px] font-black text-primary hover:underline flex items-center gap-1">View All <ArrowRight className="w-3 h-3" /></button>
+              <h2 className="text-sm font-black text-foreground">{t("dashboard.home.recentPostsTitle")}</h2>
+              <button onClick={() => navigate("/articles")} className="text-[10px] font-black text-primary hover:underline flex items-center gap-1">{t("dashboard.home.viewAll")} <ArrowRight className="w-3 h-3" /></button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border/40">
-                    {["Content","Platform","Status","Date"].map(h => (
+                    {[t("dashboard.home.tableContent"), t("dashboard.home.tablePlatform"), t("dashboard.home.tableStatus"), t("dashboard.home.tableDate")].map(h => (
                       <th key={h} className="pb-2 text-left text-[9px] font-black uppercase tracking-widest text-muted-foreground">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/20">
                   {posts.length === 0 ? (
-                    <tr><td colSpan={4} className="py-6 text-center text-muted-foreground text-xs">No posts yet</td></tr>
+                    <tr><td colSpan={4} className="py-6 text-center text-muted-foreground text-xs">{t("dashboard.home.noPostsYet")}</td></tr>
                   ) : posts.slice(0, 6).map(post => {
                     const plat = (post as any).platforms?.[0]?.platform ?? "website";
                     const cfg  = PLATFORM_CFG[plat];
@@ -556,11 +559,11 @@ const Index = () => {
 
           <div className="bg-card border border-border rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-black text-foreground">Quick Notes</h2>
-              <button onClick={() => navigate("/notes")} className="text-[10px] font-black text-primary hover:underline flex items-center gap-1">View All <ArrowRight className="w-3 h-3" /></button>
+              <h2 className="text-sm font-black text-foreground">{t("dashboard.home.quickNotesTitle")}</h2>
+              <button onClick={() => navigate("/notes")} className="text-[10px] font-black text-primary hover:underline flex items-center gap-1">{t("dashboard.home.viewAll")} <ArrowRight className="w-3 h-3" /></button>
             </div>
             {notes.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">No notes yet</p>
+              <p className="text-xs text-muted-foreground text-center py-4">{t("dashboard.home.noNotesYet")}</p>
             ) : notes.slice(0, 4).map((note: any) => (
               <div key={note.id} className="p-3 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer mb-2">
                 <p className="text-xs font-bold text-foreground">{note.title}</p>
@@ -568,7 +571,7 @@ const Index = () => {
               </div>
             ))}
             <button onClick={() => navigate("/notes")} className="w-full py-2 border border-dashed border-border/50 rounded-xl text-[10px] font-black text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors mt-1">
-              + Add Note
+              {t("dashboard.home.addNote")}
             </button>
           </div>
         </div>
@@ -578,8 +581,8 @@ const Index = () => {
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">Strategic Targets</h2>
-                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">Q3 2025 Benchmarks</p>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.strategicTargets")}</h2>
+                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">{t("dashboard.home.benchmarks")}</p>
               </div>
               <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
@@ -593,7 +596,7 @@ const Index = () => {
                   </div>
                   <p className="text-3xl font-black text-white tracking-tighter mb-1">{g.value}</p>
                   <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60 mb-1">{g.label}</p>
-                  <p className="text-[9px] text-muted-foreground/40 font-bold">Target: {g.target}</p>
+                  <p className="text-[9px] text-muted-foreground/40 font-bold">{t("dashboard.home.target", { value: g.target })}</p>
                   <div className="h-2 bg-white/[0.05] rounded-full overflow-hidden mt-4">
                     <div className={cn("h-full rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]", g.color)} style={{ width: `${g.pct}%` }} />
                   </div>
@@ -608,7 +611,7 @@ const Index = () => {
                 <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400">
                   <Zap className="w-5 h-5 shadow-[0_0_15px_rgba(245,158,11,0.2)]" />
                 </div>
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">Neural Pathways</h2>
+                <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.neuralPathways")}</h2>
               </div>
               <button onClick={() => navigate("/automation")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
@@ -617,8 +620,8 @@ const Index = () => {
             {automations.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/30">
                 <Sparkles className="w-12 h-12 mb-4 opacity-10" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-center">No active pathways</p>
-                <button onClick={() => navigate("/automation")} className="mt-4 text-[10px] font-black text-primary hover:underline uppercase tracking-widest">Connect Hub →</button>
+                <p className="text-[10px] font-black uppercase tracking-widest text-center">{t("dashboard.home.noActivePathways")}</p>
+                <button onClick={() => navigate("/automation")} className="mt-4 text-[10px] font-black text-primary hover:underline uppercase tracking-widest">{t("dashboard.home.connectHub")}</button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -626,7 +629,7 @@ const Index = () => {
                   <div key={a.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] transition-all group">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-white group-hover:text-primary transition-colors truncate">{a.name}</p>
-                      <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-50">{a.platforms?.join(", ") ?? "Multi-platform"}</p>
+                      <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-50">{a.platforms?.join(", ") ?? t("dashboard.home.multiPlatform")}</p>
                     </div>
                     <div className={cn("w-10 h-5 rounded-full relative ml-4 shrink-0 cursor-pointer transition-all", a.status === "active" ? "bg-primary shadow-[0_0_15px_rgba(155,135,245,0.4)]" : "bg-white/10")}>
                       <div className={cn("absolute top-1 w-3 h-3 rounded-full bg-white transition-all shadow-sm", a.status === "active" ? "right-1" : "left-1")} />

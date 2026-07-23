@@ -40,6 +40,7 @@ import {
 import { toast } from "sonner";
 import { usePosts } from "@/hooks/usePosts";
 import { subDays, subMonths, format, isAfter } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 function getPeriodStart(period: string): Date {
   const now = new Date();
@@ -53,6 +54,7 @@ function getPeriodStart(period: string): Date {
 }
 
 export default function Analytics() {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState("30d");
   const { posts, isLoading } = usePosts();
 
@@ -70,12 +72,12 @@ export default function Analytics() {
     const drafts = filteredPosts.filter(p => p.status === "draft").length;
 
     return [
-      { title: "Total Posts", value: total.toString(), change: `${published} published`, trend: "up" as const, icon: FileText },
-      { title: "Published", value: published.toString(), change: `in this period`, trend: "up" as const, icon: Eye },
-      { title: "Scheduled", value: scheduled.toString(), change: "upcoming", trend: "up" as const, icon: Clock },
-      { title: "Drafts", value: drafts.toString(), change: "in progress", trend: "up" as const, icon: CalendarIcon },
+      { title: t("analytics.totalPosts"), value: total.toString(), change: `${published} ${t("analytics.published").toLowerCase()}`, trend: "up" as const, icon: FileText },
+      { title: t("analytics.published"), value: published.toString(), change: t("analytics.inThisPeriod"), trend: "up" as const, icon: Eye },
+      { title: t("analytics.scheduled"), value: scheduled.toString(), change: t("analytics.upcoming"), trend: "up" as const, icon: Clock },
+      { title: t("analytics.drafts"), value: drafts.toString(), change: t("analytics.inProgress"), trend: "up" as const, icon: CalendarIcon },
     ];
-  }, [filteredPosts]);
+  }, [filteredPosts, t]);
 
   // Timeline data
   const timelineData = useMemo(() => {
@@ -196,13 +198,13 @@ export default function Analytics() {
     a.download = `analytics-${period}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("Analytics report exported as CSV");
+    toast.success(t("analytics.exportSuccess"));
   };
 
   if (isLoading) {
     return (
       <DashboardLayout>
-        <LoadingState message="Loading analytics data..." />
+        <LoadingState message={t("analytics.loading")} />
       </DashboardLayout>
     );
   }
@@ -215,27 +217,27 @@ export default function Analytics() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="page-title mb-2">Analytics</h1>
+            <h1 className="page-title mb-2">{t("analytics.title")}</h1>
             <p className="text-muted-foreground">
-              Track your content performance and distribution
+              {t("analytics.subtitle")}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Select value={period} onValueChange={setPeriod}>
               <SelectTrigger className="w-[140px]">
                 <Calendar className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Select period" />
+                <SelectValue placeholder={t("analytics.last30Days")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="7d">Last 7 days</SelectItem>
-                <SelectItem value="30d">Last 30 days</SelectItem>
-                <SelectItem value="90d">Last 90 days</SelectItem>
-                <SelectItem value="1y">Last year</SelectItem>
+                <SelectItem value="7d">{t("analytics.last7Days")}</SelectItem>
+                <SelectItem value="30d">{t("analytics.last30Days")}</SelectItem>
+                <SelectItem value="90d">{t("analytics.last90Days")}</SelectItem>
+                <SelectItem value="1y">{t("analytics.lastYear")}</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={handleExport} disabled={!hasData}>
               <Download className="mr-2 h-4 w-4" />
-              Export
+              {t("analytics.export")}
             </Button>
           </div>
         </div>
@@ -245,8 +247,8 @@ export default function Analytics() {
             <CardContent>
               <EmptyState
                 icon={BarChart3}
-                title="No content data yet"
-                description="Analytics will appear here once you start creating and publishing posts."
+                title={t("analytics.noDataTitle")}
+                description={t("analytics.noDataDesc")}
               />
             </CardContent>
           </Card>
@@ -273,16 +275,16 @@ export default function Analytics() {
             {/* Charts Section */}
             <Tabs defaultValue="timeline" className="space-y-4">
               <TabsList>
-                <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                <TabsTrigger value="platforms">Platforms</TabsTrigger>
-                <TabsTrigger value="status">Status</TabsTrigger>
+                <TabsTrigger value="timeline">{t("analytics.timeline")}</TabsTrigger>
+                <TabsTrigger value="platforms">{t("analytics.platforms")}</TabsTrigger>
+                <TabsTrigger value="status">{t("analytics.status")}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="timeline" className="space-y-4">
                 <div className="grid gap-4 lg:grid-cols-3">
                   <Card className="lg:col-span-2">
                     <CardHeader>
-                      <CardTitle>Content Timeline</CardTitle>
+                      <CardTitle>{t("analytics.contentTimeline")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="h-[300px]">
@@ -311,7 +313,7 @@ export default function Analytics() {
                             <Area
                               type="monotone"
                               dataKey="created"
-                              name="Created"
+                              name={t("analytics.created")}
                               stroke="hsl(var(--primary))"
                               fillOpacity={1}
                               fill="url(#colorCreated)"
@@ -319,7 +321,7 @@ export default function Analytics() {
                             <Area
                               type="monotone"
                               dataKey="published"
-                              name="Published"
+                              name={t("analytics.published")}
                               stroke="hsl(var(--chart-2))"
                               fillOpacity={1}
                               fill="url(#colorPublished)"
@@ -332,7 +334,7 @@ export default function Analytics() {
 
                   <Card>
                     <CardHeader>
-                      <CardTitle>Platform Distribution</CardTitle>
+                      <CardTitle>{t("analytics.platformDistribution")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       {platformData.length > 0 ? (
@@ -374,7 +376,7 @@ export default function Analytics() {
                         </>
                       ) : (
                         <p className="text-sm text-muted-foreground text-center py-8">
-                          No platform data available
+                          {t("analytics.noPlatformData")}
                         </p>
                       )}
                     </CardContent>
@@ -385,7 +387,7 @@ export default function Analytics() {
               <TabsContent value="platforms" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Posts by Platform</CardTitle>
+                    <CardTitle>{t("analytics.postsByPlatform")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="h-[300px]">
@@ -394,14 +396,14 @@ export default function Analytics() {
                           <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                           <XAxis type="number" className="text-xs" allowDecimals={false} />
                           <YAxis dataKey="name" type="category" width={100} className="text-xs" />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: "hsl(var(--card))", 
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "hsl(var(--card))",
                               border: "1px solid hsl(var(--border))",
                               borderRadius: "8px"
-                            }} 
+                            }}
                           />
-                          <Bar dataKey="value" name="Posts" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                          <Bar dataKey="value" name={t("analytics.totalPosts")} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -412,7 +414,7 @@ export default function Analytics() {
               <TabsContent value="status" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Posts by Status</CardTitle>
+                    <CardTitle>{t("analytics.postsByStatus")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="h-[300px]">
@@ -428,7 +430,7 @@ export default function Analytics() {
                               borderRadius: "8px"
                             }} 
                           />
-                          <Bar dataKey="count" name="Posts" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="count" name={t("analytics.totalPosts")} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -440,16 +442,16 @@ export default function Analytics() {
             {/* Post Types Table */}
             <Card>
               <CardHeader>
-                <CardTitle>Content Types</CardTitle>
+                <CardTitle>{t("analytics.contentTypes")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border text-left text-sm text-muted-foreground">
-                        <th className="pb-3 font-medium">Type</th>
-                        <th className="pb-3 font-medium">Count</th>
-                        <th className="pb-3 font-medium">% of Total</th>
+                        <th className="pb-3 font-medium">{t("analytics.type")}</th>
+                        <th className="pb-3 font-medium">{t("analytics.count")}</th>
+                        <th className="pb-3 font-medium">{t("analytics.percentOfTotal")}</th>
                       </tr>
                     </thead>
                     <tbody>

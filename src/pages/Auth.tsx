@@ -11,6 +11,7 @@ import { Loader2, Chrome, PlayCircle } from 'lucide-react';
 import { z } from 'zod';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
@@ -19,6 +20,7 @@ const authSchema = z.object({
 });
 
 export default function Auth() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -54,7 +56,7 @@ export default function Auth() {
       setIsSubmitting(false);
       if (error) {
         toast({
-          title: "Preview Sign In Failed",
+          title: t("auth.demoSignInFailed"),
           description: error.message,
           variant: "destructive",
         });
@@ -72,7 +74,7 @@ export default function Auth() {
     const validation = authSchema.safeParse({ email, password });
     if (!validation.success) {
       toast({
-        title: "Validation Error",
+        title: t("auth.validationError"),
         description: validation.error.errors[0]?.message,
         variant: "destructive",
       });
@@ -85,7 +87,7 @@ export default function Auth() {
 
     if (error) {
       toast({
-        title: "Sign In Failed",
+        title: t("auth.signInFailed"),
         description: error.message,
         variant: "destructive",
       });
@@ -98,7 +100,7 @@ export default function Auth() {
     const validation = authSchema.safeParse({ email, password, fullName });
     if (!validation.success) {
       toast({
-        title: "Validation Error",
+        title: t("auth.validationError"),
         description: validation.error.errors[0]?.message,
         variant: "destructive",
       });
@@ -111,14 +113,14 @@ export default function Auth() {
 
     if (error) {
       toast({
-        title: "Sign Up Failed",
+        title: t("auth.signUpFailed"),
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Check your email",
-        description: "We sent you a confirmation link to complete your registration.",
+        title: t("auth.checkEmail"),
+        description: t("auth.checkEmailDesc"),
       });
     }
   };
@@ -130,7 +132,7 @@ export default function Auth() {
 
     if (error) {
       toast({
-        title: "Google Sign In Failed",
+        title: t("auth.googleSignInFailed"),
         description: error.message,
         variant: "destructive",
       });
@@ -144,7 +146,7 @@ export default function Auth() {
 
     if (error) {
       toast({
-        title: "Preview Sign In Failed",
+        title: t("auth.demoSignInFailed"),
         description: error.message,
         variant: "destructive",
       });
@@ -168,22 +170,22 @@ export default function Auth() {
               <span className="text-primary-foreground font-bold text-xl">CH</span>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Welcome to Content Hub</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t("auth.welcomeTitle")}</CardTitle>
           <CardDescription>
-            Sign in to your account or create a new one
+            {t("auth.welcomeSubtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="signin">{t("auth.signIn")}</TabsTrigger>
+              <TabsTrigger value="signup">{t("auth.signUp")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
+                  <Label htmlFor="signin-email">{t("auth.email")}</Label>
                   <Input
                     id="signin-email"
                     type="email"
@@ -194,7 +196,7 @@ export default function Auth() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
+                  <Label htmlFor="signin-password">{t("auth.password")}</Label>
                   <Input
                     id="signin-password"
                     type="password"
@@ -208,7 +210,7 @@ export default function Auth() {
                   {isSubmitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    "Sign In"
+                    t("auth.signIn")
                   )}
                 </Button>
               </form>
@@ -217,7 +219,7 @@ export default function Auth() {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
+                  <Label htmlFor="signup-name">{t("auth.fullName")}</Label>
                   <Input
                     id="signup-name"
                     type="text"
@@ -227,7 +229,7 @@ export default function Auth() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">{t("auth.email")}</Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -238,7 +240,7 @@ export default function Auth() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">{t("auth.password")}</Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -252,7 +254,7 @@ export default function Auth() {
                   {isSubmitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    "Create Account"
+                    t("auth.createAccount")
                   )}
                 </Button>
               </form>
@@ -264,7 +266,7 @@ export default function Auth() {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-card px-2 text-muted-foreground">{t("auth.orContinueWith")}</span>
             </div>
           </div>
 
@@ -275,7 +277,7 @@ export default function Auth() {
             disabled={isSubmitting}
           >
             <Chrome className="mr-2 h-4 w-4" />
-            Google
+            {t("auth.google")}
           </Button>
 
           <Button
@@ -285,22 +287,23 @@ export default function Auth() {
             disabled={isSubmitting}
           >
             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
-            Enter Preview Demo
+            {t("auth.enterDemo")}
           </Button>
 
           <Alert className="mt-4">
             <Info className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              <strong>Google Sign-In:</strong> Requires OAuth configuration in your{' '}
-              <a 
-                href="https://supabase.com/dashboard/project/jvbucspwcjahqpoxskvr/auth/providers" 
-                target="_blank" 
+              <strong>{t("auth.googleInfoTitle")}</strong>{' '}
+              {t("auth.googleInfoPrefix")}{' '}
+              <a
+                href="https://supabase.com/dashboard/project/jvbucspwcjahqpoxskvr/auth/providers"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="underline text-primary"
               >
-                Supabase Dashboard
+                {t("auth.supabaseDashboard")}
               </a>
-              . For email login, create an account using the Sign Up tab.
+              {t("auth.googleInfoSuffix")}
             </AlertDescription>
           </Alert>
         </CardContent>
