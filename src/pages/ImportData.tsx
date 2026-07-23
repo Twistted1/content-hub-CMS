@@ -11,6 +11,7 @@ import { Upload, FileSpreadsheet, FileText, Database, CheckCircle, XCircle, Arro
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 
 type ImportStep = "upload" | "mapping" | "preview" | "importing";
 
@@ -24,14 +25,16 @@ interface FieldMapping {
   target: string;
 }
 
-const POST_FIELDS = [
-  { value: "title", label: "Title" },
-  { value: "content", label: "Content" },
-  { value: "scheduled_at", label: "Scheduled Date" },
-  { value: "status", label: "Status" },
-  { value: "type", label: "Type" },
-  { value: "skip", label: "Skip this field" },
-];
+function getPostFields(t: (key: string) => string) {
+  return [
+    { value: "title", label: t("importData.fieldTitle") },
+    { value: "content", label: t("importData.fieldContent") },
+    { value: "scheduled_at", label: t("importData.fieldScheduledDate") },
+    { value: "status", label: t("importData.fieldStatus") },
+    { value: "type", label: t("importData.fieldType") },
+    { value: "skip", label: t("importData.fieldSkip") },
+  ];
+}
 
 function parseCSV(text: string): ParsedData {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
@@ -76,6 +79,8 @@ function parseJSON(text: string): ParsedData {
 }
 
 const ImportData = () => {
+  const { t } = useTranslation();
+  const POST_FIELDS = useMemo(() => getPostFields(t), [t]);
   const { user } = useAuth();
   const [importStep, setImportStep] = useState<ImportStep>("upload");
   const [isDragging, setIsDragging] = useState(false);
@@ -93,11 +98,11 @@ const ImportData = () => {
   const handleFileUpload = useCallback(async (file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (!["csv", "json"].includes(ext || "")) {
-      toast.error("Unsupported file type. Please use CSV or JSON.");
+      toast.error(t("importData.unsupportedFileType"));
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error("File too large. Maximum 10MB.");
+      toast.error(t("importData.fileTooLarge"));
       return;
     }
 
@@ -106,7 +111,7 @@ const ImportData = () => {
       const parsed = ext === "json" ? parseJSON(text) : parseCSV(text);
 
       if (parsed.headers.length === 0 || parsed.rows.length === 0) {
-        toast.error("File is empty or could not be parsed.");
+        toast.error(t("importData.emptyFile"));
         return;
       }
 
@@ -127,11 +132,11 @@ const ImportData = () => {
 
       setMappings(autoMappings);
       setImportStep("mapping");
-      toast.success(`Parsed ${parsed.rows.length} records from ${file.name}`);
+      toast.success(t("importData.parsedRecords", { count: parsed.rows.length, name: file.name }));
     } catch {
-      toast.error("Failed to parse file. Please check the format.");
+      toast.error(t("importData.parseFailed"));
     }
-  }, []);
+  }, [t]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -206,7 +211,7 @@ const ImportData = () => {
       const { error } = await supabase.from("posts").insert(batch);
 
       if (error) {
-        toast.error(`Batch failed: ${error.message}`);
+        toast.error(t("importData.batchFailed", { error: error.message }));
         failed = true;
         break;
       }
@@ -224,7 +229,7 @@ const ImportData = () => {
     }, ...prev]);
 
     if (!failed) {
-      toast.success(`Successfully imported ${imported} posts!`);
+      toast.success(t("importData.importSuccess", { count: imported }));
     }
 
     setImportStep("upload");
@@ -238,17 +243,17 @@ const ImportData = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="page-title mb-2">Import Data</h1>
+          <h1 className="page-title mb-2">{t("importData.title")}</h1>
           <p className="text-muted-foreground mt-1">
-            Upload and import content from CSV or JSON files
+            {t("importData.subtitle")}
           </p>
         </div>
 
         <Tabs defaultValue="import" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="import">New Import</TabsTrigger>
-            <TabsTrigger value="history">Import History ({importHistory.length})</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
+            <TabsTrigger value="import">{t("importData.newImport")}</TabsTrigger>
+            <TabsTrigger value="history">{t("importData.importHistory", { count: importHistory.length })}</TabsTrigger>
+            <TabsTrigger value="templates">{t("importData.templates")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="import" className="space-y-6">
@@ -267,7 +272,7 @@ const ImportData = () => {
                   >
                     {index + 1}
                   </div>
-                  <span className="text-sm font-medium capitalize">{step}</span>
+                  <span className="text-sm font-medium capitalize">{t(`importData.step${step.charAt(0).toUpperCase()}${step.slice(1)}`)}</span>
                   {index < 2 && <ArrowRight className="h-4 w-4 text-muted-foreground mx-2" />}
                 </div>
               ))}
@@ -276,8 +281,8 @@ const ImportData = () => {
             {importStep === "upload" && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Upload File</CardTitle>
-                  <CardDescription>Drag and drop your file or click to browse</CardDescription>
+                  <CardTitle>{t("importData.uploadFile")}</CardTitle>
+                  <CardDescription>{t("importData.uploadFileDesc")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div
@@ -289,11 +294,11 @@ const ImportData = () => {
                     }`}
                   >
                     <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Drop your file here</h3>
-                    <p className="text-muted-foreground mb-4">Supports CSV and JSON files up to 10MB</p>
+                    <h3 className="text-lg font-medium mb-2">{t("importData.dropFileHere")}</h3>
+                    <p className="text-muted-foreground mb-4">{t("importData.supportsFormats")}</p>
                     <label>
                       <input type="file" accept=".csv,.json" onChange={handleFileInput} className="hidden" />
-                      <Button variant="outline" asChild><span>Browse Files</span></Button>
+                      <Button variant="outline" asChild><span>{t("importData.browseFiles")}</span></Button>
                     </label>
                   </div>
 
@@ -301,15 +306,15 @@ const ImportData = () => {
                     <div className="flex items-center gap-3 p-4 border rounded-lg">
                       <FileSpreadsheet className="h-8 w-8 text-green-600" />
                       <div>
-                        <p className="font-medium">CSV Files</p>
-                        <p className="text-sm text-muted-foreground">Comma-separated values</p>
+                        <p className="font-medium">{t("importData.csvFiles")}</p>
+                        <p className="text-sm text-muted-foreground">{t("importData.csvFilesDesc")}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-4 border rounded-lg">
                       <Database className="h-8 w-8 text-purple-600" />
                       <div>
-                        <p className="font-medium">JSON Files</p>
-                        <p className="text-sm text-muted-foreground">Structured data arrays</p>
+                        <p className="font-medium">{t("importData.jsonFiles")}</p>
+                        <p className="text-sm text-muted-foreground">{t("importData.jsonFilesDesc")}</p>
                       </div>
                     </div>
                   </div>
@@ -320,8 +325,8 @@ const ImportData = () => {
             {importStep === "mapping" && parsedData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Map Fields</CardTitle>
-                  <CardDescription>Match source columns to post fields. "Title" is required.</CardDescription>
+                  <CardTitle>{t("importData.mapFields")}</CardTitle>
+                  <CardDescription>{t("importData.mapFieldsDesc")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {uploadedFile && (
@@ -329,7 +334,7 @@ const ImportData = () => {
                       <FileSpreadsheet className="h-5 w-5 text-primary" />
                       <span className="font-medium">{uploadedFile.name}</span>
                       <Badge variant="secondary" className="ml-auto">
-                        {parsedData.rows.length} rows · {parsedData.headers.length} columns
+                        {t("importData.rowsColumns", { rows: parsedData.rows.length, cols: parsedData.headers.length })}
                       </Badge>
                     </div>
                   )}
@@ -337,10 +342,10 @@ const ImportData = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Source Column</TableHead>
-                        <TableHead>Sample Data</TableHead>
-                        <TableHead>Maps To</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>{t("importData.sourceColumn")}</TableHead>
+                        <TableHead>{t("importData.sampleData")}</TableHead>
+                        <TableHead>{t("importData.mapsTo")}</TableHead>
+                        <TableHead>{t("importData.status")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -364,9 +369,9 @@ const ImportData = () => {
                           </TableCell>
                           <TableCell>
                             {mapping.target !== "skip" ? (
-                              <Badge variant="outline" className="text-green-600 border-green-600">Mapped</Badge>
+                              <Badge variant="outline" className="text-green-600 border-green-600">{t("importData.mapped")}</Badge>
                             ) : (
-                              <Badge variant="outline">Skipped</Badge>
+                              <Badge variant="outline">{t("importData.skipped")}</Badge>
                             )}
                           </TableCell>
                         </TableRow>
@@ -375,15 +380,15 @@ const ImportData = () => {
                   </Table>
 
                   {!hasTitleMapping && (
-                    <p className="text-sm text-destructive">⚠ You must map at least one column to "Title" to proceed.</p>
+                    <p className="text-sm text-destructive">{t("importData.titleRequiredWarning")}</p>
                   )}
 
                   <div className="flex justify-between pt-4">
                     <Button variant="outline" onClick={() => { setImportStep("upload"); setParsedData(null); setUploadedFile(null); }}>
-                      Back
+                      {t("importData.back")}
                     </Button>
                     <Button onClick={() => setImportStep("preview")} disabled={!hasTitleMapping}>
-                      Continue to Preview
+                      {t("importData.continueToPreview")}
                     </Button>
                   </div>
                 </CardContent>
@@ -393,22 +398,22 @@ const ImportData = () => {
             {importStep === "preview" && parsedData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Preview Import</CardTitle>
-                  <CardDescription>Review your data before importing</CardDescription>
+                  <CardTitle>{t("importData.previewImport")}</CardTitle>
+                  <CardDescription>{t("importData.previewImportDesc")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-3 gap-4">
                     <div className="p-4 bg-muted rounded-lg text-center">
                       <p className="text-2xl font-bold">{parsedData.rows.length}</p>
-                      <p className="text-sm text-muted-foreground">Total Records</p>
+                      <p className="text-sm text-muted-foreground">{t("importData.totalRecords")}</p>
                     </div>
                     <div className="p-4 bg-muted rounded-lg text-center">
                       <p className="text-2xl font-bold text-green-600">{validRecords}</p>
-                      <p className="text-sm text-muted-foreground">Valid Records</p>
+                      <p className="text-sm text-muted-foreground">{t("importData.validRecords")}</p>
                     </div>
                     <div className="p-4 bg-muted rounded-lg text-center">
                       <p className="text-2xl font-bold text-destructive">{parsedData.rows.length - validRecords}</p>
-                      <p className="text-sm text-muted-foreground">Skipped (no title)</p>
+                      <p className="text-sm text-muted-foreground">{t("importData.skippedNoTitle")}</p>
                     </div>
                   </div>
 
@@ -434,12 +439,12 @@ const ImportData = () => {
                       </TableBody>
                     </Table>
                   </div>
-                  <p className="text-xs text-muted-foreground">Showing first 5 of {parsedData.rows.length} records</p>
+                  <p className="text-xs text-muted-foreground">{t("importData.showingFirst5", { count: parsedData.rows.length })}</p>
 
                   <div className="flex justify-between pt-4">
-                    <Button variant="outline" onClick={() => setImportStep("mapping")}>Back to Mapping</Button>
+                    <Button variant="outline" onClick={() => setImportStep("mapping")}>{t("importData.backToMapping")}</Button>
                     <Button onClick={handleImport} disabled={validRecords === 0}>
-                      Import {validRecords} Posts
+                      {t("importData.importPosts", { count: validRecords })}
                     </Button>
                   </div>
                 </CardContent>
@@ -450,9 +455,9 @@ const ImportData = () => {
               <Card>
                 <CardContent className="py-12 text-center space-y-4">
                   <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary" />
-                  <h3 className="text-lg font-medium">Importing data...</h3>
+                  <h3 className="text-lg font-medium">{t("importData.importingData")}</h3>
                   <Progress value={importProgress} className="max-w-md mx-auto" />
-                  <p className="text-sm text-muted-foreground">{importProgress}% complete</p>
+                  <p className="text-sm text-muted-foreground">{t("importData.percentComplete", { percent: importProgress })}</p>
                 </CardContent>
               </Card>
             )}
@@ -461,20 +466,20 @@ const ImportData = () => {
           <TabsContent value="history">
             <Card>
               <CardHeader>
-                <CardTitle>Import History</CardTitle>
-                <CardDescription>View past imports from this session</CardDescription>
+                <CardTitle>{t("importData.importHistoryTitle")}</CardTitle>
+                <CardDescription>{t("importData.importHistoryDesc")}</CardDescription>
               </CardHeader>
               <CardContent>
                 {importHistory.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">No imports yet. Start by uploading a file.</p>
+                  <p className="text-center text-muted-foreground py-8">{t("importData.noImportsYet")}</p>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>File Name</TableHead>
-                        <TableHead>Records</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Date</TableHead>
+                        <TableHead>{t("importData.fileName")}</TableHead>
+                        <TableHead>{t("importData.records")}</TableHead>
+                        <TableHead>{t("importData.status")}</TableHead>
+                        <TableHead>{t("importData.date")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -494,7 +499,7 @@ const ImportData = () => {
                               ) : (
                                 <XCircle className="h-4 w-4 text-destructive" />
                               )}
-                              <Badge variant={item.status === "completed" ? "default" : "destructive"}>{item.status}</Badge>
+                              <Badge variant={item.status === "completed" ? "default" : "destructive"}>{item.status === "completed" ? t("importData.statusCompleted") : t("importData.statusFailed")}</Badge>
                             </div>
                           </TableCell>
                           <TableCell className="text-muted-foreground">{item.date}</TableCell>
@@ -510,14 +515,14 @@ const ImportData = () => {
           <TabsContent value="templates">
             <Card>
               <CardHeader>
-                <CardTitle>Download Templates</CardTitle>
-                <CardDescription>Use these CSV templates to format your data correctly</CardDescription>
+                <CardTitle>{t("importData.downloadTemplates")}</CardTitle>
+                <CardDescription>{t("importData.downloadTemplatesDesc")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
-                    { name: "Posts Template", description: "Import social media posts", headers: "title,content,scheduled_at,status,type" },
-                    { name: "Blog Posts", description: "Import blog articles", headers: "title,content,scheduled_at,status\nMy First Post,Hello world!,2024-04-01,draft" },
+                    { name: t("importData.postsTemplate"), description: t("importData.postsTemplateDesc"), headers: "title,content,scheduled_at,status,type" },
+                    { name: t("importData.blogPostsTemplate"), description: t("importData.blogPostsTemplateDesc"), headers: "title,content,scheduled_at,status\nMy First Post,Hello world!,2024-04-01,draft" },
                   ].map((template) => (
                     <div key={template.name} className="flex items-center gap-4 p-4 border rounded-lg">
                       <div className="p-3 bg-primary/10 rounded-lg">
@@ -541,7 +546,7 @@ const ImportData = () => {
                         }}
                       >
                         <Download className="h-4 w-4 mr-1" />
-                        Download
+                        {t("importData.download")}
                       </Button>
                     </div>
                   ))}
