@@ -15,7 +15,6 @@ import {
   Check,
   Building2,
   Rocket,
-  Star
 } from 'lucide-react';
 
 import { Footer } from '@/components/layout/Footer';
@@ -38,24 +37,9 @@ interface PlanTranslation {
   cta: string;
 }
 
-interface TestimonialTranslation {
-  name: string;
-  role: string;
-  company: string;
-  quote: string;
-  avatar: string;
-}
-
 export default function Landing() {
   const { t } = useTranslation();
   const features = t('landing.features', { returnObjects: true }) as FeatureTranslation[];
-  const testimonials = t('landing.testimonials', { returnObjects: true }) as TestimonialTranslation[];
-  const stats = [
-    { value: '10K+', label: t('landing.statUsers') },
-    { value: '50M+', label: t('landing.statPosts') },
-    { value: '99.9%', label: t('landing.statUptime') },
-    { value: '24/7', label: t('landing.statSupport') },
-  ];
   const planPrices: Record<(typeof planKeys)[number], string> = { free: '$0', starter: '$10', pro: '$20' };
 
   return (
@@ -75,9 +59,6 @@ export default function Landing() {
             </a>
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
               {t('landing.navPricing')}
-            </a>
-            <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">
-              {t('landing.navTestimonials')}
             </a>
           </div>
           <div className="flex items-center gap-3">
@@ -118,20 +99,6 @@ export default function Landing() {
                 {t('landing.login')}
               </Link>
             </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-12 border-y border-border bg-card/50">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-1">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -234,43 +201,6 @@ export default function Landing() {
             <Link to="/pricing" className="text-primary hover:underline text-sm">
               {t('landing.viewFullPricing')}
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 px-4">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              {t('landing.testimonialsTitle')}
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              {t('landing.testimonialsSubtitle')}
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {testimonials.map((testimonial) => (
-              <Card key={testimonial.name} className="bg-card border-border">
-                <CardContent className="p-6">
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <p className="text-foreground mb-6 italic">"{testimonial.quote}"</p>
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-semibold text-primary">{testimonial.avatar}</span>
-                    </div>
-                    <div>
-                      <div className="font-semibold text-foreground">{testimonial.name}</div>
-                      <div className="text-sm text-muted-foreground">{testimonial.role}, {testimonial.company}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         </div>
       </section>

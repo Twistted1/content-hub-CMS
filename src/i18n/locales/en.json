@@ -1775,7 +1775,6 @@
     "navBrand": "Content Hub",
     "navFeatures": "Features",
     "navPricing": "Pricing",
-    "navTestimonials": "Testimonials",
     "login": "Login",
     "signUp": "Sign Up",
     "heroBadge": "AI-Powered Content Management",
@@ -1783,10 +1782,6 @@
     "heroTitleHighlight": "Modern Creators",
     "heroSubtitle": "Manage, schedule, and optimize your content across all platforms with AI-powered automation and real-time analytics.",
     "startFreeTrial": "Start Free Trial",
-    "statUsers": "Active Users",
-    "statPosts": "Posts Published",
-    "statUptime": "Uptime",
-    "statSupport": "Support",
     "featuresTitle": "Everything You Need to Succeed",
     "featuresSubtitle": "From content creation to analytics, Content Hub provides all the tools you need to grow your audience and streamline your workflow.",
     "features": [
@@ -1864,31 +1859,6 @@
         "cta": "Start Free Trial"
       }
     },
-    "testimonialsTitle": "Loved by Content Creators",
-    "testimonialsSubtitle": "See what our users have to say about transforming their content workflow.",
-    "testimonials": [
-      {
-        "name": "Sarah Chen",
-        "role": "Content Director",
-        "company": "TechFlow Inc.",
-        "quote": "Novee has transformed how we manage content. The AI suggestions alone have saved us 10+ hours per week.",
-        "avatar": "SC"
-      },
-      {
-        "name": "Marcus Johnson",
-        "role": "Social Media Manager",
-        "company": "Bloom Agency",
-        "quote": "The automation workflows are incredible. We've doubled our output without adding headcount.",
-        "avatar": "MJ"
-      },
-      {
-        "name": "Emily Rodriguez",
-        "role": "Marketing Lead",
-        "company": "StartupXYZ",
-        "quote": "Finally, a CMS that actually understands modern content needs. The analytics are game-changing.",
-        "avatar": "ER"
-      }
-    ],
     "ctaTitle": "Ready to Transform Your Content Strategy?",
     "ctaSubtitle": "Join thousands of creators and businesses who trust Content Hub to manage their content. Start your free trial today — no credit card required.",
     "getStartedFree": "Get Started for Free",

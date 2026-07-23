@@ -1775,7 +1775,6 @@
     "navBrand": "Content Hub",
     "navFeatures": "Recursos",
     "navPricing": "Preços",
-    "navTestimonials": "Depoimentos",
     "login": "Entrar",
     "signUp": "Cadastrar",
     "heroBadge": "Gerenciamento de Conteúdo com IA",
@@ -1783,10 +1782,6 @@
     "heroTitleHighlight": "Criadores Modernos",
     "heroSubtitle": "Gerencie, agende e otimize seu conteúdo em todas as plataformas com automação de IA e análises em tempo real.",
     "startFreeTrial": "Iniciar Teste Grátis",
-    "statUsers": "Usuários Ativos",
-    "statPosts": "Postagens Publicadas",
-    "statUptime": "Disponibilidade",
-    "statSupport": "Suporte",
     "featuresTitle": "Tudo que Você Precisa para Ter Sucesso",
     "featuresSubtitle": "Da criação de conteúdo às análises, a Content Hub oferece todas as ferramentas necessárias para crescer seu público e otimizar seu fluxo de trabalho.",
     "features": [
@@ -1864,31 +1859,6 @@
         "cta": "Iniciar Teste Grátis"
       }
     },
-    "testimonialsTitle": "Aprovado por Criadores de Conteúdo",
-    "testimonialsSubtitle": "Veja o que nossos usuários dizem sobre a transformação do fluxo de trabalho de conteúdo.",
-    "testimonials": [
-      {
-        "name": "Sarah Chen",
-        "role": "Diretora de Conteúdo",
-        "company": "TechFlow Inc.",
-        "quote": "A Novee transformou a forma como gerenciamos conteúdo. Só as sugestões de IA já nos pouparam mais de 10 horas por semana.",
-        "avatar": "SC"
-      },
-      {
-        "name": "Marcus Johnson",
-        "role": "Gerente de Redes Sociais",
-        "company": "Bloom Agency",
-        "quote": "Os fluxos de automação são incríveis. Dobramos nossa produção sem aumentar a equipe.",
-        "avatar": "MJ"
-      },
-      {
-        "name": "Emily Rodriguez",
-        "role": "Líder de Marketing",
-        "company": "StartupXYZ",
-        "quote": "Finalmente, um CMS que realmente entende as necessidades modernas de conteúdo. As análises são revolucionárias.",
-        "avatar": "ER"
-      }
-    ],
     "ctaTitle": "Pronto para Transformar sua Estratégia de Conteúdo?",
     "ctaSubtitle": "Junte-se a milhares de criadores e empresas que confiam na Content Hub para gerenciar seu conteúdo. Comece seu teste grátis hoje — sem necessidade de cartão de crédito.",
     "getStartedFree": "Começar Gratuitamente",
