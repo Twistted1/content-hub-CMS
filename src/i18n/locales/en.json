@@ -1535,5 +1535,93 @@
     "contactTitle": "10. Contact Us",
     "contactPrefix": "If you have any questions about these Terms of Service, please contact us at",
     "contactEmail": "legal@contenthub.io"
+  },
+  "pricing": {
+    "navBrand": "Content Hub",
+    "signIn": "Sign In",
+    "getStarted": "Get Started",
+    "backToHome": "Back to Home",
+    "heroTitle": "Simple, Transparent Pricing",
+    "heroSubtitle": "Choose the plan that fits your needs. Start free, upgrade as you grow.",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "save20": "Save ~20%",
+    "mostPopular": "Most Popular",
+    "forever": "forever",
+    "perMonth": "/month",
+    "perYear": "/year",
+    "currentPlan": "Current Plan",
+    "needCustomPrefix": "Need something custom?",
+    "getInTouch": "Get in touch",
+    "faqTitle": "Frequently Asked Questions",
+    "stillHaveQuestions": "Still have questions?",
+    "stillHaveQuestionsDesc": "Our team is here to help. Contact us for personalized guidance.",
+    "contactSupport": "Contact Support",
+    "toastCheckoutCanceled": "Checkout was canceled",
+    "toastSignInToSubscribe": "Please sign in to subscribe",
+    "toastCheckoutFailed": "Failed to start checkout",
+    "plans": {
+      "free": {
+        "name": "Free",
+        "description": "Perfect for individuals getting started",
+        "features": [
+          "3 connected platforms",
+          "50 scheduled posts/month",
+          "Basic analytics",
+          "1 team member",
+          "Community support",
+          "Novee AI (10 requests/day)"
+        ],
+        "cta": "Get Started"
+      },
+      "starter": {
+        "name": "Starter",
+        "description": "For solo creators ready to scale",
+        "features": [
+          "6 connected platforms",
+          "300 scheduled posts/month",
+          "Standard analytics",
+          "Up to 2 team members",
+          "Email support",
+          "Novee AI (100 requests/day)",
+          "Basic automation workflows"
+        ],
+        "cta": "Start with Starter"
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "For growing teams and power users",
+        "features": [
+          "Unlimited platforms",
+          "Unlimited scheduled posts",
+          "Advanced analytics & reports",
+          "Unlimited team members",
+          "Priority support",
+          "Novee AI (unlimited)",
+          "Full automation workflows",
+          "Content calendar",
+          "API access"
+        ],
+        "cta": "Go Pro"
+      }
+    },
+    "faqs": [
+      {
+        "question": "Can I change plans at any time?",
+        "answer": "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate your billing."
+      },
+      {
+        "question": "What happens when my trial ends?",
+        "answer": "After your 14-day trial, you'll be moved to the Free plan unless you choose to upgrade. No credit card required to start."
+      },
+      {
+        "question": "Do you offer discounts for annual billing?",
+        "answer": "Yes! Save ~20% when you choose annual billing on Starter or Pro."
+      },
+      {
+        "question": "Is there a limit on the number of platforms I can connect?",
+        "answer": "Free users can connect up to 3 platforms, Starter up to 6, and Pro users have unlimited connections."
+      }
+    ]
   }
 }

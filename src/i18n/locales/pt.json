@@ -1535,5 +1535,93 @@
     "contactTitle": "10. Fale Conosco",
     "contactPrefix": "Se você tiver alguma dúvida sobre estes Termos de Serviço, entre em contato conosco em",
     "contactEmail": "legal@contenthub.io"
+  },
+  "pricing": {
+    "navBrand": "Content Hub",
+    "signIn": "Entrar",
+    "getStarted": "Começar",
+    "backToHome": "Voltar para o Início",
+    "heroTitle": "Preços Simples e Transparentes",
+    "heroSubtitle": "Escolha o plano que atende às suas necessidades. Comece grátis e faça upgrade conforme cresce.",
+    "monthly": "Mensal",
+    "yearly": "Anual",
+    "save20": "Economize ~20%",
+    "mostPopular": "Mais Popular",
+    "forever": "para sempre",
+    "perMonth": "/mês",
+    "perYear": "/ano",
+    "currentPlan": "Plano Atual",
+    "needCustomPrefix": "Precisa de algo personalizado?",
+    "getInTouch": "Entre em contato",
+    "faqTitle": "Perguntas Frequentes",
+    "stillHaveQuestions": "Ainda tem dúvidas?",
+    "stillHaveQuestionsDesc": "Nossa equipe está aqui para ajudar. Entre em contato para orientação personalizada.",
+    "contactSupport": "Contatar Suporte",
+    "toastCheckoutCanceled": "Checkout cancelado",
+    "toastSignInToSubscribe": "Faça login para assinar",
+    "toastCheckoutFailed": "Falha ao iniciar o checkout",
+    "plans": {
+      "free": {
+        "name": "Gratuito",
+        "description": "Perfeito para quem está começando",
+        "features": [
+          "3 plataformas conectadas",
+          "50 postagens agendadas/mês",
+          "Análises básicas",
+          "1 membro da equipe",
+          "Suporte da comunidade",
+          "Novee AI (10 solicitações/dia)"
+        ],
+        "cta": "Começar"
+      },
+      "starter": {
+        "name": "Inicial",
+        "description": "Para criadores solo prontos para crescer",
+        "features": [
+          "6 plataformas conectadas",
+          "300 postagens agendadas/mês",
+          "Análises padrão",
+          "Até 2 membros da equipe",
+          "Suporte por e-mail",
+          "Novee AI (100 solicitações/dia)",
+          "Fluxos de automação básicos"
+        ],
+        "cta": "Começar com o Inicial"
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "Para equipes em crescimento e usuários avançados",
+        "features": [
+          "Plataformas ilimitadas",
+          "Postagens agendadas ilimitadas",
+          "Análises e relatórios avançados",
+          "Membros de equipe ilimitados",
+          "Suporte prioritário",
+          "Novee AI (ilimitado)",
+          "Fluxos de automação completos",
+          "Calendário de conteúdo",
+          "Acesso à API"
+        ],
+        "cta": "Assinar o Pro"
+      }
+    },
+    "faqs": [
+      {
+        "question": "Posso mudar de plano a qualquer momento?",
+        "answer": "Sim, você pode fazer upgrade ou downgrade do seu plano a qualquer momento. As alterações têm efeito imediato e faremos o rateio proporcional da cobrança."
+      },
+      {
+        "question": "O que acontece quando meu teste termina?",
+        "answer": "Após seu teste de 14 dias, você será movido para o plano Gratuito, a menos que escolha fazer upgrade. Não é necessário cartão de crédito para começar."
+      },
+      {
+        "question": "Vocês oferecem descontos para cobrança anual?",
+        "answer": "Sim! Economize ~20% ao escolher a cobrança anual nos planos Inicial ou Pro."
+      },
+      {
+        "question": "Há um limite no número de plataformas que posso conectar?",
+        "answer": "Usuários do plano Gratuito podem conectar até 3 plataformas, o Inicial até 6, e usuários Pro têm conexões ilimitadas."
+      }
+    ]
   }
 }
