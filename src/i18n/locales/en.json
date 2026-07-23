@@ -1748,5 +1748,23 @@
     "trial14day": "14-day free trial",
     "noCreditCard": "No credit card required",
     "cancelAnytime": "Cancel anytime"
+  },
+  "footer": {
+    "brand": "Content Hub",
+    "tagline": "The all-in-one headless CMS for modern content creators.",
+    "productHeading": "Product",
+    "productFeatures": "Features",
+    "productPricing": "Pricing",
+    "productDemo": "Demo",
+    "companyHeading": "Company",
+    "companyAbout": "About",
+    "companyContact": "Contact",
+    "legalHeading": "Legal",
+    "legalPrivacy": "Privacy Policy",
+    "legalTerms": "Terms of Service",
+    "newsletterHeading": "Stay Updated",
+    "newsletterDesc": "Subscribe for product updates and tips.",
+    "copyright": "Content Hub. All rights reserved.",
+    "madeWith": "Made with ❤️ for content creators"
   }
 }

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Twitter, Linkedin, Github, Youtube, Mail } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const socialLinks = [
   { icon: Twitter, href: "https://twitter.com/contenthubcms", label: "Twitter" },
@@ -8,24 +9,25 @@ const socialLinks = [
   { icon: Youtube, href: "https://youtube.com/@contenthubcms", label: "YouTube" },
 ];
 
-const legalLinks = [
-  { label: "Privacy Policy", href: "/privacy" },
-  { label: "Terms of Service", href: "/terms" },
-  
-];
-
-const productLinks = [
-  { label: "Features", href: "/#features" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "Demo", href: "/dashboard" },
-];
-
-const companyLinks = [
-  { label: "About", href: "/#features" },
-  { label: "Contact", href: "mailto:hello@contenthub.io" },
-];
-
 export function Footer() {
+  const { t } = useTranslation();
+
+  const legalLinks = [
+    { label: t('footer.legalPrivacy'), href: "/privacy" },
+    { label: t('footer.legalTerms'), href: "/terms" },
+  ];
+
+  const productLinks = [
+    { label: t('footer.productFeatures'), href: "/#features" },
+    { label: t('footer.productPricing'), href: "/pricing" },
+    { label: t('footer.productDemo'), href: "/dashboard" },
+  ];
+
+  const companyLinks = [
+    { label: t('footer.companyAbout'), href: "/#features" },
+    { label: t('footer.companyContact'), href: "mailto:hello@contenthub.io" },
+  ];
+
   return (
     <footer className="bg-card border-t border-border">
       <div className="container mx-auto px-4 py-12">
@@ -36,10 +38,10 @@ export function Footer() {
               <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-lg">CH</span>
               </div>
-              <span className="font-bold text-xl text-foreground">Content Hub</span>
+              <span className="font-bold text-xl text-foreground">{t('footer.brand')}</span>
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
-              The all-in-one headless CMS for modern content creators.
+              {t('footer.tagline')}
             </p>
             <div className="flex items-center gap-3">
               {socialLinks.map((social) => (
@@ -59,7 +61,7 @@ export function Footer() {
 
           {/* Product */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Product</h4>
+            <h4 className="font-semibold text-foreground mb-4">{t('footer.productHeading')}</h4>
             <ul className="space-y-2">
               {productLinks.map((link) => (
                 <li key={link.label}>
@@ -76,7 +78,7 @@ export function Footer() {
 
           {/* Company */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Company</h4>
+            <h4 className="font-semibold text-foreground mb-4">{t('footer.companyHeading')}</h4>
             <ul className="space-y-2">
               {companyLinks.map((link) => (
                 <li key={link.label}>
@@ -93,7 +95,7 @@ export function Footer() {
 
           {/* Legal */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Legal</h4>
+            <h4 className="font-semibold text-foreground mb-4">{t('footer.legalHeading')}</h4>
             <ul className="space-y-2">
               {legalLinks.map((link) => (
                 <li key={link.label}>
@@ -110,9 +112,9 @@ export function Footer() {
 
           {/* Newsletter */}
           <div className="col-span-2 md:col-span-4 lg:col-span-1">
-            <h4 className="font-semibold text-foreground mb-4">Stay Updated</h4>
+            <h4 className="font-semibold text-foreground mb-4">{t('footer.newsletterHeading')}</h4>
             <p className="text-sm text-muted-foreground mb-3">
-              Subscribe for product updates and tips.
+              {t('footer.newsletterDesc')}
             </p>
             <a
               href="mailto:hello@contenthub.io"
@@ -127,10 +129,10 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Content Hub. All rights reserved.
+            © {new Date().getFullYear()} {t('footer.copyright')}
           </p>
           <div className="flex items-center gap-6 text-xs text-muted-foreground">
-            <span>Made with ❤️ for content creators</span>
+            <span>{t('footer.madeWith')}</span>
           </div>
         </div>
       </div>

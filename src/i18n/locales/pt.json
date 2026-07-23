@@ -1748,5 +1748,23 @@
     "trial14day": "Teste grátis de 14 dias",
     "noCreditCard": "Sem necessidade de cartão de crédito",
     "cancelAnytime": "Cancele quando quiser"
+  },
+  "footer": {
+    "brand": "Content Hub",
+    "tagline": "O CMS headless completo para criadores de conteúdo modernos.",
+    "productHeading": "Produto",
+    "productFeatures": "Recursos",
+    "productPricing": "Preços",
+    "productDemo": "Demonstração",
+    "companyHeading": "Empresa",
+    "companyAbout": "Sobre",
+    "companyContact": "Contato",
+    "legalHeading": "Legal",
+    "legalPrivacy": "Política de Privacidade",
+    "legalTerms": "Termos de Serviço",
+    "newsletterHeading": "Fique por Dentro",
+    "newsletterDesc": "Assine para receber atualizações e dicas do produto.",
+    "copyright": "Content Hub. Todos os direitos reservados.",
+    "madeWith": "Feito com ❤️ para criadores de conteúdo"
   }
 }
