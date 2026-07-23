@@ -695,5 +695,30 @@
     "runAnalysis": "Executar Análise",
     "noCustomModels": "Nenhum Modelo Personalizado",
     "usingDefaultBlueprints": "O sistema está usando os blueprints padrão."
+  },
+  "gantt": {
+    "title": "Gráfico de Gantt",
+    "subtitle": "Visualize cronogramas e dependências de projetos",
+    "timelineView": "Visão de Linha do Tempo",
+    "filterByProject": "Filtrar por projeto",
+    "allProjects": "Todos os Projetos",
+    "noTasksFound": "Nenhuma tarefa encontrada",
+    "createTasksHint": "Crie tarefas nos seus projetos para vê-las aqui.",
+    "noTasksInProject": "Este projeto ainda não tem tarefas.",
+    "tasksCount": "Tarefas ({{count}})",
+    "unknownProject": "Projeto Desconhecido",
+    "totalTasks": "Total de Tarefas",
+    "completed": "Concluídas",
+    "inProgress": "Em Progresso",
+    "blocked": "Bloqueadas",
+    "legend": "Legenda:",
+    "done": "Concluída",
+    "todo": "A Fazer",
+    "loading": "Carregando Gráfico de Gantt...",
+    "statusDone": "concluída",
+    "statusInProgress": "em progresso",
+    "statusReview": "revisão",
+    "statusTodo": "a fazer",
+    "statusBlocked": "bloqueada"
   }
 }

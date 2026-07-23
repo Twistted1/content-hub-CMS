@@ -695,5 +695,30 @@
     "runAnalysis": "Run Analysis",
     "noCustomModels": "No Custom Models",
     "usingDefaultBlueprints": "System is using default blueprints."
+  },
+  "gantt": {
+    "title": "Gantt Chart",
+    "subtitle": "Visualize project timelines and dependencies",
+    "timelineView": "Timeline View",
+    "filterByProject": "Filter by project",
+    "allProjects": "All Projects",
+    "noTasksFound": "No tasks found",
+    "createTasksHint": "Create tasks in your projects to see them here.",
+    "noTasksInProject": "This project has no tasks yet.",
+    "tasksCount": "Tasks ({{count}})",
+    "unknownProject": "Unknown Project",
+    "totalTasks": "Total Tasks",
+    "completed": "Completed",
+    "inProgress": "In Progress",
+    "blocked": "Blocked",
+    "legend": "Legend:",
+    "done": "Done",
+    "todo": "Todo",
+    "loading": "Loading Gantt chart...",
+    "statusDone": "done",
+    "statusInProgress": "in-progress",
+    "statusReview": "review",
+    "statusTodo": "todo",
+    "statusBlocked": "blocked"
   }
 }

@@ -18,8 +18,17 @@ import {
 } from "lucide-react";
 import { useProjects, useTasks } from "@/hooks/useProjects";
 import { type Task } from "@/types";
+import { useTranslation } from "react-i18next";
 
 const dayWidth = 40;
+
+const STATUS_KEYS: Record<string, string> = {
+  done: "gantt.statusDone",
+  "in-progress": "gantt.statusInProgress",
+  review: "gantt.statusReview",
+  todo: "gantt.statusTodo",
+  blocked: "gantt.statusBlocked",
+};
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -44,6 +53,7 @@ const getStatusBadge = (status: string) => {
 };
 
 export default function GanttChart() {
+  const { t } = useTranslation();
   const { projects, isLoading: projectsLoading } = useProjects();
   const { tasks, isLoading: tasksLoading } = useTasks();
   const [selectedProject, setSelectedProject] = useState("all");
@@ -82,7 +92,7 @@ export default function GanttChart() {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <LoadingState message="Loading Gantt chart..." />
+        <LoadingState message={t("gantt.loading")} />
       </DashboardLayout>
     );
   }
@@ -93,9 +103,9 @@ export default function GanttChart() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="page-title mb-2">Gantt Chart</h1>
+            <h1 className="page-title mb-2">{t("gantt.title")}</h1>
             <p className="text-sm text-muted-foreground font-medium opacity-60">
-              Visualize project timelines and dependencies
+              {t("gantt.subtitle")}
             </p>
           </div>
         </div>
@@ -104,16 +114,16 @@ export default function GanttChart() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md">
             <Calendar className="h-4 w-4" />
-            <span className="font-medium">Timeline View</span>
+            <span className="font-medium">{t("gantt.timelineView")}</span>
           </div>
           <div className="flex items-center gap-2">
             <Select value={selectedProject} onValueChange={setSelectedProject}>
               <SelectTrigger className="w-[200px]">
                 <Filter className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Filter by project" />
+                <SelectValue placeholder={t("gantt.filterByProject")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Projects</SelectItem>
+                <SelectItem value="all">{t("gantt.allProjects")}</SelectItem>
                 {projects.map(project => (
                   <SelectItem key={project.id} value={project.id}>{(project as any).name || project.title}</SelectItem>
                 ))}
@@ -132,8 +142,8 @@ export default function GanttChart() {
         {filteredTasks.length === 0 ? (
           <EmptyState
             icon={ListTodo}
-            title="No tasks found"
-            description={selectedProject === "all" ? "Create tasks in your projects to see them here." : "This project has no tasks yet."}
+            title={t("gantt.noTasksFound")}
+            description={selectedProject === "all" ? t("gantt.createTasksHint") : t("gantt.noTasksInProject")}
           />
         ) : (
           <Card>
@@ -142,7 +152,7 @@ export default function GanttChart() {
                 {/* Task List */}
                 <div className="w-[280px] shrink-0 border-r border-border">
                   <div className="h-12 border-b border-border px-4 flex items-center bg-muted/50">
-                    <span className="font-medium text-sm">Tasks ({filteredTasks.length})</span>
+                    <span className="font-medium text-sm">{t("gantt.tasksCount", { count: filteredTasks.length })}</span>
                   </div>
                   <div className="divide-y divide-border">
                     {filteredTasks.map((task) => (
@@ -150,11 +160,11 @@ export default function GanttChart() {
                         <div className="min-w-0">
                           <p className="font-medium text-sm truncate">{task.name}</p>
                           <p className="text-xs text-muted-foreground truncate">
-                            {projectMap[task.projectId] || "Unknown Project"}
+                            {projectMap[task.projectId] || t("gantt.unknownProject")}
                           </p>
                           <div className="mt-1 flex items-center gap-2">
                             <Badge variant="secondary" className={`text-xs ${getStatusBadge(task.status)}`}>
-                              {task.status}
+                              {t(STATUS_KEYS[task.status] || task.status)}
                             </Badge>
                             <span className="text-xs text-muted-foreground">{task.progress}%</span>
                           </div>
@@ -231,7 +241,7 @@ export default function GanttChart() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Tasks</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t("gantt.totalTasks")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.total}</div>
@@ -239,7 +249,7 @@ export default function GanttChart() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t("gantt.completed")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-500">{stats.done}</div>
@@ -247,7 +257,7 @@ export default function GanttChart() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">In Progress</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t("gantt.inProgress")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-primary">{stats.inProgress}</div>
@@ -255,7 +265,7 @@ export default function GanttChart() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Blocked</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t("gantt.blocked")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">{stats.blocked}</div>
@@ -267,22 +277,22 @@ export default function GanttChart() {
         <Card>
           <CardContent className="py-4">
             <div className="flex flex-wrap items-center gap-6">
-              <span className="text-sm font-medium">Legend:</span>
+              <span className="text-sm font-medium">{t("gantt.legend")}</span>
               <div className="flex items-center gap-2">
                 <div className="h-3 w-8 rounded bg-green-500" />
-                <span className="text-sm text-muted-foreground">Done</span>
+                <span className="text-sm text-muted-foreground">{t("gantt.done")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-3 w-8 rounded bg-primary" />
-                <span className="text-sm text-muted-foreground">In Progress</span>
+                <span className="text-sm text-muted-foreground">{t("gantt.inProgress")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-3 w-8 rounded bg-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Todo</span>
+                <span className="text-sm text-muted-foreground">{t("gantt.todo")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-3 w-8 rounded bg-destructive" />
-                <span className="text-sm text-muted-foreground">Blocked</span>
+                <span className="text-sm text-muted-foreground">{t("gantt.blocked")}</span>
               </div>
             </div>
           </CardContent>
