@@ -34,8 +34,26 @@ import { UserCard } from "@/components/users/UserCard";
 import { UserDialog } from "@/components/users/UserDialog";
 import { RoleConfigDialog } from "@/components/users/RoleConfigDialog";
 import { roles, permissions, rolePermissions } from "@/components/users/usersData";
+import { useTranslation } from "react-i18next";
+
+const ROLE_KEYS: Record<string, { label: string; desc: string }> = {
+  admin: { label: "users.roleAdmin", desc: "users.roleAdminDesc" },
+  editor: { label: "users.roleEditor", desc: "users.roleEditorDesc" },
+  viewer: { label: "users.roleViewer", desc: "users.roleViewerDesc" },
+  member: { label: "users.roleMember", desc: "users.roleMemberDesc" },
+};
+
+const PERMISSION_KEYS: Record<string, { label: string; desc: string }> = {
+  manage_users: { label: "users.permManageUsers", desc: "users.permManageUsersDesc" },
+  manage_content: { label: "users.permManageContent", desc: "users.permManageContentDesc" },
+  manage_settings: { label: "users.permManageSettings", desc: "users.permManageSettingsDesc" },
+  view_analytics: { label: "users.permViewAnalytics", desc: "users.permViewAnalyticsDesc" },
+  view_content: { label: "users.permViewContent", desc: "users.permViewContentDesc" },
+  publish_content: { label: "users.permPublishContent", desc: "users.permPublishContentDesc" },
+};
 
 const UsersPage = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { users, addUser, updateUser, deleteUser, resendInvite } = useUsers({ includeInvitations: true });
   
@@ -103,8 +121,8 @@ const UsersPage = () => {
         role: data.role || "member",
       });
       toast({
-        title: "Invitation sent",
-        description: `An invitation has been sent to ${data.email}`,
+        title: t("users.invitationSent"),
+        description: t("users.invitationSentDesc", { email: data.email }),
       });
     } else if (selectedUser) {
       if (userDialogMode === "role") {
@@ -113,14 +131,14 @@ const UsersPage = () => {
           updateUser(selectedUser.id, { permissions: data.permissions });
         }
         toast({
-          title: "Role updated",
-          description: `${selectedUser.name}'s role has been updated`,
+          title: t("users.roleUpdated"),
+          description: t("users.roleUpdatedDesc", { name: selectedUser.name }),
         });
       } else {
         updateUser(selectedUser.id, data);
         toast({
-          title: "User updated",
-          description: `${selectedUser.name}'s information has been updated`,
+          title: t("users.userUpdated"),
+          description: t("users.userUpdatedDesc", { name: selectedUser.name }),
         });
       }
     }
@@ -131,16 +149,16 @@ const UsersPage = () => {
     deleteUser(userId);
     setSelectedUsers(selectedUsers.filter((id) => id !== userId));
     toast({
-      title: "User removed",
-      description: `${user?.name || "User"} has been removed from the team`,
+      title: t("users.userRemoved"),
+      description: t("users.userRemovedDesc", { name: user?.name || "User" }),
     });
   };
 
   const handleBulkDelete = () => {
     selectedUsers.forEach(id => deleteUser(id));
     toast({
-      title: "Users removed",
-      description: `${selectedUsers.length} users have been removed`,
+      title: t("users.usersRemoved"),
+      description: t("users.usersRemovedDesc", { count: selectedUsers.length }),
     });
     setSelectedUsers([]);
   };
@@ -153,8 +171,8 @@ const UsersPage = () => {
       }
     });
     toast({
-      title: "Users activated",
-      description: `${selectedUsers.length} users have been activated`,
+      title: t("users.usersActivated"),
+      description: t("users.usersActivatedDesc", { count: selectedUsers.length }),
     });
     setSelectedUsers([]);
   };
@@ -167,8 +185,8 @@ const UsersPage = () => {
       }
     });
     toast({
-      title: "Users deactivated",
-      description: `${selectedUsers.length} users have been deactivated`,
+      title: t("users.usersDeactivated"),
+      description: t("users.usersDeactivatedDesc", { count: selectedUsers.length }),
     });
     setSelectedUsers([]);
   };
@@ -177,8 +195,8 @@ const UsersPage = () => {
     resendInvite(userId);
     const user = users.find((u) => u.id === userId);
     toast({
-      title: "Invitation resent",
-      description: `Invitation resent to ${user?.email}`,
+      title: t("users.invitationResent"),
+      description: t("users.invitationResentDesc", { email: user?.email }),
     });
   };
 
@@ -189,8 +207,8 @@ const UsersPage = () => {
 
   const handleRoleConfigSave = (permissions: string[]) => {
     toast({
-      title: "Role configured",
-      description: `${selectedRole?.label} role permissions have been updated`,
+      title: t("users.roleConfigured"),
+      description: t("users.roleConfiguredDesc", { role: selectedRole ? t(ROLE_KEYS[selectedRole.value]?.label || selectedRole.label) : "" }),
     });
   };
 
@@ -205,14 +223,14 @@ const UsersPage = () => {
         {/* Header */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="page-title mb-2">Users & Permissions</h1>
+            <h1 className="page-title mb-2">{t("users.title")}</h1>
             <p className="text-muted-foreground">
-              Manage team members, roles, and permissions
+              {t("users.subtitle")}
             </p>
           </div>
           <Button onClick={handleInviteUser}>
             <UserPlus className="mr-2 h-4 w-4" />
-            Invite User
+            {t("users.inviteUser")}
           </Button>
         </div>
 
@@ -220,42 +238,42 @@ const UsersPage = () => {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("users.totalUsers")}</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{users.length}</div>
-              <p className="text-xs text-muted-foreground">Team members</p>
+              <p className="text-xs text-muted-foreground">{t("users.teamMembers")}</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("users.activeUsers")}</CardTitle>
               <UserCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{activeUsers}</div>
-              <p className="text-xs text-muted-foreground">Currently active</p>
+              <p className="text-xs text-muted-foreground">{t("users.currentlyActive")}</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Invites</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("users.pendingInvites")}</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{pendingUsers}</div>
-              <p className="text-xs text-muted-foreground">Awaiting response</p>
+              <p className="text-xs text-muted-foreground">{t("users.awaitingResponse")}</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Admins</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("users.admins")}</CardTitle>
               <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{adminUsers}</div>
-              <p className="text-xs text-muted-foreground">With full access</p>
+              <p className="text-xs text-muted-foreground">{t("users.fullAccess")}</p>
             </CardContent>
           </Card>
         </div>
@@ -263,9 +281,9 @@ const UsersPage = () => {
         {/* Main Content */}
         <Tabs defaultValue="members" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="members">Team Members</TabsTrigger>
-            <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
-            <TabsTrigger value="invitations">Invitations</TabsTrigger>
+            <TabsTrigger value="members">{t("users.tabMembers")}</TabsTrigger>
+            <TabsTrigger value="roles">{t("users.tabRoles")}</TabsTrigger>
+            <TabsTrigger value="invitations">{t("users.tabInvitations")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="members" className="space-y-4">
@@ -273,18 +291,18 @@ const UsersPage = () => {
               <CardHeader>
                 <div className="flex flex-col gap-4">
                   <div>
-                    <CardTitle>Team Members</CardTitle>
+                    <CardTitle>{t("users.tabMembers")}</CardTitle>
                     <CardDescription>
-                      Manage your team and their access levels
+                      {t("users.teamMembersDesc")}
                     </CardDescription>
                   </div>
-                  
+
                   {/* Filters */}
                   <div className="flex flex-col gap-3 md:flex-row md:items-center">
                     <div className="relative flex-1">
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Search users..."
+                        placeholder={t("users.searchPlaceholder")}
                         className="pl-8"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -292,24 +310,24 @@ const UsersPage = () => {
                     </div>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="w-full md:w-[140px]">
-                        <SelectValue placeholder="Status" />
+                        <SelectValue placeholder={t("users.statusPlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="all">{t("users.allStatus")}</SelectItem>
+                        <SelectItem value="active">{t("users.active")}</SelectItem>
+                        <SelectItem value="inactive">{t("users.inactive")}</SelectItem>
+                        <SelectItem value="pending">{t("users.pending")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <Select value={roleFilter} onValueChange={setRoleFilter}>
                       <SelectTrigger className="w-full md:w-[140px]">
-                        <SelectValue placeholder="Role" />
+                        <SelectValue placeholder={t("users.rolePlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="all">{t("users.allRoles")}</SelectItem>
                         {roles.map((role) => (
                           <SelectItem key={role.value} value={role.value}>
-                            {role.label}
+                            {t(ROLE_KEYS[role.value]?.label || role.label)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -320,20 +338,20 @@ const UsersPage = () => {
                   {selectedUsers.length > 0 && (
                     <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
                       <span className="text-sm font-medium">
-                        {selectedUsers.length} selected
+                        {t("users.selected", { count: selectedUsers.length })}
                       </span>
                       <div className="flex-1" />
                       <Button variant="outline" size="sm" onClick={handleBulkActivate}>
                         <UserCheck className="mr-2 h-4 w-4" />
-                        Activate
+                        {t("users.activate")}
                       </Button>
                       <Button variant="outline" size="sm" onClick={handleBulkDeactivate}>
                         <UserX className="mr-2 h-4 w-4" />
-                        Deactivate
+                        {t("users.deactivate")}
                       </Button>
                       <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Remove
+                        {t("users.remove")}
                       </Button>
                     </div>
                   )}
@@ -345,10 +363,10 @@ const UsersPage = () => {
                   <Checkbox
                     checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
                     onCheckedChange={handleSelectAll}
-                    aria-label="Select all"
+                    aria-label={t("users.selectAll")}
                   />
                   <span className="text-sm text-muted-foreground">
-                    Select all ({filteredUsers.length})
+                    {t("users.selectAllCount", { count: filteredUsers.length })}
                   </span>
                 </div>
 
@@ -370,7 +388,7 @@ const UsersPage = () => {
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <Users className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                      <p>No users found</p>
+                      <p>{t("users.noUsersFound")}</p>
                     </div>
                   )}
                 </div>
@@ -382,9 +400,9 @@ const UsersPage = () => {
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Roles</CardTitle>
+                  <CardTitle>{t("users.rolesTitle")}</CardTitle>
                   <CardDescription>
-                    Define access levels for your team
+                    {t("users.rolesDesc")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -394,17 +412,17 @@ const UsersPage = () => {
                       className="flex items-center justify-between rounded-lg border p-4"
                     >
                       <div className="space-y-1">
-                        <div className="font-medium">{role.label}</div>
+                        <div className="font-medium">{t(ROLE_KEYS[role.value]?.label || role.label)}</div>
                         <div className="text-sm text-muted-foreground">
-                          {role.description}
+                          {t(ROLE_KEYS[role.value]?.desc || role.description)}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {users.filter((u) => u.role === role.value).length} users
+                          {t("users.usersCount", { count: users.filter((u) => u.role === role.value).length })}
                         </div>
                       </div>
                       <Button variant="outline" size="sm" onClick={() => handleConfigureRole(role)}>
                         <Settings className="mr-2 h-4 w-4" />
-                        Configure
+                        {t("users.configure")}
                       </Button>
                     </div>
                   ))}
@@ -413,9 +431,9 @@ const UsersPage = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Permissions</CardTitle>
+                  <CardTitle>{t("users.permissionsTitle")}</CardTitle>
                   <CardDescription>
-                    Granular access control settings
+                    {t("users.permissionsDesc")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -425,9 +443,9 @@ const UsersPage = () => {
                       className="flex items-center justify-between rounded-lg border p-4"
                     >
                       <div className="space-y-1">
-                        <div className="font-medium">{permission.label}</div>
+                        <div className="font-medium">{t(PERMISSION_KEYS[permission.id]?.label || permission.label)}</div>
                         <div className="text-sm text-muted-foreground">
-                          {permission.description}
+                          {t(PERMISSION_KEYS[permission.id]?.desc || permission.description)}
                         </div>
                       </div>
                       <Switch defaultChecked />
@@ -441,9 +459,9 @@ const UsersPage = () => {
           <TabsContent value="invitations" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Pending Invitations</CardTitle>
+                <CardTitle>{t("users.pendingInvitations")}</CardTitle>
                 <CardDescription>
-                  Invitations awaiting response
+                  {t("users.invitationsDesc")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -463,18 +481,18 @@ const UsersPage = () => {
                             <div>
                               <div className="font-medium">{user.email}</div>
                               <div className="text-sm text-muted-foreground">
-                                Invited as {user.role} • Sent {user.joinedDate}
+                                {t("users.invitedAs", { role: user.role, date: user.joinedDate })}
                               </div>
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               size="sm"
                               onClick={() => handleResendInvite(user.id)}
                             >
                               <RefreshCw className="mr-2 h-4 w-4" />
-                              Resend
+                              {t("users.resend")}
                             </Button>
                             <Button
                               variant="ghost"
@@ -490,7 +508,7 @@ const UsersPage = () => {
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <Mail className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                    <p>No pending invitations</p>
+                    <p>{t("users.noPendingInvitations")}</p>
                   </div>
                 )}
               </CardContent>
