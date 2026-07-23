@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useContentPipeline, type PipelineRun, type WebhookConfig } from "@/hooks/useContentPipeline";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 const PLATFORM_OPTIONS = [
   { value: "twitter", label: "X (Twitter)" },
@@ -39,24 +40,25 @@ const getStatusIcon = (status: string) => {
   }
 };
 
-const getStepLabel = (step: string) => {
+const getStepLabel = (t: (key: string) => string, step: string) => {
   const labels: Record<string, string> = {
-    started: "Pipeline started",
-    generating_content: "Generating content with AI...",
-    content_generated: "Content generated ✓",
-    generating_image: "Generating cover image with DALL-E...",
-    image_generated: "Cover image created ✓",
-    image_failed: "Image generation failed (continuing...)",
-    image_skipped: "Image skipped",
-    creating_post: "Creating post...",
-    post_created: "Post created ✓",
-    firing_webhooks: "Firing publish webhooks...",
-    webhooks_fired: "Webhooks dispatched ✓",
+    started: t("pipeline.stepStarted"),
+    generating_content: t("pipeline.stepGeneratingContent"),
+    content_generated: t("pipeline.stepContentGenerated"),
+    generating_image: t("pipeline.stepGeneratingImage"),
+    image_generated: t("pipeline.stepImageGenerated"),
+    image_failed: t("pipeline.stepImageFailed"),
+    image_skipped: t("pipeline.stepImageSkipped"),
+    creating_post: t("pipeline.stepCreatingPost"),
+    post_created: t("pipeline.stepPostCreated"),
+    firing_webhooks: t("pipeline.stepFiringWebhooks"),
+    webhooks_fired: t("pipeline.stepWebhooksFired"),
   };
   return labels[step] || step;
 };
 
 export default function ContentPipeline() {
+  const { t } = useTranslation();
   const { pipelineRuns, webhooks, isLoading, runPipeline, addWebhook, deleteWebhook, toggleWebhook } = useContentPipeline();
 
   const [topic, setTopic] = useState("");
@@ -112,9 +114,9 @@ export default function ContentPipeline() {
       <div className="space-y-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="page-title mb-2">Content Pipeline</h1>
+          <h1 className="page-title mb-2">{t("pipeline.title")}</h1>
           <p className="text-sm text-muted-foreground font-medium max-w-xl opacity-60">
-            Advanced neural-orchestration. From initial conceptualization to global multi-platform publication.
+            {t("pipeline.subtitle")}
           </p>
         </div>
 
@@ -123,16 +125,16 @@ export default function ContentPipeline() {
           <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-primary/40 transition-all duration-500">
             <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-primary/10 transition-all" />
             <div className="flex items-center justify-between relative z-10">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Total Operations</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t("pipeline.totalOperations")}</span>
               <Zap className="h-5 w-5 text-primary" />
             </div>
             <div className="text-4xl font-black text-white tracking-tighter relative z-10">{pipelineRuns.length}</div>
           </div>
-          
+
           <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-emerald-500/40 transition-all duration-500">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-emerald-500/10 transition-all" />
             <div className="flex items-center justify-between relative z-10">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Success Rate</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t("pipeline.successRate")}</span>
               <CheckCircle2 className="h-5 w-5 text-emerald-500" />
             </div>
             <div className="text-4xl font-black text-emerald-500 tracking-tighter relative z-10">{completedRuns}</div>
@@ -141,7 +143,7 @@ export default function ContentPipeline() {
           <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-amber-500/40 transition-all duration-500">
             <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-amber-500/10 transition-all" />
             <div className="flex items-center justify-between relative z-10">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Active Nodes</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t("pipeline.activeNodes")}</span>
               <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />
             </div>
             <div className="text-4xl font-black text-amber-500 tracking-tighter relative z-10">{runningRuns}</div>
@@ -150,21 +152,21 @@ export default function ContentPipeline() {
           <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-blue-500/40 transition-all duration-500">
             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-blue-500/10 transition-all" />
             <div className="flex items-center justify-between relative z-10">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Integrations</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t("pipeline.integrations")}</span>
               <Webhook className="h-5 w-5 text-blue-500" />
             </div>
             <div className="flex items-baseline gap-2 relative z-10">
               <div className="text-4xl font-black text-white tracking-tighter">{webhooks.filter(w => w.isActive).length}</div>
-              <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">Active</span>
+              <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">{t("pipeline.active")}</span>
             </div>
           </div>
         </div>
 
         <Tabs defaultValue="create" className="space-y-6">
           <TabsList className="bg-white/[0.03] border border-white/[0.08] p-1.5 rounded-2xl h-auto">
-            <TabsTrigger value="create" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Command</TabsTrigger>
-            <TabsTrigger value="history" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Archives</TabsTrigger>
-            <TabsTrigger value="webhooks" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Endpoints</TabsTrigger>
+            <TabsTrigger value="create" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">{t("pipeline.tabCreate")}</TabsTrigger>
+            <TabsTrigger value="history" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">{t("pipeline.tabHistory")}</TabsTrigger>
+            <TabsTrigger value="webhooks" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">{t("pipeline.tabWebhooks")}</TabsTrigger>
           </TabsList>
 
           {/* CREATE PIPELINE TAB */}
@@ -175,18 +177,18 @@ export default function ContentPipeline() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-foreground">
                     <Sparkles className="h-5 w-5 text-primary" />
-                    Automated Generation
+                    {t("pipeline.automatedGeneration")}
                   </CardTitle>
                   <CardDescription>
-                    Describe your content topic and the pipeline will build a full multi-platform campaign
+                    {t("pipeline.automatedGenerationDesc")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Topic */}
                   <div className="space-y-2">
-                    <Label>Content Topic / Prompt</Label>
+                    <Label>{t("pipeline.contentTopic")}</Label>
                     <Textarea
-                      placeholder="e.g., 5 productivity tips for remote workers, a behind-the-scenes look at our latest product..."
+                      placeholder={t("pipeline.contentTopicPlaceholder")}
                       value={topic}
                       onChange={(e) => setTopic(e.target.value)}
                       className="min-h-[100px]"
@@ -196,7 +198,7 @@ export default function ContentPipeline() {
 
                   {/* Platforms */}
                   <div className="space-y-2">
-                    <Label>Target Platforms</Label>
+                    <Label>{t("pipeline.targetPlatforms")}</Label>
                     <div className="flex flex-wrap gap-2">
                       {PLATFORM_OPTIONS.map((p) => (
                         <Badge
@@ -213,20 +215,20 @@ export default function ContentPipeline() {
 
                   {/* Schedule Mode */}
                   <div className="space-y-2">
-                    <Label>After Generation</Label>
+                    <Label>{t("pipeline.afterGeneration")}</Label>
                     <Select value={scheduleMode} onValueChange={(v: any) => setScheduleMode(v)} disabled={isRunning}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="draft">
-                          <span className="flex items-center gap-2"><FileText className="h-3 w-3" /> Save as Draft</span>
+                          <span className="flex items-center gap-2"><FileText className="h-3 w-3" /> {t("pipeline.saveAsDraft")}</span>
                         </SelectItem>
                         <SelectItem value="scheduled">
-                          <span className="flex items-center gap-2"><Calendar className="h-3 w-3" /> Schedule</span>
+                          <span className="flex items-center gap-2"><Calendar className="h-3 w-3" /> {t("pipeline.schedule")}</span>
                         </SelectItem>
                         <SelectItem value="immediate">
-                          <span className="flex items-center gap-2"><Send className="h-3 w-3" /> Publish via Webhooks</span>
+                          <span className="flex items-center gap-2"><Send className="h-3 w-3" /> {t("pipeline.publishViaWebhooks")}</span>
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -234,7 +236,7 @@ export default function ContentPipeline() {
 
                   {scheduleMode === "scheduled" && (
                     <div className="space-y-2">
-                      <Label>Schedule Date & Time</Label>
+                      <Label>{t("pipeline.scheduleDateTime")}</Label>
                       <Input
                         type="datetime-local"
                         value={scheduledAt}
@@ -254,12 +256,12 @@ export default function ContentPipeline() {
                     {isRunning ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Generating Campaign...
+                        {t("pipeline.generatingCampaign")}
                       </>
                     ) : (
                       <>
                         <Zap className="h-4 w-4" />
-                        Run Automated Pipeline
+                        {t("pipeline.runPipeline")}
                       </>
                     )}
                   </Button>
@@ -269,15 +271,15 @@ export default function ContentPipeline() {
               {/* Pipeline Steps Visual */}
               <Card className="lg:col-span-2 bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-sm text-foreground">Automation Flow</CardTitle>
+                  <CardTitle className="text-sm text-foreground">{t("pipeline.automationFlow")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {[
-                      { icon: Sparkles, label: "1. AI Strategy & Plan", desc: "Builds a multi-platform content roadmap" },
-                      { icon: FileText, label: "2. Content Generation", desc: "Crafts copy for X, IG, FB & Articles" },
-                      { icon: Image, label: "3. DALL-E Visualization", desc: "Cover images auto-created per post" },
-                      { icon: Calendar, label: "4. Smart Scheduling", desc: "Positions items in the optimal slots" },
+                      { icon: Sparkles, label: t("pipeline.step1Label"), desc: t("pipeline.step1Desc") },
+                      { icon: FileText, label: t("pipeline.step2Label"), desc: t("pipeline.step2Desc") },
+                      { icon: Image, label: t("pipeline.step3Label"), desc: t("pipeline.step3Desc") },
+                      { icon: Calendar, label: t("pipeline.step4Label"), desc: t("pipeline.step4Desc") },
                     ].map((step, i) => (
                       <div key={i} className="flex items-start gap-4">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-muted text-primary shadow-sm">
@@ -304,7 +306,7 @@ export default function ContentPipeline() {
                   <Card>
                     <CardContent className="py-12 text-center text-muted-foreground">
                       <Zap className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                      <p>No pipeline runs yet. Create your first one above!</p>
+                      <p>{t("pipeline.noRunsYet")}</p>
                     </CardContent>
                   </Card>
                 ) : (
@@ -320,36 +322,36 @@ export default function ContentPipeline() {
           <TabsContent value="webhooks" className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold">Publish Webhooks</h3>
+                <h3 className="text-lg font-semibold">{t("pipeline.publishWebhooks")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Configure endpoints to receive post data when publishing (Zapier, Make, n8n, custom)
+                  {t("pipeline.publishWebhooksDesc")}
                 </p>
               </div>
               <Dialog open={whDialogOpen} onOpenChange={setWhDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="gap-2">
                     <Plus className="h-4 w-4" />
-                    Add Webhook
+                    {t("pipeline.addWebhook")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Add Webhook Endpoint</DialogTitle>
+                    <DialogTitle>{t("pipeline.addWebhookEndpoint")}</DialogTitle>
                     <DialogDescription>
-                      This webhook will receive POST requests with content data when the pipeline publishes
+                      {t("pipeline.addWebhookDesc")}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Name</Label>
-                      <Input placeholder="e.g., Zapier Hook, My API" value={whName} onChange={(e) => setWhName(e.target.value)} />
+                      <Label>{t("pipeline.name")}</Label>
+                      <Input placeholder={t("pipeline.namePlaceholder")} value={whName} onChange={(e) => setWhName(e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Webhook URL</Label>
+                      <Label>{t("pipeline.webhookUrl")}</Label>
                       <Input placeholder="https://hooks.zapier.com/..." value={whUrl} onChange={(e) => setWhUrl(e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Platforms (leave empty for all)</Label>
+                      <Label>{t("pipeline.platformsOptional")}</Label>
                       <div className="flex flex-wrap gap-2">
                         {PLATFORM_OPTIONS.map((p) => (
                           <Badge
@@ -367,8 +369,8 @@ export default function ContentPipeline() {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setWhDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleAddWebhook} disabled={!whName.trim() || !whUrl.trim()}>Add Webhook</Button>
+                    <Button variant="outline" onClick={() => setWhDialogOpen(false)}>{t("common.cancel")}</Button>
+                    <Button onClick={handleAddWebhook} disabled={!whName.trim() || !whUrl.trim()}>{t("pipeline.addWebhook")}</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -379,7 +381,7 @@ export default function ContentPipeline() {
                 <Card>
                   <CardContent className="py-12 text-center text-muted-foreground">
                     <Webhook className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                    <p>No webhooks configured. Add one to enable automated publishing.</p>
+                    <p>{t("pipeline.noWebhooksConfigured")}</p>
                   </CardContent>
                 </Card>
               ) : (
@@ -422,6 +424,7 @@ export default function ContentPipeline() {
 }
 
 function PipelineRunCard({ run }: { run: PipelineRun }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   const progress = run.status === "completed" ? 100 : run.status === "running"
@@ -457,11 +460,11 @@ function PipelineRunCard({ run }: { run: PipelineRun }) {
 
         {expanded && (
           <div className="mt-4 space-y-2 border-t pt-3">
-            <p className="text-xs font-medium text-muted-foreground uppercase">Pipeline Steps</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase">{t("pipeline.pipelineSteps")}</p>
             {run.steps.map((step, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
                 <CheckCircle2 className="h-3 w-3 text-green-500" />
-                <span>{getStepLabel(step.step)}</span>
+                <span>{getStepLabel(t, step.step)}</span>
                 <span className="text-xs text-muted-foreground ml-auto">
                   {format(new Date(step.ts), "HH:mm:ss")}
                 </span>
@@ -469,9 +472,9 @@ function PipelineRunCard({ run }: { run: PipelineRun }) {
             ))}
             {run.result && (
               <div className="mt-2 p-3 rounded-md bg-muted text-sm">
-                <p><strong>Post:</strong> {run.result.title}</p>
-                <p><strong>Image:</strong> {run.result.hasImage ? "Yes ✓" : "No"}</p>
-                <p><strong>Status:</strong> {run.result.postStatus}</p>
+                <p><strong>{t("pipeline.post")}:</strong> {run.result.title}</p>
+                <p><strong>{t("pipeline.image")}:</strong> {run.result.hasImage ? t("pipeline.yes") : t("pipeline.no")}</p>
+                <p><strong>{t("pipeline.status")}:</strong> {run.result.postStatus}</p>
               </div>
             )}
             {run.errorMessage && (
