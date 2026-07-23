@@ -25,8 +25,10 @@ import {
 import { useUserPreferencesStore } from "@/stores/useUserPreferencesStore";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 
 export function SecuritySettings() {
+  const { t } = useTranslation();
   const { security, updateSecurity } = useUserPreferencesStore();
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [show2FADialog, setShow2FADialog] = useState(false);
@@ -65,11 +67,11 @@ export function SecuritySettings() {
 
   const handlePasswordChange = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error(t("settings.security.toastPasswordMismatch"));
       return;
     }
     if (passwordForm.newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters");
+      toast.error(t("settings.security.toastPasswordTooShort"));
       return;
     }
     setIsChangingPassword(true);
@@ -78,7 +80,7 @@ export function SecuritySettings() {
       const { data: userData } = await supabase.auth.getUser();
       const email = userData.user?.email;
       if (!email) {
-        toast.error("You must be signed in to change your password");
+        toast.error(t("settings.security.toastMustBeSignedIn"));
         return;
       }
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -86,7 +88,7 @@ export function SecuritySettings() {
         password: passwordForm.currentPassword,
       });
       if (signInError) {
-        toast.error("Current password is incorrect");
+        toast.error(t("settings.security.toastCurrentPasswordIncorrect"));
         return;
       }
 
@@ -97,7 +99,7 @@ export function SecuritySettings() {
         toast.error(error.message);
         return;
       }
-      toast.success("Password updated successfully");
+      toast.success(t("settings.security.toastPasswordUpdated"));
       setShowPasswordDialog(false);
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } finally {
@@ -118,9 +120,9 @@ export function SecuritySettings() {
         }
         setMfaEnrolled(false);
         updateSecurity({ twoFactorEnabled: false });
-        toast.success("Two-factor authentication disabled");
+        toast.success(t("settings.security.toast2FADisabled"));
       } catch (e: any) {
-        toast.error(e?.message ?? "Failed to disable 2FA");
+        toast.error(e?.message ?? t("settings.security.toast2FADisableFailed"));
       } finally {
         setMfaBusy(false);
       }
@@ -144,7 +146,7 @@ export function SecuritySettings() {
       setMfaCode("");
       setShow2FADialog(true);
     } catch (e: any) {
-      toast.error(e?.message ?? "Failed to start 2FA enrollment");
+      toast.error(e?.message ?? t("settings.security.toast2FAEnrollFailed"));
     } finally {
       setMfaBusy(false);
     }
@@ -153,7 +155,7 @@ export function SecuritySettings() {
   const verify2FA = async () => {
     if (!mfaFactorId) return;
     if (!/^\d{6}$/.test(mfaCode)) {
-      toast.error("Enter the 6-digit code from your authenticator app");
+      toast.error(t("settings.security.toastEnterCode"));
       return;
     }
     setMfaBusy(true);
@@ -165,14 +167,14 @@ export function SecuritySettings() {
       if (error) throw error;
       setMfaEnrolled(true);
       updateSecurity({ twoFactorEnabled: true });
-      toast.success("Two-factor authentication enabled");
+      toast.success(t("settings.security.toast2FAEnabled"));
       setShow2FADialog(false);
       setMfaFactorId(null);
       setMfaQrSvg(null);
       setMfaSecret(null);
       setMfaCode("");
     } catch (e: any) {
-      toast.error(e?.message ?? "Verification failed");
+      toast.error(e?.message ?? t("settings.security.toastVerificationFailed"));
     } finally {
       setMfaBusy(false);
     }
@@ -198,9 +200,9 @@ export function SecuritySettings() {
     try {
       const { error } = await supabase.auth.signOut({ scope: "others" });
       if (error) throw error;
-      toast.success("All other sessions have been signed out");
+      toast.success(t("settings.security.toastSignedOutOthers"));
     } catch (e: any) {
-      toast.error(e?.message ?? "Failed to sign out other sessions");
+      toast.error(e?.message ?? t("settings.security.toastSignOutOthersFailed"));
     } finally {
       setRevokingSessions(false);
     }
@@ -212,22 +214,22 @@ export function SecuritySettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Key className="h-5 w-5" />
-            Password
+            {t("settings.security.passwordTitle")}
           </CardTitle>
           <CardDescription>
-            Manage your password and authentication settings.
+            {t("settings.security.passwordCardDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Password</Label>
+              <Label>{t("settings.security.password")}</Label>
               <p className="text-sm text-muted-foreground">
-                Last changed 30 days ago
+                {t("settings.security.lastChanged")}
               </p>
             </div>
             <Button variant="outline" onClick={() => setShowPasswordDialog(true)}>
-              Change Password
+              {t("settings.security.changePassword")}
             </Button>
           </div>
         </CardContent>
@@ -237,24 +239,24 @@ export function SecuritySettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Smartphone className="h-5 w-5" />
-            Two-Factor Authentication
+            {t("settings.security.twoFactorTitle")}
           </CardTitle>
           <CardDescription>
-            Add an extra layer of security to your account.
+            {t("settings.security.twoFactorCardDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5 flex items-center gap-3">
               <div>
-                <Label>Two-Factor Authentication</Label>
+                <Label>{t("settings.security.twoFactor")}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Require a verification code when signing in
+                  {t("settings.security.twoFactorDesc")}
                 </p>
               </div>
               {mfaEnrolled && (
                 <Badge variant="secondary" className="bg-green-500/10 text-green-500">
-                  Enabled
+                  {t("settings.security.enabled")}
                 </Badge>
               )}
             </div>
@@ -271,18 +273,18 @@ export function SecuritySettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            Security Preferences
+            {t("settings.security.preferencesTitle")}
           </CardTitle>
           <CardDescription>
-            Configure security preferences for your account.
+            {t("settings.security.preferencesDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Session Timeout</Label>
+              <Label>{t("settings.security.sessionTimeout")}</Label>
               <p className="text-sm text-muted-foreground">
-                Automatically log out after inactivity
+                {t("settings.security.sessionTimeoutDesc")}
               </p>
             </div>
             <Select
@@ -295,20 +297,20 @@ export function SecuritySettings() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="15">15 minutes</SelectItem>
-                <SelectItem value="30">30 minutes</SelectItem>
-                <SelectItem value="60">1 hour</SelectItem>
-                <SelectItem value="120">2 hours</SelectItem>
-                <SelectItem value="0">Never</SelectItem>
+                <SelectItem value="15">{t("settings.security.min15")}</SelectItem>
+                <SelectItem value="30">{t("settings.security.min30")}</SelectItem>
+                <SelectItem value="60">{t("settings.security.hour1")}</SelectItem>
+                <SelectItem value="120">{t("settings.security.hour2")}</SelectItem>
+                <SelectItem value="0">{t("settings.security.never")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <Separator />
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Login Alerts</Label>
+              <Label>{t("settings.security.loginAlerts")}</Label>
               <p className="text-sm text-muted-foreground">
-                Get notified of new sign-ins to your account
+                {t("settings.security.loginAlertsDesc")}
               </p>
             </div>
             <Switch
@@ -323,17 +325,17 @@ export function SecuritySettings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Active Sessions</CardTitle>
+          <CardTitle>{t("settings.security.sessionsTitle")}</CardTitle>
           <CardDescription>
-            Sign out of every other device where this account is logged in.
+            {t("settings.security.sessionsDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Sign out other sessions</Label>
+              <Label>{t("settings.security.signOutOthers")}</Label>
               <p className="text-sm text-muted-foreground">
-                Revokes refresh tokens on every other device. This session stays signed in.
+                {t("settings.security.signOutOthersDesc")}
               </p>
             </div>
             <Button
@@ -342,7 +344,7 @@ export function SecuritySettings() {
               disabled={revokingSessions}
             >
               <LogOut className="h-4 w-4 mr-2" />
-              {revokingSessions ? "Signing out..." : "Sign out others"}
+              {revokingSessions ? t("settings.security.signingOut") : t("settings.security.signOutOthersButton")}
             </Button>
           </div>
         </CardContent>
@@ -352,25 +354,25 @@ export function SecuritySettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-5 w-5" />
-            Danger Zone
+            {t("settings.security.dangerZone")}
           </CardTitle>
           <CardDescription>
-            Irreversible and destructive actions.
+            {t("settings.security.dangerZoneDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Delete Account</Label>
+              <Label>{t("settings.security.deleteAccount")}</Label>
               <p className="text-sm text-muted-foreground">
-                Permanently delete your account and all data
+                {t("settings.security.deleteAccountDesc")}
               </p>
             </div>
             <Button
               variant="destructive"
-              onClick={() => toast.error("Account deletion requires confirmation")}
+              onClick={() => toast.error(t("settings.security.toastDeleteRequiresConfirm"))}
             >
-              Delete Account
+              {t("settings.security.deleteAccount")}
             </Button>
           </div>
         </CardContent>
@@ -380,14 +382,14 @@ export function SecuritySettings() {
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
+            <DialogTitle>{t("settings.security.changePasswordDialogTitle")}</DialogTitle>
             <DialogDescription>
-              Enter your current password and choose a new one.
+              {t("settings.security.changePasswordDialogDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="current-password">Current Password</Label>
+              <Label htmlFor="current-password">{t("settings.security.currentPassword")}</Label>
               <div className="relative">
                 <Input
                   id="current-password"
@@ -416,7 +418,7 @@ export function SecuritySettings() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
+              <Label htmlFor="new-password">{t("settings.security.newPassword")}</Label>
               <div className="relative">
                 <Input
                   id="new-password"
@@ -445,7 +447,7 @@ export function SecuritySettings() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm New Password</Label>
+              <Label htmlFor="confirm-password">{t("settings.security.confirmNewPassword")}</Label>
               <Input
                 id="confirm-password"
                 type="password"
@@ -461,10 +463,10 @@ export function SecuritySettings() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
-              Cancel
+              {t("settings.security.cancel")}
             </Button>
             <Button onClick={handlePasswordChange} disabled={isChangingPassword}>
-              {isChangingPassword ? "Updating..." : "Update Password"}
+              {isChangingPassword ? t("settings.security.updating") : t("settings.security.updatePassword")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -479,9 +481,9 @@ export function SecuritySettings() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Enable Two-Factor Authentication</DialogTitle>
+            <DialogTitle>{t("settings.security.enable2FATitle")}</DialogTitle>
             <DialogDescription>
-              Scan the QR code with your authenticator app to enable 2FA.
+              {t("settings.security.enable2FADesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
@@ -493,19 +495,19 @@ export function SecuritySettings() {
                 />
               ) : (
                 <div className="w-40 h-40 bg-foreground/10 rounded flex items-center justify-center text-muted-foreground">
-                  Loading…
+                  {t("settings.security.qrLoading")}
                 </div>
               )}
             </div>
             {mfaSecret && (
               <p className="text-xs text-muted-foreground text-center break-all">
-                Or enter this secret manually: <span className="font-mono">{mfaSecret}</span>
+                {t("settings.security.enterSecretManually")} <span className="font-mono">{mfaSecret}</span>
               </p>
             )}
             <div className="space-y-2">
-              <Label>Verification Code</Label>
+              <Label>{t("settings.security.verificationCode")}</Label>
               <Input
-                placeholder="Enter 6-digit code"
+                placeholder={t("settings.security.enterCodePlaceholder")}
                 maxLength={6}
                 inputMode="numeric"
                 value={mfaCode}
@@ -515,10 +517,10 @@ export function SecuritySettings() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={cancel2FA} disabled={mfaBusy}>
-              Cancel
+              {t("settings.security.cancel")}
             </Button>
             <Button onClick={verify2FA} disabled={mfaBusy || mfaCode.length !== 6}>
-              {mfaBusy ? "Verifying..." : "Enable 2FA"}
+              {mfaBusy ? t("settings.security.verifying") : t("settings.security.enable2FA")}
             </Button>
           </DialogFooter>
         </DialogContent>

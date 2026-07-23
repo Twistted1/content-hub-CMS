@@ -6,30 +6,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { useUserPreferencesStore } from "@/stores/useUserPreferencesStore";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 export function NotificationSettings() {
+  const { t } = useTranslation();
   const { notifications, updateNotifications } = useUserPreferencesStore();
 
   const handleToggle = (key: keyof typeof notifications) => {
     updateNotifications({ [key]: !notifications[key] });
-    toast.success("Notification preference updated");
+    toast.success(t("settings.notifications.toastUpdated"));
   };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Notification Channels</CardTitle>
+          <CardTitle>{t("settings.notifications.channelsTitle")}</CardTitle>
           <CardDescription>
-            Choose how you want to receive notifications.
+            {t("settings.notifications.channelsDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Email Notifications</Label>
+              <Label>{t("settings.notifications.email")}</Label>
               <p className="text-sm text-muted-foreground">
-                Receive notifications via email
+                {t("settings.notifications.emailDesc")}
               </p>
             </div>
             <Switch
@@ -40,9 +42,9 @@ export function NotificationSettings() {
           <Separator />
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Push Notifications</Label>
+              <Label>{t("settings.notifications.push")}</Label>
               <p className="text-sm text-muted-foreground">
-                Receive browser push notifications
+                {t("settings.notifications.pushDesc")}
               </p>
             </div>
             <Switch
@@ -53,9 +55,9 @@ export function NotificationSettings() {
           <Separator />
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Weekly Digest</Label>
+              <Label>{t("settings.notifications.weeklyDigest")}</Label>
               <p className="text-sm text-muted-foreground">
-                Receive a weekly summary of your activity
+                {t("settings.notifications.weeklyDigestDesc")}
               </p>
             </div>
             <Switch
@@ -68,17 +70,17 @@ export function NotificationSettings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Activity Notifications</CardTitle>
+          <CardTitle>{t("settings.notifications.activityTitle")}</CardTitle>
           <CardDescription>
-            Choose which activities you want to be notified about.
+            {t("settings.notifications.activityDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Post Published</Label>
+              <Label>{t("settings.notifications.postPublished")}</Label>
               <p className="text-sm text-muted-foreground">
-                When a scheduled post is published
+                {t("settings.notifications.postPublishedDesc")}
               </p>
             </div>
             <Switch
@@ -89,9 +91,9 @@ export function NotificationSettings() {
           <Separator />
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Automation Completed</Label>
+              <Label>{t("settings.notifications.automationCompleted")}</Label>
               <p className="text-sm text-muted-foreground">
-                When an automation finishes running
+                {t("settings.notifications.automationCompletedDesc")}
               </p>
             </div>
             <Switch
@@ -102,9 +104,9 @@ export function NotificationSettings() {
           <Separator />
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Team Updates</Label>
+              <Label>{t("settings.notifications.teamUpdates")}</Label>
               <p className="text-sm text-muted-foreground">
-                When team members join or make changes
+                {t("settings.notifications.teamUpdatesDesc")}
               </p>
             </div>
             <Switch
@@ -117,17 +119,17 @@ export function NotificationSettings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Marketing</CardTitle>
+          <CardTitle>{t("settings.notifications.marketingTitle")}</CardTitle>
           <CardDescription>
-            Manage marketing and promotional communications.
+            {t("settings.notifications.marketingDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Marketing Emails</Label>
+              <Label>{t("settings.notifications.marketingEmails")}</Label>
               <p className="text-sm text-muted-foreground">
-                Receive product updates and promotional offers
+                {t("settings.notifications.marketingEmailsDesc")}
               </p>
             </div>
             <Switch

@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPreferencesStore } from "@/stores/useUserPreferencesStore";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const timezones = [
   { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
@@ -41,6 +42,7 @@ interface ProfileForm {
 }
 
 export function ProfileSettings() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { profile: localProfile, updateProfile: updateLocalProfile } = useUserPreferencesStore();
 
@@ -71,7 +73,7 @@ export function ProfileSettings() {
         .single();
 
       if (error) {
-        toast.error("Failed to load profile");
+        toast.error(t("settings.profile.toastLoadFailed"));
       } else if (data) {
         setFormData((prev) => ({
           ...prev,
@@ -105,7 +107,7 @@ export function ProfileSettings() {
       .eq("user_id", user.id);
 
     if (error) {
-      toast.error("Failed to save profile");
+      toast.error(t("settings.profile.toastSaveFailed"));
     } else {
       // Also persist local-only fields to the Zustand store
       updateLocalProfile({
@@ -117,7 +119,7 @@ export function ProfileSettings() {
         bio: formData.bio,
       });
       setIsDirty(false);
-      toast.success("Profile updated successfully");
+      toast.success(t("settings.profile.toastSaved"));
     }
     setIsSaving(false);
   };
@@ -125,11 +127,11 @@ export function ProfileSettings() {
   const handleAvatarUpload = async (file: File) => {
     if (!user) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
+      toast.error(t("settings.profile.toastNotImage"));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB");
+      toast.error(t("settings.profile.toastTooLarge"));
       return;
     }
     setIsUploadingAvatar(true);
@@ -149,9 +151,9 @@ export function ProfileSettings() {
         .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
         .eq("user_id", user.id);
       setFormData(prev => ({ ...prev, avatarUrl: publicUrl }));
-      toast.success("Profile picture updated!");
+      toast.success(t("settings.profile.toastAvatarUpdated"));
     } catch (err: any) {
-      toast.error(err?.message || "Failed to upload avatar");
+      toast.error(err?.message || t("settings.profile.toastAvatarUploadFailed"));
     } finally {
       setIsUploadingAvatar(false);
       if (avatarInputRef.current) avatarInputRef.current.value = "";
@@ -165,7 +167,7 @@ export function ProfileSettings() {
       .update({ avatar_url: null, updated_at: new Date().toISOString() })
       .eq("user_id", user.id);
     setFormData(prev => ({ ...prev, avatarUrl: "" }));
-    toast.success("Profile picture removed");
+    toast.success(t("settings.profile.toastAvatarRemoved"));
   };
 
   const getInitials = () => {
@@ -185,9 +187,9 @@ export function ProfileSettings() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Profile Picture</CardTitle>
+          <CardTitle>{t("settings.profile.pictureTitle")}</CardTitle>
           <CardDescription>
-            Update your profile picture. This will be visible to your team members.
+            {t("settings.profile.pictureDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center gap-6">
@@ -197,7 +199,7 @@ export function ProfileSettings() {
             type="file"
             accept="image/*"
             className="hidden"
-            aria-label="Upload profile picture"
+            aria-label={t("settings.profile.uploadAria")}
             onChange={e => {
               const file = e.target.files?.[0];
               if (file) handleAvatarUpload(file);
@@ -228,7 +230,7 @@ export function ProfileSettings() {
                 disabled={isUploadingAvatar}
                 onClick={() => avatarInputRef.current?.click()}
               >
-                {isUploadingAvatar ? "Uploading…" : "Upload new picture"}
+                {isUploadingAvatar ? t("settings.profile.uploading") : t("settings.profile.uploadNew")}
               </Button>
               {formData.avatarUrl && (
                 <Button
@@ -237,12 +239,12 @@ export function ProfileSettings() {
                   className="text-destructive hover:text-destructive"
                   onClick={handleRemoveAvatar}
                 >
-                  Remove
+                  {t("settings.profile.remove")}
                 </Button>
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              JPG, PNG, GIF or WebP · Max 5MB · Min 200×200px
+              {t("settings.profile.fileHint")}
             </p>
           </div>
         </CardContent>
@@ -250,15 +252,15 @@ export function ProfileSettings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
+          <CardTitle>{t("settings.profile.infoTitle")}</CardTitle>
           <CardDescription>
-            Update your personal details and contact information.
+            {t("settings.profile.infoDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="displayName">Full Name</Label>
+              <Label htmlFor="displayName">{t("settings.profile.fullName")}</Label>
               <Input
                 id="displayName"
                 value={formData.displayName}
@@ -266,7 +268,7 @@ export function ProfileSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">{t("settings.profile.emailAddress")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -279,7 +281,7 @@ export function ProfileSettings() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">{t("settings.profile.phoneNumber")}</Label>
               <Input
                 id="phone"
                 value={formData.phone}
@@ -287,7 +289,7 @@ export function ProfileSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="companyName">Company</Label>
+              <Label htmlFor="companyName">{t("settings.profile.company")}</Label>
               <Input
                 id="companyName"
                 value={formData.companyName}
@@ -298,7 +300,7 @@ export function ProfileSettings() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
+              <Label htmlFor="location">{t("settings.profile.location")}</Label>
               <Input
                 id="location"
                 value={formData.location}
@@ -306,13 +308,13 @@ export function ProfileSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="timezone">Timezone</Label>
+              <Label htmlFor="timezone">{t("settings.profile.timezone")}</Label>
               <Select
                 value={formData.timezone}
                 onValueChange={(value) => handleChange("timezone", value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select timezone" />
+                  <SelectValue placeholder={t("settings.profile.selectTimezone")} />
                 </SelectTrigger>
                 <SelectContent>
                   {timezones.map((tz) => (
@@ -326,13 +328,13 @@ export function ProfileSettings() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
+            <Label htmlFor="bio">{t("settings.profile.bio")}</Label>
             <Textarea
               id="bio"
               value={formData.bio}
               onChange={(e) => handleChange("bio", e.target.value)}
               rows={3}
-              placeholder="Tell us about yourself..."
+              placeholder={t("settings.profile.bioPlaceholder")}
             />
           </div>
         </CardContent>
@@ -363,7 +365,7 @@ export function ProfileSettings() {
           }}
           disabled={!isDirty || isSaving}
         >
-          Cancel
+          {t("settings.profile.cancel")}
         </Button>
         <Button onClick={handleSave} disabled={!isDirty || isSaving}>
           {isSaving ? (
@@ -371,7 +373,7 @@ export function ProfileSettings() {
           ) : (
             <Save className="h-4 w-4 mr-2" />
           )}
-          Save Changes
+          {t("settings.profile.saveChanges")}
         </Button>
       </div>
     </div>

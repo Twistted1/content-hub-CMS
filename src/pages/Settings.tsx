@@ -10,8 +10,10 @@ import { BillingSettings } from "@/components/settings/BillingSettings";
 import { IntegrationsSettings } from "@/components/settings/IntegrationsSettings";
 import { DataSettings } from "@/components/settings/DataSettings";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function Settings() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "profile";
@@ -34,9 +36,9 @@ export default function Settings() {
             <ChevronLeft className="h-6 w-6" />
           </Button>
           <div>
-            <h1 className="page-title mb-2">Settings</h1>
+            <h1 className="page-title mb-2">{t("settings.header.title")}</h1>
             <p className="text-sm text-muted-foreground font-medium opacity-60">
-              Configure your neural parameters and system preferences.
+              {t("settings.header.subtitle")}
             </p>
           </div>
         </div>
@@ -46,31 +48,31 @@ export default function Settings() {
           <TabsList className="bg-white/[0.03] border border-white/[0.08] p-1.5 rounded-2xl h-auto flex flex-wrap max-w-fit">
             <TabsTrigger value="profile" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
               <User className="h-3.5 w-3.5" />
-              <span>Profile</span>
+              <span>{t("settings.tabs.profile")}</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
               <Bell className="h-3.5 w-3.5" />
-              <span>Alerts</span>
+              <span>{t("settings.tabs.alerts")}</span>
             </TabsTrigger>
             <TabsTrigger value="security" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
               <Shield className="h-3.5 w-3.5" />
-              <span>Security</span>
+              <span>{t("settings.tabs.security")}</span>
             </TabsTrigger>
             <TabsTrigger value="billing" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
               <CreditCard className="h-3.5 w-3.5" />
-              <span>Billing</span>
+              <span>{t("settings.tabs.billing")}</span>
             </TabsTrigger>
             <TabsTrigger value="integrations" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
               <Link2 className="h-3.5 w-3.5" />
-              <span>Links</span>
+              <span>{t("settings.tabs.links")}</span>
             </TabsTrigger>
             <TabsTrigger value="data" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
               <Database className="h-3.5 w-3.5" />
-              <span>Data</span>
+              <span>{t("settings.tabs.data")}</span>
             </TabsTrigger>
             <TabsTrigger value="appearance" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
               <Palette className="h-3.5 w-3.5" />
-              <span>Theme</span>
+              <span>{t("settings.tabs.theme")}</span>
             </TabsTrigger>
           </TabsList>
 
