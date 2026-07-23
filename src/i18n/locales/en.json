@@ -56,8 +56,7 @@
     "stats": {
       "totalPosts": "Total Posts",
       "scheduledPosts": "Scheduled Posts",
-      "publishedPosts": "Published Posts",
-      "engagement": "Engagement"
+      "publishedPosts": "Published Posts"
     },
     "greeting": {
       "morning": "Good morning",
@@ -78,7 +77,6 @@
       "allClear": "All clear",
       "publishedBadge": "This week",
       "vsLastWeek": "vs last week",
-      "engagementBadge": "Avg rate",
       "autoSuccess": "Auto Success",
       "liveBadge": "Live",
       "velocityInsights": "Velocity Insights",
@@ -132,14 +130,21 @@
       "itemsInQueueSuffix": "items in queue",
       "readyToDeploySuffix": "ready to deploy",
       "postsLower": "posts",
-      "goalFollowerGrowth": "Follower Growth",
-      "goalAvgEngagement": "Avg Engagement",
       "goalMonthlyOutput": "Monthly Output",
-      "goalWebsiteTraffic": "Website Traffic",
       "publishedSuccessfully": "published successfully",
       "scheduledLower": "scheduled",
       "draftSaved": "draft saved",
-      "minAgo": "m ago"
+      "minAgo": "m ago",
+      "connectedPlatforms": "Connected Platforms",
+      "platformsBadge": "Networks",
+      "runsCount": "{{count}} runs",
+      "noRunsYet": "No runs yet",
+      "goalScheduledQueue": "Scheduled Queue",
+      "goalPublishRate": "Publish Rate",
+      "goalAutomationCoverage": "Automation Coverage",
+      "addedThisWeek": "+{{count}} this week",
+      "automationsCount": "{{count}} automations",
+      "noHealthData": "No platform activity yet. Connect a platform and schedule a post to see it here."
     }
   },
   "settings": {
@@ -1245,7 +1250,6 @@
     "totalTemplates": "Total Templates",
     "timesUsed": "Times Used",
     "favorites": "Favorites",
-    "teamMembers": "Team Members",
     "categories": "Categories",
     "searchPlaceholder": "Search templates...",
     "all": "All",
@@ -1274,7 +1278,6 @@
     "templateCreated": "Template created successfully",
     "templateDuplicated": "Template duplicated",
     "removedFromFavorites": "Removed from favorites",
-    "addedToFavorites": "Added to favorites",
     "templateDeleted": "Template deleted",
     "contentCopied": "Template content copied to clipboard!",
     "templateApplied": "Template applied!",
@@ -1286,7 +1289,13 @@
     "catEngagement": "Engagement",
     "catContent": "Content",
     "catSocialProof": "Social Proof",
-    "import": "Import"
+    "import": "Import",
+    "recentlyAdded": "Recently Added",
+    "createdThisMonth": "+{{count}} this month",
+    "topCategory": "Top: {{category}}",
+    "newThisWeek": "+{{count}} this week",
+    "addedToFavorites": "Added to favorites",
+    "entityName": "Template"
   },
   "contentModel": {
     "title": "Content Models",

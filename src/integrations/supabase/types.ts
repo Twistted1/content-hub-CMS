@@ -892,6 +892,48 @@ export type Database = {
           },
         ]
       }
+      templates: {
+        Row: {
+          category: string
+          content: string | null
+          created_at: string
+          description: string
+          id: string
+          is_favorite: boolean
+          name: string
+          platforms: string[]
+          updated_at: string
+          user_id: string
+          uses: number
+        }
+        Insert: {
+          category?: string
+          content?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          is_favorite?: boolean
+          name: string
+          platforms?: string[]
+          updated_at?: string
+          user_id: string
+          uses?: number
+        }
+        Update: {
+          category?: string
+          content?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          is_favorite?: boolean
+          name?: string
+          platforms?: string[]
+          updated_at?: string
+          user_id?: string
+          uses?: number
+        }
+        Relationships: []
+      }
       user_platforms: {
         Row: {
           account_name: string

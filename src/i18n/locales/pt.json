@@ -56,8 +56,7 @@
     "stats": {
       "totalPosts": "Total de Posts",
       "scheduledPosts": "Posts Agendados",
-      "publishedPosts": "Posts Publicados",
-      "engagement": "Engajamento"
+      "publishedPosts": "Posts Publicados"
     },
     "greeting": {
       "morning": "Bom dia",
@@ -78,7 +77,6 @@
       "allClear": "Tudo certo",
       "publishedBadge": "Esta semana",
       "vsLastWeek": "vs semana passada",
-      "engagementBadge": "Taxa média",
       "autoSuccess": "Sucesso da Automação",
       "liveBadge": "Ao vivo",
       "velocityInsights": "Insights de Velocidade",
@@ -132,14 +130,21 @@
       "itemsInQueueSuffix": "itens na fila",
       "readyToDeploySuffix": "prontos para publicar",
       "postsLower": "posts",
-      "goalFollowerGrowth": "Crescimento de Seguidores",
-      "goalAvgEngagement": "Engajamento Médio",
       "goalMonthlyOutput": "Produção Mensal",
-      "goalWebsiteTraffic": "Tráfego do Site",
       "publishedSuccessfully": "publicado com sucesso",
       "scheduledLower": "agendado",
       "draftSaved": "rascunho salvo",
-      "minAgo": "min atrás"
+      "minAgo": "min atrás",
+      "connectedPlatforms": "Plataformas Conectadas",
+      "platformsBadge": "Redes",
+      "runsCount": "{{count}} execuções",
+      "noRunsYet": "Nenhuma execução ainda",
+      "goalScheduledQueue": "Fila de Agendamento",
+      "goalPublishRate": "Taxa de Publicação",
+      "goalAutomationCoverage": "Cobertura de Automação",
+      "addedThisWeek": "+{{count}} esta semana",
+      "automationsCount": "{{count}} automações",
+      "noHealthData": "Ainda não há atividade de plataforma. Conecte uma plataforma e agende uma postagem para ver aqui."
     }
   },
   "settings": {
@@ -1245,7 +1250,6 @@
     "totalTemplates": "Total de Modelos",
     "timesUsed": "Vezes Usado",
     "favorites": "Favoritos",
-    "teamMembers": "Membros da Equipe",
     "categories": "Categorias",
     "searchPlaceholder": "Pesquisar modelos...",
     "all": "Todos",
@@ -1274,7 +1278,6 @@
     "templateCreated": "Modelo criado com sucesso",
     "templateDuplicated": "Modelo duplicado",
     "removedFromFavorites": "Removido dos favoritos",
-    "addedToFavorites": "Adicionado aos favoritos",
     "templateDeleted": "Modelo excluído",
     "contentCopied": "Conteúdo do modelo copiado para a área de transferência!",
     "templateApplied": "Modelo aplicado!",
@@ -1286,7 +1289,13 @@
     "catEngagement": "Engajamento",
     "catContent": "Conteúdo",
     "catSocialProof": "Prova Social",
-    "import": "Importar"
+    "import": "Importar",
+    "recentlyAdded": "Adicionados Recentemente",
+    "createdThisMonth": "+{{count}} este mês",
+    "topCategory": "Principal: {{category}}",
+    "newThisWeek": "+{{count}} esta semana",
+    "addedToFavorites": "Adicionado aos favoritos",
+    "entityName": "Modelo"
   },
   "contentModel": {
     "title": "Modelos de Conteúdo",

@@ -5,8 +5,10 @@ import { usePosts } from "@/hooks/usePosts";
 import { useAuth } from "@/hooks/useAuth";
 import { useAutomations } from "@/hooks/useAutomations";
 import { useNotes } from "@/hooks/useNotes";
+import { usePlatforms } from "@/hooks/usePlatforms";
+import { usePlatformOAuth, DirectPlatform } from "@/hooks/usePlatformOAuth";
 import {
-  format, subDays, isToday, isSameDay,
+  format, subDays, subMonths, isToday, isSameDay,
   startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek,
 } from "date-fns";
 import {
@@ -147,8 +149,10 @@ const Index = () => {
   const stats      = useDashboardStats();
   const { posts }  = usePosts();
   const { user }   = useAuth();
-  const { automations } = useAutomations();
+  const { automations, automationRuns } = useAutomations();
   const { notes }  = useNotes();
+  const { platforms: userPlatforms } = usePlatforms();
+  const { isConnected } = usePlatformOAuth();
   const navigate   = useNavigate();
   const [now, setNow] = useState(new Date());
 
@@ -196,22 +200,89 @@ const Index = () => {
   const heatWeeks: typeof heatCells[] = [];
   for (let i = 0; i < heatCells.length; i += 7) heatWeeks.push(heatCells.slice(i, i + 7));
 
-  // Platform health
-  const platformHealth = [
-    { key: "youtube",   queued: 8,  pct: 92 },
-    { key: "tiktok",    queued: 14, pct: 98 },
-    { key: "instagram", queued: 21, pct: 95 },
-    { key: "twitter",   queued: 21, pct: 97 },
-    { key: "linkedin",  queued: 8,  pct: 88 },
-    { key: "facebook",  queued: 7,  pct: 75 },
-  ];
+  // Platform health — computed from real posts, not fabricated. "pct" is the
+  // share of that platform's posts which have actually been published.
+  const CORE_PLATFORM_IDS = ["youtube", "tiktok", "instagram", "twitter", "linkedin", "facebook"];
+  const platformHealth = CORE_PLATFORM_IDS.map((key) => {
+    const platformPosts = posts.filter(p => (p as any).platforms?.some((pp: any) => pp.platform === key));
+    const queued = platformPosts.filter(p => p.status === "scheduled").length;
+    const publishedCount = platformPosts.filter(p => p.status === "published").length;
+    const pct = platformPosts.length > 0 ? Math.round((publishedCount / platformPosts.length) * 100) : 0;
+    return { key, queued, pct, hasActivity: platformPosts.length > 0 };
+  }).filter(p => p.hasActivity).sort((a, b) => b.queued - a.queued);
 
-  // Goals
+  // Connected platforms — real connection status (user_platforms + direct OAuth)
+  const connectedPlatformsCount = CORE_PLATFORM_IDS.filter((id) =>
+    userPlatforms.some(up => up.platformType === id) ||
+    ((id === "linkedin" || id === "twitter") && isConnected(id as DirectPlatform))
+  ).length;
+
+  // Automation success rate — real, from automation_runs history
+  const completedRuns = automationRuns.filter(r => r.status === "success" || r.status === "failed");
+  const successRuns = automationRuns.filter(r => r.status === "success").length;
+  const autoSuccessRate = completedRuns.length > 0 ? Math.round((successRuns / completedRuns.length) * 100) : null;
+  const activeAutomationsCount = automations.filter((a: any) => a.status === "active").length;
+
+  // Month-over-month trend for Total Posts (created)
+  const startThisMonth = startOfMonth(now);
+  const startLastMonth = startOfMonth(subMonths(now, 1));
+  const endLastMonth = endOfMonth(subMonths(now, 1));
+  const createdThisMonth = posts.filter(p => p.createdAt && new Date(p.createdAt) >= startThisMonth).length;
+  const createdLastMonth = posts.filter(p => p.createdAt && new Date(p.createdAt) >= startLastMonth && new Date(p.createdAt) <= endLastMonth).length;
+  const totalPostsTrendUp = createdThisMonth >= createdLastMonth;
+
+  // Week-over-week trend for Published
+  const startThisWeek = startOfWeek(now);
+  const startLastWeek = startOfWeek(subDays(now, 7));
+  const endLastWeek = endOfWeek(subDays(now, 7));
+  const publishedThisWeek = posts.filter(p => p.status === "published" && p.publishedAt && new Date(p.publishedAt) >= startThisWeek).length;
+  const publishedLastWeek = posts.filter(p => p.status === "published" && p.publishedAt && new Date(p.publishedAt) >= startLastWeek && new Date(p.publishedAt) <= endLastWeek).length;
+  const publishedTrendUp = publishedThisWeek >= publishedLastWeek;
+
+  // Newly scheduled this week (real)
+  const scheduledThisWeek = posts.filter(p => p.status === "scheduled" && p.createdAt && new Date(p.createdAt) >= subDays(now, 7)).length;
+
+  // Overall publish rate (real)
+  const publishRatePct = stats.totalPosts > 0 ? Math.round((stats.publishedPosts / stats.totalPosts) * 100) : 0;
+
+  // Posts published so far this calendar month (real)
+  const publishedThisMonth = posts.filter(p => p.status === "published" && p.publishedAt && new Date(p.publishedAt) >= startThisMonth).length;
+  const publishedLastMonth = posts.filter(p => p.status === "published" && p.publishedAt && new Date(p.publishedAt) >= startLastMonth && new Date(p.publishedAt) <= endLastMonth).length;
+
+  // Goals — all derived from real posts/automations data, no fabricated numbers
   const goals = [
-    { label: t("dashboard.home.goalFollowerGrowth"),  value: "2,840", target: "5,000",  pct: 57, change: "+12.4%", color: "bg-violet-500" },
-    { label: t("dashboard.home.goalAvgEngagement"),   value: "6.2%",  target: "8%",     pct: 78, change: "+1.1%",  color: "bg-blue-500"   },
-    { label: t("dashboard.home.goalMonthlyOutput"),   value: `${stats.publishedPosts}`,  target: `90 ${t("dashboard.home.postsLower")}`, pct: Math.min(100, Math.round((stats.publishedPosts / 90) * 100)), change: "+23%", color: "bg-emerald-500" },
-    { label: t("dashboard.home.goalWebsiteTraffic"),  value: "8,400", target: "15,000", pct: 56, change: "+18%",   color: "bg-amber-500"  },
+    {
+      label: t("dashboard.home.goalMonthlyOutput"),
+      value: `${publishedThisMonth}`,
+      target: `90 ${t("dashboard.home.postsLower")}`,
+      pct: Math.min(100, Math.round((publishedThisMonth / 90) * 100)),
+      change: publishedLastMonth > 0 ? `${publishedThisMonth - publishedLastMonth >= 0 ? "+" : ""}${publishedThisMonth - publishedLastMonth} ${t("dashboard.home.postsLower")}` : "",
+      color: "bg-emerald-500",
+    },
+    {
+      label: t("dashboard.home.goalScheduledQueue"),
+      value: `${stats.scheduledPosts}`,
+      target: `20 ${t("dashboard.home.postsLower")}`,
+      pct: Math.min(100, Math.round((stats.scheduledPosts / 20) * 100)),
+      change: scheduledThisWeek > 0 ? t("dashboard.home.addedThisWeek", { count: scheduledThisWeek }) : "",
+      color: "bg-blue-500",
+    },
+    {
+      label: t("dashboard.home.goalPublishRate"),
+      value: `${publishRatePct}%`,
+      target: "100%",
+      pct: publishRatePct,
+      change: "",
+      color: "bg-violet-500",
+    },
+    {
+      label: t("dashboard.home.goalAutomationCoverage"),
+      value: `${activeAutomationsCount}/${automations.length}`,
+      target: t("dashboard.home.automationsCount", { count: automations.length }),
+      pct: automations.length > 0 ? Math.round((activeAutomationsCount / automations.length) * 100) : 0,
+      change: "",
+      color: "bg-amber-500",
+    },
   ];
 
   // Activity feed
@@ -274,12 +345,12 @@ const Index = () => {
 
         {/* ── 6 Stat Cards ────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
-          <StatCard title={t("dashboard.stats.totalPosts")}  value={stats.totalPosts}    badge={t("dashboard.home.totalPostsBadge")}   sub={t("dashboard.home.vsLastMonth")} trendUp  color="text-foreground" />
+          <StatCard title={t("dashboard.stats.totalPosts")}  value={stats.totalPosts}    badge={t("dashboard.home.totalPostsBadge")}   sub={t("dashboard.home.vsLastMonth")} trendUp={totalPostsTrendUp}  color="text-foreground" />
           <StatCard title={t("dashboard.home.scheduled")}    value={stats.scheduledPosts} badge={t("dashboard.home.scheduledBadge")}  sub={t("dashboard.home.todayCount", { count: todayQueue.length })} trendUp color="text-blue-400" />
           <StatCard title={t("dashboard.home.drafts")}       value={stats.draftPosts}    badge={t("dashboard.home.draftsBadge")} sub={stats.draftPosts > 0 ? t("dashboard.home.needReview", { count: stats.draftPosts }) : t("dashboard.home.allClear")} color="text-amber-400" />
-          <StatCard title={t("dashboard.stats.publishedPosts")}    value={stats.publishedPosts} badge={t("dashboard.home.publishedBadge")} sub={t("dashboard.home.vsLastWeek")} trendUp color="text-emerald-400" />
-          <StatCard title={t("dashboard.stats.engagement")}   value="6.2%"                badge={t("dashboard.home.engagementBadge")}   sub="1.1%" trendUp color="text-violet-400" />
-          <StatCard title={t("dashboard.home.autoSuccess")} value="98.5%"               badge={t("dashboard.home.liveBadge")}       sub="0.3%" trendUp color="text-primary" />
+          <StatCard title={t("dashboard.stats.publishedPosts")}    value={stats.publishedPosts} badge={t("dashboard.home.publishedBadge")} sub={t("dashboard.home.vsLastWeek")} trendUp={publishedTrendUp} color="text-emerald-400" />
+          <StatCard title={t("dashboard.home.connectedPlatforms")} value={connectedPlatformsCount} badge={t("dashboard.home.platformsBadge")} color="text-violet-400" />
+          <StatCard title={t("dashboard.home.autoSuccess")} value={autoSuccessRate !== null ? `${autoSuccessRate}%` : "—"} badge={t("dashboard.home.liveBadge")} sub={completedRuns.length > 0 ? t("dashboard.home.runsCount", { count: completedRuns.length }) : t("dashboard.home.noRunsYet")} trendUp={autoSuccessRate !== null ? autoSuccessRate >= 80 : undefined} color="text-primary" />
         </div>
 
         {/* ── Activity Chart + Platform Health ────────────────────────── */}
@@ -333,6 +404,12 @@ const Index = () => {
               </button>
             </div>
             <div className="space-y-3">
+              {platformHealth.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground/30">
+                  <BarChart3 className="w-10 h-10 mb-3 opacity-10" />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-center">{t("dashboard.home.noHealthData")}</p>
+                </div>
+              )}
               {platformHealth.map(({ key, queued, pct }) => {
                 const cfg = PLATFORM_CFG[key];
                 if (!cfg) return null;
@@ -591,9 +668,11 @@ const Index = () => {
             <div className="grid grid-cols-2 gap-4">
               {goals.map(g => (
                 <div key={g.label} className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 group hover:border-primary/30 transition-all">
-                  <div className="flex justify-end mb-2">
-                    <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg">{g.change}</span>
-                  </div>
+                  {g.change && (
+                    <div className="flex justify-end mb-2">
+                      <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg">{g.change}</span>
+                    </div>
+                  )}
                   <p className="text-3xl font-black text-white tracking-tighter mb-1">{g.value}</p>
                   <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60 mb-1">{g.label}</p>
                   <p className="text-[9px] text-muted-foreground/40 font-bold">{t("dashboard.home.target", { value: g.target })}</p>

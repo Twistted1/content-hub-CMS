@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { usePosts } from "@/hooks/usePosts";
+import { useTemplates, type Template } from "@/hooks/useTemplates";
 import { getNextOptimalDate } from "@/utils/scheduling";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,87 +69,6 @@ const CATEGORY_KEYS: Record<string, string> = {
   "Content": "templates.catContent",
   "Social Proof": "templates.catSocialProof",
 };
-
-interface Template {
-  id: number;
-  name: string;
-  description: string;
-  category: string;
-  platforms: string[];
-  uses: number;
-  isFavorite: boolean;
-  createdAt: string;
-  content?: string;
-}
-
-const initialTemplates: Template[] = [
-  {
-    id: 1,
-    name: "Product Launch Announcement",
-    description: "Announce new products with impact across all platforms",
-    category: "Marketing",
-    platforms: ["instagram", "twitter", "linkedin"],
-    uses: 234,
-    isFavorite: true,
-    createdAt: "2024-01-15",
-    content: "🚀 Exciting news! We're thrilled to announce [Product Name]...",
-  },
-  {
-    id: 2,
-    name: "Weekly Newsletter",
-    description: "Engaging email template for weekly updates",
-    category: "Email",
-    platforms: ["email"],
-    uses: 156,
-    isFavorite: true,
-    createdAt: "2024-01-10",
-    content: "Hello [Name],\n\nHere's what's new this week...",
-  },
-  {
-    id: 3,
-    name: "Social Media Contest",
-    description: "Run engaging contests and giveaways",
-    category: "Engagement",
-    platforms: ["instagram", "facebook", "twitter"],
-    uses: 89,
-    isFavorite: false,
-    createdAt: "2024-01-08",
-    content: "🎉 GIVEAWAY TIME! 🎉\n\nTo enter:\n1. Follow us\n2. Like this post\n3. Tag 2 friends",
-  },
-  {
-    id: 4,
-    name: "Case Study",
-    description: "Professional case study format for success stories",
-    category: "Content",
-    platforms: ["linkedin", "email"],
-    uses: 67,
-    isFavorite: false,
-    createdAt: "2024-01-05",
-    content: "# Case Study: [Client Name]\n\n## Challenge\n\n## Solution\n\n## Results",
-  },
-  {
-    id: 5,
-    name: "Event Promotion",
-    description: "Promote upcoming events and webinars",
-    category: "Marketing",
-    platforms: ["instagram", "facebook", "linkedin", "email"],
-    uses: 145,
-    isFavorite: true,
-    createdAt: "2024-01-03",
-    content: "📅 Mark your calendars!\n\nJoin us for [Event Name]...",
-  },
-  {
-    id: 6,
-    name: "Customer Testimonial",
-    description: "Showcase customer reviews and testimonials",
-    category: "Social Proof",
-    platforms: ["instagram", "twitter", "linkedin"],
-    uses: 112,
-    isFavorite: false,
-    createdAt: "2024-01-01",
-    content: '"[Quote from customer]"\n\n— [Customer Name], [Title]',
-  },
-];
 
 const categories = [
   { name: "All Templates", icon: FileText },
@@ -261,7 +181,7 @@ function TemplateCard({
 export default function Templates() {
   const { t } = useTranslation();
   const { addPost } = usePosts();
-  const [templates, setTemplates] = useState<Template[]>(initialTemplates);
+  const { templates, addTemplate, updateTemplate, deleteTemplate: removeTemplate, duplicateTemplate } = useTemplates();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All Templates");
   const [activeTab, setActiveTab] = useState("all");
@@ -299,11 +219,49 @@ export default function Templates() {
     return counts;
   }, [templates]);
 
+  const createdThisMonthCount = templates.filter(tpl => {
+    const created = new Date(tpl.createdAt);
+    const now = new Date();
+    return created.getFullYear() === now.getFullYear() && created.getMonth() === now.getMonth();
+  }).length;
+
+  const recentlyAddedCount = templates.filter(
+    tpl => new Date(tpl.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  ).length;
+
+  const topCategory = useMemo(() => {
+    const counts: Record<string, number> = {};
+    templates.forEach(tpl => { counts[tpl.category] = (counts[tpl.category] || 0) + 1; });
+    const entries = Object.entries(counts);
+    if (entries.length === 0) return null;
+    return entries.sort((a, b) => b[1] - a[1])[0][0];
+  }, [templates]);
+
   const stats = [
-    { label: t("templates.totalTemplates"), value: templates.length.toString(), icon: FileText, trend: "+3 this month" },
-    { label: t("templates.timesUsed"), value: templates.reduce((sum, tpl) => sum + tpl.uses, 0).toLocaleString(), icon: Copy, trend: "+18% vs last month" },
-    { label: t("templates.favorites"), value: templates.filter(tpl => tpl.isFavorite).length.toString(), icon: Star, trend: "Most used category" },
-    { label: t("templates.teamMembers"), value: "12", icon: Users, trend: "Using templates" },
+    {
+      label: t("templates.totalTemplates"),
+      value: templates.length.toString(),
+      icon: FileText,
+      trend: createdThisMonthCount > 0 ? t("templates.createdThisMonth", { count: createdThisMonthCount }) : "",
+    },
+    {
+      label: t("templates.timesUsed"),
+      value: templates.reduce((sum, tpl) => sum + tpl.uses, 0).toLocaleString(),
+      icon: Copy,
+      trend: "",
+    },
+    {
+      label: t("templates.favorites"),
+      value: templates.filter(tpl => tpl.isFavorite).length.toString(),
+      icon: Star,
+      trend: topCategory ? t("templates.topCategory", { category: t(CATEGORY_KEYS[topCategory] || topCategory) }) : "",
+    },
+    {
+      label: t("templates.recentlyAdded"),
+      value: recentlyAddedCount.toString(),
+      icon: Users,
+      trend: recentlyAddedCount > 0 ? t("templates.newThisWeek", { count: recentlyAddedCount }) : "",
+    },
   ];
 
   const resetForm = () => {
@@ -337,35 +295,22 @@ export default function Templates() {
     }
 
     if (editingTemplate) {
-      setTemplates((prev) =>
-        prev.map((tpl) =>
-          tpl.id === editingTemplate.id
-            ? {
-                ...tpl,
-                name: formName,
-                description: formDescription,
-                category: formCategory,
-                content: formContent,
-                platforms: formPlatforms,
-              }
-            : tpl
-        )
-      );
+      updateTemplate(editingTemplate.id, {
+        name: formName,
+        description: formDescription,
+        category: formCategory,
+        content: formContent,
+        platforms: formPlatforms,
+      });
       toast.success(t("templates.templateUpdated"));
     } else {
-      const newTemplate: Template = {
-        id: Date.now(),
+      addTemplate.mutate({
         name: formName,
         description: formDescription,
         category: formCategory,
         platforms: formPlatforms,
-        uses: 0,
-        isFavorite: false,
-        createdAt: new Date().toISOString().split("T")[0],
         content: formContent,
-      };
-      setTemplates((prev) => [newTemplate, ...prev]);
-      toast.success(t("templates.templateCreated"));
+      });
     }
 
     setDialogOpen(false);
@@ -373,39 +318,22 @@ export default function Templates() {
   };
 
   const handleDuplicate = (template: Template) => {
-    const duplicate: Template = {
-      ...template,
-      id: Date.now(),
-      name: `${template.name} (Copy)`,
-      uses: 0,
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    setTemplates((prev) => [duplicate, ...prev]);
-    toast.success(t("templates.templateDuplicated"));
+    duplicateTemplate.mutate(template);
   };
 
   const handleToggleFavorite = (template: Template) => {
-    setTemplates((prev) =>
-      prev.map((tpl) =>
-        tpl.id === template.id ? { ...tpl, isFavorite: !tpl.isFavorite } : tpl
-      )
-    );
+    updateTemplate(template.id, { isFavorite: !template.isFavorite });
     toast.success(template.isFavorite ? t("templates.removedFromFavorites") : t("templates.addedToFavorites"));
   };
 
   const handleDeleteConfirm = () => {
     if (!deleteTemplate) return;
-    setTemplates((prev) => prev.filter((tpl) => tpl.id !== deleteTemplate.id));
-    toast.success(t("templates.templateDeleted"));
+    removeTemplate(deleteTemplate.id);
     setDeleteTemplate(null);
   };
 
   const handleUseTemplate = (template: Template) => {
-    setTemplates((prev) =>
-      prev.map((tpl) =>
-        tpl.id === template.id ? { ...tpl, uses: tpl.uses + 1 } : tpl
-      )
-    );
+    updateTemplate(template.id, { uses: template.uses + 1 });
     if (template.content) {
       navigator.clipboard.writeText(template.content);
       toast.success(t("templates.contentCopied"));
@@ -454,25 +382,19 @@ export default function Templates() {
     }
 
     const items = Array.isArray(data) ? data : [data];
-    const newTemplates = items.map((item: any) => ({
-      id: Date.now() + Math.floor(Math.random() * 1000),
-      name: item.name || item.title || "Untitled Template",
-      description: item.description || "",
-      category: item.category || "General",
-      content: item.content || "",
-      platforms: item.platforms || [],
-      isFavorite: false,
-      uses: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }));
-    
-    setTemplates(prev => [...newTemplates, ...prev]);
-    toast.success(t("templates.importedTemplates", { count: newTemplates.length }));
+    items.forEach((item: any) => {
+      addTemplate.mutate({
+        name: item.name || item.title || "Untitled Template",
+        description: item.description || "",
+        category: item.category || "Content",
+        content: item.content || "",
+        platforms: item.platforms || [],
+      });
+    });
   };
 
   return (
-    <DragDropImport onImport={handleImport} entityName="Template">
+    <DragDropImport onImport={handleImport} entityName={t("templates.entityName")}>
       <DashboardLayout>
         <div className="space-y-6">
         {/* Header */}
@@ -501,7 +423,7 @@ export default function Templates() {
                   <div>
                     <p className="text-2xl font-bold">{stat.value}</p>
                     <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{stat.trend}</p>
+                    {stat.trend && <p className="text-xs text-muted-foreground mt-1">{stat.trend}</p>}
                   </div>
                 </div>
               </CardContent>
