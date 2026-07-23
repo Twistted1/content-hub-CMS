@@ -677,5 +677,23 @@
     "catEngagement": "Engagement",
     "catContent": "Content",
     "catSocialProof": "Social Proof"
+  },
+  "contentModel": {
+    "title": "Content Models",
+    "subtitle": "Schema Definition & Architectural Mapping",
+    "blueprintStatus": "Blueprint Status",
+    "defineModel": "Define Model",
+    "architecture": "ARCHITECTURE",
+    "visualMapping": "Visual Content Mapping",
+    "mappingDesc": "The Content Model defines how your articles, videos, and social posts interconnect. Mapping your schema here ensures the AI Agent can correctly distribute metadata across all platforms while maintaining SEO consistency.",
+    "crossPlatformSync": "Cross-Platform Sync",
+    "crossPlatformSyncDesc": "Auto-mapping fields from YouTube descriptions to Instagram captions and Twitter threads.",
+    "logicInjection": "Logic Injection",
+    "logicInjectionDesc": "Define conditional logic for when content should be promoted or archived based on velocity.",
+    "aiSchemaSuggest": "AI Schema Suggest",
+    "aiSchemaSuggestDesc": "Let the AI analyze your brand tone and suggest the optimal field structure for your content models.",
+    "runAnalysis": "Run Analysis",
+    "noCustomModels": "No Custom Models",
+    "usingDefaultBlueprints": "System is using default blueprints."
   }
 }

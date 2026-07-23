@@ -677,5 +677,23 @@
     "catEngagement": "Engajamento",
     "catContent": "Conteúdo",
     "catSocialProof": "Prova Social"
+  },
+  "contentModel": {
+    "title": "Modelos de Conteúdo",
+    "subtitle": "Definição de Esquema e Mapeamento Arquitetural",
+    "blueprintStatus": "Status do Blueprint",
+    "defineModel": "Definir Modelo",
+    "architecture": "ARQUITETURA",
+    "visualMapping": "Mapeamento Visual de Conteúdo",
+    "mappingDesc": "O Modelo de Conteúdo define como seus artigos, vídeos e posts sociais se interconectam. Mapear seu esquema aqui garante que o Agente de IA possa distribuir metadados corretamente entre todas as plataformas mantendo a consistência de SEO.",
+    "crossPlatformSync": "Sincronização entre Plataformas",
+    "crossPlatformSyncDesc": "Mapeamento automático de campos de descrições do YouTube para legendas do Instagram e threads do Twitter.",
+    "logicInjection": "Injeção de Lógica",
+    "logicInjectionDesc": "Defina a lógica condicional para quando o conteúdo deve ser promovido ou arquivado com base na velocidade.",
+    "aiSchemaSuggest": "Sugestão de Esquema por IA",
+    "aiSchemaSuggestDesc": "Deixe a IA analisar o tom da sua marca e sugerir a estrutura de campos ideal para seus modelos de conteúdo.",
+    "runAnalysis": "Executar Análise",
+    "noCustomModels": "Nenhum Modelo Personalizado",
+    "usingDefaultBlueprints": "O sistema está usando os blueprints padrão."
   }
 }
