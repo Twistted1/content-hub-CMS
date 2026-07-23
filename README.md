@@ -36,7 +36,7 @@ Fill in `.env` with your values (see `.env.example` for all required keys).
 npm run dev
 ```
 
-App runs at **http://localhost:8080**
+App runs at **http://localhost:5173**
 
 ## Supabase Setup
 

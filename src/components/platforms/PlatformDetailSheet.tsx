@@ -3,59 +3,21 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 import {
   CheckCircle2,
-  Heart,
-  TrendingUp,
   Clock,
   ExternalLink,
-  Sparkles,
-  MessageCircle,
+  FileText,
   Calendar,
-  Eye,
-  Share2,
-  Users,
   Settings,
-  Bell,
-  Shield,
 } from "lucide-react";
-import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { usePlatforms } from "@/hooks/usePlatforms";
-import { PlatformType } from "@/types";
-
-interface PlatformData {
-  id: string;
-  name: string;
-  icon: LucideIcon;
-  colorClass: string;
-  bgGradient: string;
-  connected: boolean;
-  username: string;
-  followers: number;
-  followersDisplay: string;
-  posts: number;
-  lastSync: string;
-  status: string;
-  stats: { views: string; engagement: string; shares: string };
-  weeklyGrowth: number;
-  topPost?: { likes: number; comments: number; title: string };
-  weeklyData: { day: string; followers: number; views: number }[];
-  schedule?: { pending: number; published: number };
-  subPlatforms?: string[];
-  dbId?: string;
-  settings?: {
-    autoPublish: boolean;
-    notifications: boolean;
-    analytics: boolean;
-    contentBackup: boolean;
-  };
-}
+import { formatDistanceToNow } from "date-fns";
+import { PlatformData } from "./PlatformCard";
 
 interface PlatformDetailSheetProps {
   platform: PlatformData | null;
@@ -66,7 +28,7 @@ interface PlatformDetailSheetProps {
 
 export function PlatformDetailSheet({ platform, open, onOpenChange, getPlatformColor }: PlatformDetailSheetProps) {
   const { updatePlatformSettings, disconnectPlatform } = usePlatforms();
-  
+
   const [localSettings, setLocalSettings] = useState(
     platform?.settings || {
       autoPublish: true,
@@ -101,24 +63,30 @@ export function PlatformDetailSheet({ platform, open, onOpenChange, getPlatformC
             <div>
               <SheetTitle className="flex items-center gap-2">
                 {platform.name}
-                <Badge className="bg-[hsl(var(--success))]/20 text-[hsl(var(--success))] border-0 text-[10px]">
+                <Badge
+                  className={cn(
+                    "border-0 text-[10px]",
+                    platform.status === "active"
+                      ? "bg-[hsl(var(--success))]/20 text-[hsl(var(--success))]"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
                   <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Active
+                  {platform.status === "active" ? "Active" : platform.connected ? "Paused" : "Not Connected"}
                 </Badge>
               </SheetTitle>
-              <SheetDescription>{platform.username}</SheetDescription>
+              <SheetDescription>{platform.username || "No account connected yet"}</SheetDescription>
             </div>
           </div>
         </SheetHeader>
 
         <div className="space-y-6 pb-6">
           {/* Key Stats */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             {[
-              { icon: Users, label: "Followers", value: platform.followersDisplay },
-              { icon: Eye, label: "Views", value: platform.stats.views },
-              { icon: Heart, label: "Engagement", value: platform.stats.engagement },
-              { icon: Share2, label: "Shares", value: platform.stats.shares },
+              { icon: FileText, label: "Total Posts", value: platform.totalPosts },
+              { icon: Calendar, label: "Scheduled", value: platform.scheduledCount },
+              { icon: CheckCircle2, label: "Published", value: platform.publishedCount },
             ].map((stat) => (
               <div key={stat.label} className="p-3 rounded-lg bg-muted/50 border border-border">
                 <div className="flex items-center gap-2 mb-1">
@@ -130,93 +98,69 @@ export function PlatformDetailSheet({ platform, open, onOpenChange, getPlatformC
             ))}
           </div>
 
-          {/* Growth Chart */}
-          <div>
-            <h4 className="text-sm font-medium text-foreground mb-3">Weekly Performance</h4>
-            <div className="h-[160px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={platform.weeklyData}>
-                  <defs>
-                    <linearGradient id={`gradient-${platform.id}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={color} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                      color: "hsl(var(--foreground))",
-                    }}
-                  />
-                  <Area type="monotone" dataKey="views" stroke={color} fill={`url(#gradient-${platform.id})`} strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
+          {/* Posts Chart */}
+          {platform.weeklyData.some((d) => d.posts > 0) && (
+            <div>
+              <h4 className="text-sm font-medium text-foreground mb-3">Posts Created (Last 7 Days)</h4>
+              <div className="h-[160px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={platform.weeklyData}>
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--popover))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        color: "hsl(var(--foreground))",
+                      }}
+                    />
+                    <Bar dataKey="posts" fill={color} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          </div>
-
-          {/* Growth */}
-          <div>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-muted-foreground">Weekly Growth</span>
-              <span className={platform.weeklyGrowth >= 0 ? "text-[hsl(var(--success))]" : "text-destructive"}>
-                {platform.weeklyGrowth >= 0 ? "+" : ""}{platform.weeklyGrowth}%
-              </span>
-            </div>
-            <Progress value={Math.min(Math.abs(platform.weeklyGrowth) * 10, 100)} className="h-2" />
-          </div>
+          )}
 
           <Separator />
 
-          {/* Top Post */}
-          {platform.topPost && (
+          {/* Latest Post */}
+          {platform.latestPost && (
             <div>
               <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                Top Performing Post
+                <FileText className="h-4 w-4 text-primary" />
+                Latest Post
               </h4>
               <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
-                <p className="text-sm font-medium text-foreground mb-2">"{platform.topPost.title}"</p>
-                <div className="flex gap-4 text-sm">
-                  <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <Heart className="h-4 w-4 text-destructive" />
-                    {platform.topPost.likes.toLocaleString()} likes
-                  </span>
-                  <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <MessageCircle className="h-4 w-4 text-primary" />
-                    {platform.topPost.comments.toLocaleString()} comments
-                  </span>
-                </div>
+                <p className="text-sm font-medium text-foreground mb-2">"{platform.latestPost.title}"</p>
+                <Badge variant="outline" className="text-xs capitalize">
+                  {platform.latestPost.status.replace("_", " ")}
+                </Badge>
               </div>
             </div>
           )}
 
           {/* Schedule Info */}
-          {platform.schedule && (
-            <div>
-              <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" />
-                Schedule
-              </h4>
-              <div className="flex gap-3">
-                <div className="flex-1 p-3 rounded-lg bg-primary/5 border border-primary/10 text-center">
-                  <p className="text-2xl font-bold text-primary">{platform.schedule.pending}</p>
-                  <p className="text-xs text-muted-foreground">Pending</p>
-                </div>
-                <div className="flex-1 p-3 rounded-lg bg-muted/50 border border-border text-center">
-                  <p className="text-2xl font-bold text-foreground">{platform.schedule.published}</p>
-                  <p className="text-xs text-muted-foreground">Published</p>
-                </div>
-                <div className="flex-1 p-3 rounded-lg bg-muted/50 border border-border text-center">
-                  <p className="text-2xl font-bold text-foreground">{platform.posts}</p>
-                  <p className="text-xs text-muted-foreground">Total Posts</p>
-                </div>
+          <div>
+            <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              Schedule
+            </h4>
+            <div className="flex gap-3">
+              <div className="flex-1 p-3 rounded-lg bg-primary/5 border border-primary/10 text-center">
+                <p className="text-2xl font-bold text-primary">{platform.scheduledCount}</p>
+                <p className="text-xs text-muted-foreground">Pending</p>
+              </div>
+              <div className="flex-1 p-3 rounded-lg bg-muted/50 border border-border text-center">
+                <p className="text-2xl font-bold text-foreground">{platform.publishedCount}</p>
+                <p className="text-xs text-muted-foreground">Published</p>
+              </div>
+              <div className="flex-1 p-3 rounded-lg bg-muted/50 border border-border text-center">
+                <p className="text-2xl font-bold text-foreground">{platform.totalPosts}</p>
+                <p className="text-xs text-muted-foreground">Total Posts</p>
               </div>
             </div>
-          )}
+          </div>
 
           <Separator />
 
@@ -226,10 +170,15 @@ export function PlatformDetailSheet({ platform, open, onOpenChange, getPlatformC
               <Settings className="h-4 w-4 text-primary" />
               Platform Settings
             </h4>
+            {!platform.dbId && (
+              <p className="text-xs text-muted-foreground mb-3">
+                Connect this platform to configure these settings.
+              </p>
+            )}
             <div className="space-y-3">
               {[
                 { id: "autoPublish", label: "Auto-publish posts", description: "Automatically publish scheduled posts" },
-                { id: "notifications", label: "Push notifications", description: "Get notified about engagement spikes" },
+                { id: "notifications", label: "Push notifications", description: "Get notified about activity" },
                 { id: "analytics", label: "Analytics tracking", description: "Track detailed performance metrics" },
                 { id: "contentBackup", label: "Content backup", description: "Backup all published content" },
               ].map((setting) => (
@@ -240,20 +189,18 @@ export function PlatformDetailSheet({ platform, open, onOpenChange, getPlatformC
                   </div>
                   <Switch
                     checked={localSettings[setting.id as keyof typeof localSettings] ?? true}
+                    disabled={!platform.dbId}
                     onCheckedChange={(checked) => {
-                      // Update local state immediately for visual responsiveness
+                      if (!platform.dbId) {
+                        toast.error("Connect this platform first");
+                        return;
+                      }
                       const newSettings = { ...localSettings, [setting.id]: checked };
                       setLocalSettings(newSettings);
-                      
-                      // Also push to DB if connected
-                      if (platform.dbId) {
-                        updatePlatformSettings.mutate({
-                          id: platform.dbId,
-                          settings: newSettings,
-                        });
-                      } else {
-                        toast.success(`${setting.label} updated`);
-                      }
+                      updatePlatformSettings.mutate({
+                        id: platform.dbId,
+                        settings: newSettings,
+                      });
                     }}
                   />
                 </div>
@@ -267,12 +214,10 @@ export function PlatformDetailSheet({ platform, open, onOpenChange, getPlatformC
               variant="outline"
               className="flex-1 gap-2"
               onClick={() => {
-                // @ts-expect-error - url property might not be in type definition yet
                 if (platform.url) {
-                   // @ts-expect-error - url property might not be in type definition yet
-                   window.open(platform.url, "_blank");
+                  window.open(platform.url, "_blank");
                 } else {
-                   window.open(`https://${platform.id === "twitter" ? "x" : platform.id}.com`, "_blank");
+                  window.open(`https://${platform.id === "twitter" ? "x" : platform.id}.com`, "_blank");
                 }
               }}
             >
@@ -282,6 +227,7 @@ export function PlatformDetailSheet({ platform, open, onOpenChange, getPlatformC
             <Button
               variant="destructive"
               className="gap-2"
+              disabled={!platform.dbId}
               onClick={() => {
                 if (!platform.dbId) return;
                 disconnectPlatform.mutate(platform.dbId, {
@@ -295,7 +241,9 @@ export function PlatformDetailSheet({ platform, open, onOpenChange, getPlatformC
 
           <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
             <Clock className="h-3 w-3" />
-            Last synced {platform.lastSync}
+            {platform.lastActivity
+              ? `Last activity ${formatDistanceToNow(new Date(platform.lastActivity), { addSuffix: true })}`
+              : "No activity yet"}
           </div>
         </div>
       </SheetContent>

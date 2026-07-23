@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,38 +11,31 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { AreaChart, Area, XAxis, YAxis } from "recharts";
+import { BarChart, Bar, XAxis, YAxis } from "recharts";
 import { toast } from "@/hooks/use-toast";
-import { useAppStore } from "@/stores/useAppStore";
 import { usePosts } from "@/hooks/usePosts";
+import { usePlatforms } from "@/hooks/usePlatforms";
 import { Post, PostType, PlatformType } from "@/types";
-import { PlatformCard } from "@/components/platforms/PlatformCard";
+import { PlatformCard, PlatformData } from "@/components/platforms/PlatformCard";
 import { PlatformDetailSheet } from "@/components/platforms/PlatformDetailSheet";
 import { PostDialog } from "@/components/platforms/PostDialog";
 import { ScheduleCalendar } from "@/components/platforms/ScheduleCalendar";
 import { PostCard } from "@/components/platforms/PostCard";
-import { platforms, totalStats, recentActivity, availablePlatforms, overallPerformance, platformColors } from "@/components/platforms/platformsData";
+import { platforms as platformIdentities, availablePlatforms, platformColors } from "@/components/platforms/platformsData";
 import { DirectPublishingPanel } from "@/components/platforms/DirectPublishingPanel";
 import { usePlatformOAuth, publishPostDirect, DirectPlatform } from "@/hooks/usePlatformOAuth";
+import { subDays, format, isSameDay, formatDistanceToNow } from "date-fns";
 import {
-  Music2,
   RefreshCw,
   CheckCircle2,
-  Users,
-  Eye,
-  Heart,
-  TrendingUp,
   Plus,
   Globe,
   BarChart3,
   ArrowUpRight,
   ArrowDownRight,
-  Sparkles,
   Zap,
-  Share2,
   Activity,
   Calendar,
-  Target,
   CalendarClock,
   FileText,
 } from "lucide-react";
@@ -50,9 +43,10 @@ import {
 export default function Platforms() {
   const { posts, addPost, updatePost, deletePost, publishPost } = usePosts();
   const { isConnected } = usePlatformOAuth();
+  const { platforms: userPlatforms } = usePlatforms();
   const scheduledPosts = (posts || []).filter((p) => p.status === "scheduled");
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
-  const [detailPlatform, setDetailPlatform] = useState<any>(null);
+  const [detailPlatform, setDetailPlatform] = useState<PlatformData | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("connected");
   const [syncing, setSyncing] = useState(false);
@@ -66,13 +60,66 @@ export default function Platforms() {
     scheduledTime: "",
     type: "text" as PostType,
   });
-  
+
   const [isAddPlatformOpen, setIsAddPlatformOpen] = useState(false);
   const [newPlatform, setNewPlatform] = useState({ name: "", url: "", description: "" });
   const [customAvailablePlatforms, setCustomAvailablePlatforms] = useState<any[]>(availablePlatforms);
-  
+
+  // Merge static branding config with real connection status (user_platforms /
+  // OAuth tokens) and real post counts. No follower/view/engagement numbers -
+  // this app has no analytics ingestion pipeline to source them from.
+  const last7Days = useMemo(() => Array.from({ length: 7 }, (_, i) => subDays(new Date(), 6 - i)), []);
+
+  const platforms: PlatformData[] = useMemo(() => {
+    return platformIdentities.map((identity) => {
+      const userPlatform = userPlatforms.find((up) => up.platformType === identity.id);
+      const directConnected =
+        (identity.id === "linkedin" || identity.id === "twitter") &&
+        isConnected(identity.id as DirectPlatform);
+      const connected = !!userPlatform || directConnected;
+
+      const platformPosts = (posts || []).filter((p) =>
+        ((p as any).platforms || []).some((pp: any) => pp.platform === identity.id)
+      );
+      const scheduledCount = platformPosts.filter((p) => p.status === "scheduled").length;
+      const publishedCount = platformPosts.filter((p) => p.status === "published").length;
+      const latestPost = [...platformPosts].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )[0];
+
+      const weeklyData = last7Days.map((day) => ({
+        day: format(day, "EEE"),
+        posts: platformPosts.filter((p) => isSameDay(new Date(p.createdAt), day)).length,
+      }));
+
+      return {
+        ...identity,
+        connected,
+        username: userPlatform?.username || userPlatform?.accountName || null,
+        dbId: userPlatform?.id,
+        status: userPlatform?.status || (connected ? "active" : "inactive"),
+        settings: userPlatform?.settings,
+        totalPosts: platformPosts.length,
+        scheduledCount,
+        publishedCount,
+        latestPost: latestPost ? { title: latestPost.title, status: latestPost.status } : null,
+        lastActivity: userPlatform?.lastSync || latestPost?.createdAt || null,
+        weeklyData,
+      };
+    });
+  }, [userPlatforms, posts, isConnected, last7Days]);
+
   const connectedPlatforms = platforms.filter((p) => p.connected);
   const disconnectedPlatforms = platforms.filter((p) => !p.connected);
+
+  const platformPostDistribution = connectedPlatforms
+    .filter((p) => p.totalPosts > 0)
+    .map((p) => ({ name: p.name, posts: p.totalPosts }))
+    .sort((a, b) => b.posts - a.posts);
+
+  const recentPosts = [...(posts || [])]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 8);
 
   const getTailwindColor = (id: string) => {
     switch (id.toLowerCase()) {
@@ -249,81 +296,53 @@ export default function Platforms() {
           </div>
 
           {/* Overview Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: Users, label: "Reach", value: totalStats.totalFollowers, change: `+${totalStats.weeklyGrowth}%`, positive: true, color: "text-primary" },
-              { icon: Eye, label: "Impact", value: totalStats.totalViews, change: "+12.4%", positive: true, color: "text-blue-400" },
-              { icon: Heart, label: "Pulse", value: totalStats.avgEngagement, change: "+0.3%", positive: true, color: "text-pink-400" },
-              { icon: Share2, label: "Velocity", value: totalStats.totalShares, change: "+8.2%", positive: true, color: "text-amber-400" },
-              { icon: CheckCircle2, label: "Nodes", value: `${totalStats.connectedPlatforms}/8`, subtext: "active", color: "text-emerald-400" },
-              { icon: BarChart3, label: "Transmissions", value: totalStats.totalPosts.toLocaleString(), subtext: "all", color: "text-purple-400" },
-              { icon: Calendar, label: "Queue", value: totalStats.scheduledPosts.toString(), subtext: "pending", color: "text-indigo-400" },
-              { icon: TrendingUp, label: "Momentum", value: `+${totalStats.weeklyGrowth}%`, subtext: "avg", highlight: true, color: "text-primary" },
+              { icon: CheckCircle2, label: "Connected", value: `${connectedPlatforms.length}/${platforms.length}`, subtext: "platforms", color: "text-emerald-400" },
+              { icon: BarChart3, label: "Total Posts", value: (posts || []).length.toString(), subtext: "all time", color: "text-purple-400" },
+              { icon: Calendar, label: "Scheduled", value: scheduledPosts.filter((p) => p.status !== "published").length.toString(), subtext: "pending", color: "text-indigo-400" },
+              { icon: FileText, label: "Published", value: (posts || []).filter((p) => p.status === "published").length.toString(), subtext: "all time", color: "text-primary" },
             ].map((stat, index) => (
               <div
                 key={index}
-                className={`glass-card p-4 flex flex-col gap-2 relative overflow-hidden group transition-all duration-500 hover:border-primary/40 ${
-                  stat.highlight ? "border-primary/30 shadow-[0_0_20px_-10px_rgba(155,135,245,0.3)]" : ""
-                }`}
+                className="glass-card p-4 flex flex-col gap-2 relative overflow-hidden group transition-all duration-500 hover:border-primary/40"
               >
                 <div className="flex items-center justify-between mb-1">
                   <stat.icon className={`h-3.5 w-3.5 ${stat.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
                   <span className="text-[9px] font-black uppercase tracking-[0.1em] text-muted-foreground/50">{stat.label}</span>
                 </div>
                 <div className="text-xl font-black text-white tracking-tighter group-hover:text-primary transition-colors">{stat.value}</div>
-                {stat.change ? (
-                  <div className={`text-[9px] font-black flex items-center gap-1 ${stat.positive ? "text-emerald-400" : "text-rose-400"}`}>
-                    {stat.positive ? <ArrowUpRight className="h-2 w-2" /> : <ArrowDownRight className="h-2 w-2" />}
-                    {stat.change}
-                  </div>
-                ) : (
-                  <div className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-widest">{stat.subtext}</div>
-                )}
+                <div className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-widest">{stat.subtext}</div>
               </div>
             ))}
           </div>
 
-          {/* Performance Overview Chart */}
+          {/* Posts by Platform */}
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Performance Overview</CardTitle>
-                </div>
-                <div className="flex gap-4 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-primary" />
-                    <span className="text-muted-foreground">Followers</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-chart-2" />
-                    <span className="text-muted-foreground">Engagement %</span>
-                  </div>
-                </div>
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Posts by Platform</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
-              <ChartContainer
-                config={{
-                  followers: { label: "Followers", color: "hsl(var(--primary))" },
-                  engagement: { label: "Engagement", color: "hsl(var(--chart-2))" },
-                }}
-                className="h-[180px] w-full"
-              >
-                <AreaChart data={overallPerformance}>
-                  <defs>
-                    <linearGradient id="followerGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area type="monotone" dataKey="followers" stroke="hsl(var(--primary))" fill="url(#followerGradient)" strokeWidth={2} />
-                </AreaChart>
-              </ChartContainer>
+              {platformPostDistribution.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No posts yet. Create your first post to see the platform breakdown here.
+                </p>
+              ) : (
+                <ChartContainer
+                  config={{ posts: { label: "Posts", color: "hsl(var(--primary))" } }}
+                  className="h-[180px] w-full"
+                >
+                  <BarChart data={platformPostDistribution}>
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} allowDecimals={false} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="posts" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              )}
             </CardContent>
           </Card>
 
@@ -346,10 +365,6 @@ export default function Platforms() {
               <TabsTrigger value="activity" className="gap-2">
                 <Zap className="h-4 w-4" />
                 Activity
-              </TabsTrigger>
-              <TabsTrigger value="insights" className="gap-2">
-                <Sparkles className="h-4 w-4" />
-                Insights
               </TabsTrigger>
             </TabsList>
 
@@ -604,191 +619,54 @@ export default function Platforms() {
             <TabsContent value="activity" className="space-y-4">
               <Card className="bg-card border-border">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Zap className="h-5 w-5 text-primary" />
-                      <CardTitle>Recent Activity</CardTitle>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => {
-                      toast({ title: "Activity log", description: "Full activity history coming soon." });
-                    }}>
-                      View All
-                    </Button>
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-primary" />
+                    <CardTitle>Recent Activity</CardTitle>
                   </div>
-                  <CardDescription>Latest updates from your connected platforms</CardDescription>
+                  <CardDescription>Your most recently created posts, across all platforms</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {recentActivity.map((activity, index) => (
-                      <div
-                        key={index}
-                        className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border/50 transition-all duration-200 hover:bg-muted/50"
-                      >
-                        <div
-                          className={`h-12 w-12 rounded-xl flex items-center justify-center ${
-                            activity.positive
-                              ? "bg-gradient-to-br from-emerald-500/20 to-emerald-600/10"
-                              : "bg-gradient-to-br from-red-500/20 to-red-600/10"
-                          }`}
-                        >
-                          <activity.icon
-                            className={`h-6 w-6 ${activity.positive ? "text-emerald-500" : "text-red-500"}`}
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] px-1.5 py-0"
-                            >
-                              {activity.platform}
-                            </Badge>
-                            <Badge
-                              variant={activity.positive ? "default" : "destructive"}
-                              className={`text-[10px] px-1.5 py-0 ${
-                                activity.positive
-                                  ? "bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30"
-                                  : ""
-                              }`}
-                            >
-                              {activity.type}
-                            </Badge>
+                  {recentPosts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      No posts yet. Create your first post to see activity here.
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {recentPosts.map((post) => {
+                        const postPlatforms = ((post as any).platforms || []) as any[];
+                        return (
+                          <div
+                            key={post.id}
+                            className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border/50 transition-all duration-200 hover:bg-muted/50"
+                          >
+                            <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/10">
+                              <FileText className="h-6 w-6 text-primary" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                {postPlatforms.map((pp, i) => (
+                                  <Badge key={i} variant="outline" className="text-[10px] px-1.5 py-0 capitalize">
+                                    {pp.platform}
+                                  </Badge>
+                                ))}
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 capitalize">
+                                  {post.status.replace("_", " ")}
+                                </Badge>
+                              </div>
+                              <p className="font-medium text-foreground">{post.title}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                              </p>
+                            </div>
                           </div>
-                          <p className="font-medium text-foreground">{activity.action}</p>
-                          <p className="text-sm text-muted-foreground">{activity.detail}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs text-muted-foreground">{activity.time}</p>
-                          {activity.positive ? (
-                            <ArrowUpRight className="h-4 w-4 text-[hsl(var(--success))] ml-auto mt-1" />
-                          ) : (
-                            <ArrowDownRight className="h-4 w-4 text-destructive ml-auto mt-1" />
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            {/* Insights Tab */}
-            <TabsContent value="insights" className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* Best Performing Platform */}
-                <Card className="bg-card border-border">
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-lg">Best Performing</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-pink-500/10 to-purple-500/10 border border-primary/20">
-                      <div className="p-3 rounded-xl bg-gradient-to-br from-pink-500/20 to-purple-500/20">
-                        <Music2 className="h-8 w-8 text-pink-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg text-foreground">TikTok</h3>
-                        <p className="text-sm text-muted-foreground">Highest engagement rate this month</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">12.4%</p>
-                        <p className="text-xs text-emerald-500 flex items-center justify-end gap-1">
-                          <ArrowUpRight className="h-3 w-3" />
-                          +5.8% growth
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 space-y-3">
-                      <h4 className="text-sm font-medium text-muted-foreground">Platform Ranking</h4>
-                      {connectedPlatforms
-                        .sort((a, b) => parseFloat(b.stats?.engagement || "0") - parseFloat(a.stats?.engagement || "0"))
-                        .map((platform, index) => (
-                          <div key={platform.id} className="flex items-center gap-3">
-                            <span className="text-lg font-bold text-muted-foreground w-6">#{index + 1}</span>
-                            <platform.icon
-                              className="h-5 w-5"
-                              style={{ color: getPlatformColor(platform.id) }}
-                            />
-                            <span className="flex-1 text-sm text-foreground">{platform.name}</span>
-                            <span className="text-sm font-medium text-foreground">
-                              {platform.stats?.engagement}
-                            </span>
-                          </div>
-                        ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* AI Recommendations */}
-                <Card className="bg-card border-border">
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-lg">AI Recommendations</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {[
-                      {
-                        title: "Post more on TikTok",
-                        desc: "Your TikTok engagement is 4x higher than other platforms. Consider increasing posting frequency.",
-                        priority: "high",
-                      },
-                      {
-                        title: "Revitalize Facebook strategy",
-                        desc: "Facebook reach has declined 5%. Try video content to boost engagement.",
-                        priority: "medium",
-                      },
-                      {
-                        title: "Optimal posting time",
-                        desc: "Your audience is most active between 6-8 PM. Schedule posts accordingly.",
-                        priority: "medium",
-                      },
-                      {
-                        title: "Cross-promote content",
-                        desc: "Repurpose your top YouTube videos as short clips for TikTok and Reels.",
-                        priority: "low",
-                      },
-                    ].map((rec, index) => (
-                      <div
-                        key={index}
-                        className="p-4 rounded-xl bg-muted/30 border border-border/50 hover:bg-muted/50 transition-all cursor-pointer"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-medium text-foreground">{rec.title}</h4>
-                              <Badge
-                                variant={rec.priority === "high" ? "destructive" : rec.priority === "medium" ? "secondary" : "outline"}
-                                className="text-[10px]"
-                              >
-                                {rec.priority}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{rec.desc}</p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-primary"
-                            onClick={() => {
-                              toast({
-                                title: `Applying: ${rec.title}`,
-                                description: "This recommendation has been added to your strategy.",
-                              });
-                            }}
-                          >
-                            Apply
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </div>
             </TabsContent>
           </Tabs>
           <PlatformDetailSheet
