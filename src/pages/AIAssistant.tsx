@@ -43,17 +43,17 @@ import { useNotes } from "@/hooks/useNotes";
 import { NotificationsDropdown } from "@/components/header/NotificationsDropdown";
 import { UserDropdown } from "@/components/header/UserDropdown";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 // --- Types & Constants ---
 
-const QUICK_ACTIONS = [
-  { icon: <Wand2 className="w-3.5 h-3.5" />, label: "Generate Post", prompt: "Generate a social media post about" },
-  { icon: <Hash className="w-3.5 h-3.5" />, label: "Find Hashtags", prompt: "Find trending hashtags for" },
-  { icon: <Image className="w-3.5 h-3.5" />, label: "Caption Image", prompt: "Write an engaging caption for my image about" },
-  { icon: <Lightbulb className="w-3.5 h-3.5" />, label: "Brainstorm", prompt: "Brainstorm content ideas for" },
+const getQuickActions = (t: TFunction) => [
+  { icon: <Wand2 className="w-3.5 h-3.5" />, label: t("aiAssistant.actionGeneratePost"), prompt: t("aiAssistant.promptGeneratePost") },
+  { icon: <Hash className="w-3.5 h-3.5" />, label: t("aiAssistant.actionFindHashtags"), prompt: t("aiAssistant.promptFindHashtags") },
+  { icon: <Image className="w-3.5 h-3.5" />, label: t("aiAssistant.actionCaptionImage"), prompt: t("aiAssistant.promptCaptionImage") },
+  { icon: <Lightbulb className="w-3.5 h-3.5" />, label: t("aiAssistant.actionBrainstorm"), prompt: t("aiAssistant.promptBrainstorm") },
 ];
-
-const GREETING = "Hi";
 
 // --- Sub-components ---
 
@@ -76,6 +76,14 @@ function HeaderStat({ icon, count, label, color }: any) {
 }
 
 function AISidebar({ onQuickAction, onNewChat }: any) {
+  const { t } = useTranslation();
+  const QUICK_ACTIONS = getQuickActions(t);
+  const TIPS = [
+    { text: t("aiAssistant.tip1"), icon: "💡" },
+    { text: t("aiAssistant.tip2"), icon: "🎯" },
+    { text: t("aiAssistant.tip3"), icon: "✨" },
+    { text: t("aiAssistant.tip4"), icon: "📊" },
+  ];
   return (
     <aside className="w-[310px] bg-card border-r border-border flex flex-col h-full overflow-y-auto custom-scrollbar">
       <div className="p-6">
@@ -88,22 +96,22 @@ function AISidebar({ onQuickAction, onNewChat }: any) {
               <Bot className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-foreground leading-none tracking-tight">AI Assistant</h2>
-              <p className="text-[10px] font-bold text-muted-foreground mt-1">Smart Generator</p>
+              <h2 className="text-sm font-black text-foreground leading-none tracking-tight">{t("aiAssistant.title")}</h2>
+              <p className="text-[10px] font-bold text-muted-foreground mt-1">{t("aiAssistant.subtitle")}</p>
             </div>
           </div>
         </div>
 
-        <Button 
+        <Button
           onClick={onNewChat}
           className="w-full h-12 mb-8 bg-gradient-to-r from-primary to-[#a855f7] hover:opacity-90 text-white rounded-2xl flex items-center justify-center gap-2 group transition-all shadow-xl shadow-primary/10 border-0"
         >
           <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
-          <span className="text-[11px] font-black uppercase tracking-[0.2em]">New Chat</span>
+          <span className="text-[11px] font-black uppercase tracking-[0.2em]">{t("aiAssistant.newChat")}</span>
         </Button>
 
         <div className="bg-muted/30 border border-border rounded-[32px] p-5 mb-8 shadow-sm">
-          <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">Quick Actions</h3>
+          <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">{t("aiAssistant.quickActions")}</h3>
           <div className="space-y-1">
             {QUICK_ACTIONS.map(action => (
               <button
@@ -121,14 +129,9 @@ function AISidebar({ onQuickAction, onNewChat }: any) {
         </div>
 
         <div className="bg-muted/30 border border-border rounded-[32px] p-5 shadow-sm">
-          <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">AI Tips</h3>
+          <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">{t("aiAssistant.aiTips")}</h3>
           <div className="space-y-4">
-            {[
-              { text: "Be specific about your audience", icon: "💡" },
-              { text: "Mention the platform target", icon: "🎯" },
-              { text: "Include brand voice preference", icon: "✨" },
-              { text: "Ask for variations to test", icon: "📊" },
-            ].map((tip, i) => (
+            {TIPS.map((tip, i) => (
               <div key={i} className="flex gap-3 items-center p-3 rounded-2xl bg-card border border-border">
                 <span className="text-sm">{tip.icon}</span>
                 <p className="text-[10px] font-bold text-muted-foreground leading-tight">{tip.text}</p>
@@ -142,6 +145,7 @@ function AISidebar({ onQuickAction, onNewChat }: any) {
 }
 
 const AIAssistant = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { messages, isLoading, sendMessage, resetChat, addGreeting } = useChat();
   const { addPost } = usePosts();
@@ -153,7 +157,7 @@ const AIAssistant = () => {
 
   useEffect(() => {
     if (messages.length === 0) {
-      addGreeting(GREETING);
+      addGreeting(t("aiAssistant.greeting"));
     }
   }, []);
 
@@ -176,14 +180,14 @@ const AIAssistant = () => {
       const template = JSON.parse(jsonMatch[0]);
       await processUJT(template);
       toast({
-        title: "Campaign Launched",
-        description: `Successfully processed ${template.items?.length || 0} items for your calendar.`,
+        title: t("aiAssistant.campaignLaunchedTitle"),
+        description: t("aiAssistant.campaignLaunchedDesc", { count: template.items?.length || 0 }),
       });
     } catch (err) {
       console.error("Failed to process campaign:", err);
       toast({
-        title: "Process Failed",
-        description: "Could not parse the campaign template. Please check the AI output.",
+        title: t("aiAssistant.processFailedTitle"),
+        description: t("aiAssistant.processFailedDesc"),
         variant: "destructive",
       });
     }
@@ -198,8 +202,8 @@ const AIAssistant = () => {
 
   const handleNewChat = () => {
     resetChat();
-    addGreeting(GREETING);
-    toast({ title: "New chat started" });
+    addGreeting(t("aiAssistant.greeting"));
+    toast({ title: t("aiAssistant.newChatStarted") });
   };
 
   return (
@@ -212,21 +216,21 @@ const AIAssistant = () => {
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
-                <h1 className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground">AI Strategy Console</h1>
+                <h1 className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground">{t("aiAssistant.strategyConsole")}</h1>
               </div>
               <div className="h-4 w-px bg-border/50" />
               <div className="flex items-center gap-2">
                 <Bot className="h-3 w-3 text-primary" />
-                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Active Assistant</span>
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{t("aiAssistant.activeAssistant")}</span>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="relative group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-foreground transition-colors" />
-                <input 
-                  type="text" 
-                  placeholder="Search chat..." 
+                <input
+                  type="text"
+                  placeholder={t("aiAssistant.searchChatPlaceholder")}
                   className="bg-muted border border-border rounded-full py-1.5 pl-9 pr-4 text-[11px] font-bold text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary/50 w-48 transition-all"
                 />
               </div>
@@ -258,17 +262,17 @@ const AIAssistant = () => {
                             <div className="flex items-center justify-between mb-4">
                               <div className="flex items-center gap-2">
                                 <Zap className="h-4 w-4 text-primary" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-foreground">Content Campaign Detected</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-foreground">{t("aiAssistant.campaignDetected")}</span>
                               </div>
-                              <Badge variant="outline" className="text-[9px] bg-background">v1.0 Ready</Badge>
+                              <Badge variant="outline" className="text-[9px] bg-background">{t("aiAssistant.versionReady")}</Badge>
                             </div>
-                            <p className="text-[11px] text-muted-foreground mb-4">A complete multi-platform campaign template has been generated based on your strategy.</p>
-                            <Button 
+                            <p className="text-[11px] text-muted-foreground mb-4">{t("aiAssistant.campaignDetectedDesc")}</p>
+                            <Button
                               onClick={() => handleProcessCampaign(m.content)}
                               className="w-full bg-primary hover:opacity-90 text-white font-black uppercase tracking-widest h-10 rounded-xl shadow-lg shadow-primary/10 gap-2 border-0"
                             >
                               <Play className="h-4 w-4" />
-                              Process & Schedule Campaign
+                              {t("aiAssistant.processCampaign")}
                             </Button>
                           </div>
                         )}
@@ -304,9 +308,9 @@ const AIAssistant = () => {
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-gradient-to-r from-primary to-[#a855f7] rounded-[36px] blur opacity-10 group-focus-within:opacity-20 transition duration-500"></div>
                   <div className="relative bg-card border border-border rounded-[32px] overflow-hidden shadow-2xl">
-                    <Textarea 
+                    <Textarea
                       ref={inputRef}
-                      placeholder="Ask AI to create content, generate ideas..."
+                      placeholder={t("aiAssistant.inputPlaceholder")}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
@@ -318,26 +322,26 @@ const AIAssistant = () => {
                     />
                     <div className="px-8 pb-6 flex items-center justify-between border-t border-border/50 pt-4">
                       <div className="flex gap-3">
-                        <button title="Enhance prompt" className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all border border-border">
+                        <button title={t("aiAssistant.enhancePrompt")} className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all border border-border">
                           <Sparkles className="w-4 h-4" />
                         </button>
-                        <button title="Edit template" className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all border border-border">
+                        <button title={t("aiAssistant.editTemplate")} className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all border border-border">
                           <PenTool className="w-4 h-4" />
                         </button>
                       </div>
-                      <Button 
-                        onClick={handleSend} 
+                      <Button
+                        onClick={handleSend}
                         disabled={isLoading}
                         className="h-12 px-8 rounded-2xl bg-gradient-to-r from-primary to-[#a855f7] hover:opacity-90 text-white font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-primary/20 border-0"
                       >
-                        <span className="mr-2">Send Message</span>
+                        <span className="mr-2">{t("aiAssistant.sendMessage")}</span>
                         <Send className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
                 </div>
                 <p className="text-[10px] text-center text-muted-foreground mt-6 font-bold uppercase tracking-widest opacity-50">
-                  AI responses may require verification. Use critically.
+                  {t("aiAssistant.disclaimer")}
                 </p>
               </div>
             </div>
