@@ -23,6 +23,7 @@ import {
 import { Report } from "./ReportCard";
 import { usePosts } from "@/hooks/usePosts";
 import { subMonths, format, isAfter, isBefore } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 interface ReportPreviewDialogProps {
   open: boolean;
@@ -41,6 +42,7 @@ export function ReportPreviewDialog({
   onOpenChange,
   report,
 }: ReportPreviewDialogProps) {
+  const { t } = useTranslation();
   const { posts } = usePosts();
 
   // Current period = last 30 days, previous period = the 30 days before that.
@@ -66,19 +68,19 @@ export function ReportPreviewDialog({
 
   const tableData = useMemo(() => {
     const rows: { metric: string; current: number; previous: number }[] = [
-      { metric: "Total Posts", current: currentPosts.length, previous: previousPosts.length },
+      { metric: t("analytics.totalPosts"), current: currentPosts.length, previous: previousPosts.length },
       {
-        metric: "Published",
+        metric: t("analytics.published"),
         current: countByStatus(currentPosts, "published"),
         previous: countByStatus(previousPosts, "published"),
       },
       {
-        metric: "Scheduled",
+        metric: t("analytics.scheduled"),
         current: countByStatus(currentPosts, "scheduled"),
         previous: countByStatus(previousPosts, "scheduled"),
       },
       {
-        metric: "Awaiting Review",
+        metric: t("reports.awaitingReview"),
         current: countByStatus(currentPosts, "awaiting_review"),
         previous: countByStatus(previousPosts, "awaiting_review"),
       },
@@ -87,7 +89,7 @@ export function ReportPreviewDialog({
       ...r,
       change: pctChange(r.current, r.previous),
     }));
-  }, [currentPosts, previousPosts]);
+  }, [currentPosts, previousPosts, t]);
 
   const trendData = useMemo(() => {
     const months: { month: string; value: number }[] = [];
@@ -128,21 +130,21 @@ export function ReportPreviewDialog({
             <div>
               <DialogTitle className="text-xl">{report.name}</DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Generated: {report.lastGenerated}
+                {t("reports.generatedOn", { date: report.lastGenerated })}
               </p>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm">
                 <Share2 className="h-4 w-4 mr-2" />
-                Share
+                {t("reports.share")}
               </Button>
               <Button variant="outline" size="sm">
                 <Printer className="h-4 w-4 mr-2" />
-                Print
+                {t("reports.print")}
               </Button>
               <Button size="sm">
                 <Download className="h-4 w-4 mr-2" />
-                Download {report.format}
+                {t("reports.download", { format: report.format })}
               </Button>
             </div>
           </div>
@@ -152,14 +154,16 @@ export function ReportPreviewDialog({
           {/* Executive Summary */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Executive Summary</CardTitle>
+              <CardTitle className="text-base">{t("reports.executiveSummary")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                This {report.type.toLowerCase()} report covers content activity for the last 30 days
-                compared to the prior 30-day period, drawn directly from your posts. {tableData[0].current}{" "}
-                posts were created in this period ({tableData[0].change} vs. the previous period), with{" "}
-                {tableData[1].current} published.
+                {t("reports.summaryBody", {
+                  type: report.type.toLowerCase(),
+                  count: tableData[0].current,
+                  change: tableData[0].change,
+                  published: tableData[1].current,
+                })}
               </p>
             </CardContent>
           </Card>
@@ -167,17 +171,17 @@ export function ReportPreviewDialog({
           {/* Key Metrics */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Key Metrics</CardTitle>
+              <CardTitle className="text-base">{t("reports.keyMetrics")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-2 font-medium">Metric</th>
-                      <th className="text-right py-2 font-medium">Current Period</th>
-                      <th className="text-right py-2 font-medium">Previous Period</th>
-                      <th className="text-right py-2 font-medium">Change</th>
+                      <th className="text-left py-2 font-medium">{t("reports.metric")}</th>
+                      <th className="text-right py-2 font-medium">{t("reports.currentPeriod")}</th>
+                      <th className="text-right py-2 font-medium">{t("reports.previousPeriod")}</th>
+                      <th className="text-right py-2 font-medium">{t("reports.change")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -209,7 +213,7 @@ export function ReportPreviewDialog({
           {/* Trend Chart */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Posts Created Per Month</CardTitle>
+              <CardTitle className="text-base">{t("reports.postsCreatedPerMonth")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[250px]">
@@ -237,7 +241,7 @@ export function ReportPreviewDialog({
                       stroke="hsl(var(--primary))"
                       fillOpacity={1}
                       fill="url(#colorValue)"
-                      name="Posts"
+                      name={t("analytics.totalPosts")}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -248,12 +252,12 @@ export function ReportPreviewDialog({
           {/* Platform Breakdown */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Posts by Platform</CardTitle>
+              <CardTitle className="text-base">{t("reports.postsByPlatform")}</CardTitle>
             </CardHeader>
             <CardContent>
               {platformData.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
-                  No platform data for this period yet.
+                  {t("reports.noPlatformDataPeriod")}
                 </p>
               ) : (
               <div className="h-[200px]">

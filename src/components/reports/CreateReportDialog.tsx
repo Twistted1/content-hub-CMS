@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Calendar, FileText, BarChart3, PieChart, TrendingUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface CreateReportDialogProps {
   open: boolean;
@@ -34,18 +35,18 @@ interface CreateReportDialogProps {
   }) => void;
 }
 
-const reportTypes = [
-  { value: "Performance", label: "Performance", icon: TrendingUp },
-  { value: "Analytics", label: "Analytics", icon: BarChart3 },
-  { value: "Financial", label: "Financial", icon: PieChart },
-  { value: "Marketing", label: "Marketing", icon: FileText },
-];
-
 export function CreateReportDialog({
   open,
   onOpenChange,
   onCreateReport,
 }: CreateReportDialogProps) {
+  const { t } = useTranslation();
+  const reportTypes = [
+    { value: "Performance", label: t("reports.performance"), icon: TrendingUp },
+    { value: "Analytics", label: t("reports.analyticsType"), icon: BarChart3 },
+    { value: "Financial", label: t("reports.financial"), icon: PieChart },
+    { value: "Marketing", label: t("reports.marketing"), icon: FileText },
+  ];
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState("");
@@ -79,28 +80,28 @@ export function CreateReportDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create New Report</DialogTitle>
+          <DialogTitle>{t("reports.createNewReport")}</DialogTitle>
           <DialogDescription>
-            Configure your report settings and generate it now or schedule for later.
+            {t("reports.createDialogDesc")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Report Name</Label>
+            <Label htmlFor="name">{t("reports.reportName")}</Label>
             <Input
               id="name"
-              placeholder="e.g., Monthly Sales Report"
+              placeholder={t("reports.reportNamePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t("reports.description")}</Label>
             <Textarea
               id="description"
-              placeholder="Brief description of what this report covers..."
+              placeholder={t("reports.descriptionPlaceholder")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -109,17 +110,17 @@ export function CreateReportDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Report Type</Label>
+              <Label>{t("reports.reportType")}</Label>
               <Select value={type} onValueChange={setType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder={t("reports.selectType")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {reportTypes.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
+                  {reportTypes.map((rt) => (
+                    <SelectItem key={rt.value} value={rt.value}>
                       <div className="flex items-center gap-2">
-                        <t.icon className="h-4 w-4" />
-                        {t.label}
+                        <rt.icon className="h-4 w-4" />
+                        {rt.label}
                       </div>
                     </SelectItem>
                   ))}
@@ -128,7 +129,7 @@ export function CreateReportDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>Format</Label>
+              <Label>{t("reports.format")}</Label>
               <Select value={format} onValueChange={setFormat}>
                 <SelectTrigger>
                   <SelectValue />
@@ -147,11 +148,11 @@ export function CreateReportDialog({
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <Label htmlFor="schedule" className="cursor-pointer">
-                  Schedule Report
+                  {t("reports.scheduleReport")}
                 </Label>
               </div>
               <p className="text-sm text-muted-foreground">
-                Automatically generate this report on a schedule
+                {t("reports.scheduleReportDesc")}
               </p>
             </div>
             <Switch
@@ -163,16 +164,16 @@ export function CreateReportDialog({
 
           {schedule && (
             <div className="space-y-2">
-              <Label>Frequency</Label>
+              <Label>{t("reports.frequency")}</Label>
               <Select value={frequency} onValueChange={setFrequency}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                  <SelectItem value="daily">{t("reports.daily")}</SelectItem>
+                  <SelectItem value="weekly">{t("reports.weekly")}</SelectItem>
+                  <SelectItem value="monthly">{t("reports.monthly")}</SelectItem>
+                  <SelectItem value="quarterly">{t("reports.quarterly")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -181,10 +182,10 @@ export function CreateReportDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={!name || !type}>
-            Create Report
+            {t("reports.createReport")}
           </Button>
         </DialogFooter>
       </DialogContent>

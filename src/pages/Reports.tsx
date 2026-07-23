@@ -16,6 +16,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { ReportCard, Report as ReportCardType } from "@/components/reports/ReportCard";
 import { CreateReportDialog } from "@/components/reports/CreateReportDialog";
 import { ReportPreviewDialog } from "@/components/reports/ReportPreviewDialog";
@@ -47,6 +48,7 @@ function mapToCardReport(r: any): ReportCardType {
 }
 
 export default function Reports() {
+  const { t } = useTranslation();
   const { reports, isLoading, addReport, deleteReport, regenerateReport } = useReports();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -103,7 +105,7 @@ export default function Reports() {
   };
 
   const handleDownload = (report: ReportCardType) => {
-    toast.success(`Downloading ${report.name}.${report.format.toLowerCase()}`);
+    toast.success(t("reports.downloading", { file: `${report.name}.${report.format.toLowerCase()}` }));
   };
 
   const handleRegenerate = (report: ReportCardType) => {
@@ -121,18 +123,18 @@ export default function Reports() {
   };
 
   const handleSchedule = (report: ReportCardType) => {
-    toast.info(`Opening schedule options for "${report.name}"`);
+    toast.info(t("reports.openingSchedule", { name: report.name }));
   };
 
   const handleQuickTemplate = (templateName: string) => {
     setCreateDialogOpen(true);
-    toast.info(`Template "${templateName}" selected`);
+    toast.info(t("reports.templateSelected", { name: templateName }));
   };
 
   if (isLoading) {
     return (
       <DashboardLayout>
-        <LoadingState message="Loading reports..." />
+        <LoadingState message={t("reports.loading")} />
       </DashboardLayout>
     );
   }
@@ -143,14 +145,14 @@ export default function Reports() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="page-title mb-2">Reports</h1>
+            <h1 className="page-title mb-2">{t("reports.title")}</h1>
             <p className="text-muted-foreground">
-              Generate and manage your business reports
+              {t("reports.subtitle")}
             </p>
           </div>
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Create Report
+            {t("reports.createReport")}
           </Button>
         </div>
 
@@ -159,7 +161,7 @@ export default function Reports() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search reports..."
+              placeholder={t("reports.searchPlaceholder")}
               className="pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -168,26 +170,26 @@ export default function Reports() {
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-full sm:w-[150px]">
               <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Type" />
+              <SelectValue placeholder={t("reports.typePlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="performance">Performance</SelectItem>
-              <SelectItem value="analytics">Analytics</SelectItem>
-              <SelectItem value="financial">Financial</SelectItem>
-              <SelectItem value="marketing">Marketing</SelectItem>
+              <SelectItem value="all">{t("reports.allTypes")}</SelectItem>
+              <SelectItem value="performance">{t("reports.performance")}</SelectItem>
+              <SelectItem value="analytics">{t("reports.analyticsType")}</SelectItem>
+              <SelectItem value="financial">{t("reports.financial")}</SelectItem>
+              <SelectItem value="marketing">{t("reports.marketing")}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={dateFilter} onValueChange={setDateFilter}>
             <SelectTrigger className="w-full sm:w-[150px]">
               <Calendar className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Date" />
+              <SelectValue placeholder={t("reports.datePlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="recent">Most Recent</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-              <SelectItem value="year">This Year</SelectItem>
+              <SelectItem value="recent">{t("reports.mostRecent")}</SelectItem>
+              <SelectItem value="week">{t("reports.thisWeek")}</SelectItem>
+              <SelectItem value="month">{t("reports.thisMonth")}</SelectItem>
+              <SelectItem value="year">{t("reports.thisYear")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -196,9 +198,9 @@ export default function Reports() {
           {/* Reports List */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Available Reports</h2>
+              <h2 className="text-lg font-semibold">{t("reports.availableReports")}</h2>
               <span className="text-sm text-muted-foreground">
-                {filteredReports.length} of {cardReports.length} reports
+                {t("reports.reportsCount", { filtered: filteredReports.length, total: cardReports.length })}
               </span>
             </div>
             <div className="space-y-3">
@@ -218,15 +220,15 @@ export default function Reports() {
                 <Card>
                   <CardContent className="flex flex-col items-center justify-center py-12">
                     <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium">No reports found</h3>
+                    <h3 className="text-lg font-medium">{t("reports.noReportsFound")}</h3>
                     <p className="text-sm text-muted-foreground text-center mt-1">
                       {searchQuery || typeFilter !== "all"
-                        ? "Try adjusting your search or filters"
-                        : "Create your first report to get started"}
+                        ? t("reports.adjustFilters")
+                        : t("reports.createFirstReport")}
                     </p>
                     <Button className="mt-4" onClick={() => setCreateDialogOpen(true)}>
                       <Plus className="mr-2 h-4 w-4" />
-                      Create Report
+                      {t("reports.createReport")}
                     </Button>
                   </CardContent>
                 </Card>
@@ -239,19 +241,19 @@ export default function Reports() {
             {/* Quick Stats */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Report Statistics</CardTitle>
+                <CardTitle className="text-base">{t("reports.reportStatistics")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Total Reports</span>
+                  <span className="text-sm text-muted-foreground">{t("reports.totalReports")}</span>
                   <span className="font-medium">{reports.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Ready</span>
+                  <span className="text-sm text-muted-foreground">{t("reports.ready")}</span>
                   <span className="font-medium">{reports.filter(r => r.status === "Ready").length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Scheduled</span>
+                  <span className="text-sm text-muted-foreground">{t("reports.title")}</span>
                   <span className="font-medium">{scheduledReports.length}</span>
                 </div>
               </CardContent>
@@ -260,8 +262,8 @@ export default function Reports() {
             {/* Scheduled Reports */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Scheduled Reports</CardTitle>
-                <CardDescription>Upcoming automated reports</CardDescription>
+                <CardTitle className="text-base">{t("reports.scheduledReports")}</CardTitle>
+                <CardDescription>{t("reports.upcomingAutomated")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {scheduledReports.length > 0 ? (
@@ -275,7 +277,7 @@ export default function Reports() {
                         <p className="text-xs text-muted-foreground">{report.scheduleFrequency}</p>
                         {report.scheduleNextRun && (
                           <p className="text-xs text-muted-foreground">
-                            Next: {new Date(report.scheduleNextRun).toLocaleDateString()}
+                            {t("reports.next", { date: new Date(report.scheduleNextRun).toLocaleDateString() })}
                           </p>
                         )}
                       </div>
@@ -291,7 +293,7 @@ export default function Reports() {
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    No scheduled reports
+                    {t("reports.noScheduledReports")}
                   </p>
                 )}
                 <Button
@@ -301,7 +303,7 @@ export default function Reports() {
                   onClick={() => setCreateDialogOpen(true)}
                 >
                   <Plus className="mr-2 h-3 w-3" />
-                  Schedule New
+                  {t("reports.scheduleNew")}
                 </Button>
               </CardContent>
             </Card>
@@ -309,21 +311,24 @@ export default function Reports() {
             {/* Report Templates */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Quick Templates</CardTitle>
+                <CardTitle className="text-base">{t("reports.quickTemplates")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {quickTemplates.map((template) => (
-                  <Button
-                    key={template.name}
-                    variant="outline"
-                    className="w-full justify-start"
-                    size="sm"
-                    onClick={() => handleQuickTemplate(template.name)}
-                  >
-                    <template.icon className="mr-2 h-4 w-4" />
-                    {template.name}
-                  </Button>
-                ))}
+                {quickTemplates.map((template) => {
+                  const translatedName = t(`reports.template${template.name.replace(/\s+/g, "")}`, template.name);
+                  return (
+                    <Button
+                      key={template.name}
+                      variant="outline"
+                      className="w-full justify-start"
+                      size="sm"
+                      onClick={() => handleQuickTemplate(translatedName)}
+                    >
+                      <template.icon className="mr-2 h-4 w-4" />
+                      {translatedName}
+                    </Button>
+                  );
+                })}
               </CardContent>
             </Card>
           </div>
@@ -348,18 +353,18 @@ export default function Reports() {
       <AlertDialog open={!!deleteReportTarget} onOpenChange={(open) => !open && setDeleteReportTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Report</AlertDialogTitle>
+            <AlertDialogTitle>{t("reports.deleteReport")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deleteReportTarget?.name}"? This action cannot be undone.
+              {t("reports.deleteConfirm", { name: deleteReportTarget?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

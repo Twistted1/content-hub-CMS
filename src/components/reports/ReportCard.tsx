@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LucideIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export interface Report {
   id: number | string;
@@ -66,6 +67,7 @@ export function ReportCard({
   onDelete,
   onSchedule,
 }: ReportCardProps) {
+  const { t } = useTranslation();
   const Icon = report.icon;
 
   return (
@@ -92,22 +94,22 @@ export function ReportCard({
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => onView(report)}>
                     <Eye className="mr-2 h-4 w-4" />
-                    View Report
+                    {t("reports.viewReport")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onSchedule(report)}>
                     <Calendar className="mr-2 h-4 w-4" />
-                    Schedule
+                    {t("reports.schedule")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onRegenerate(report)}>
                     <Settings className="mr-2 h-4 w-4" />
-                    Edit Settings
+                    {t("reports.editSettings")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive"
                     onClick={() => onDelete(report)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
+                    {t("common.delete")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -120,7 +122,7 @@ export function ReportCard({
                 {report.status}
               </Badge>
               <span className="text-xs text-muted-foreground">
-                Last generated: {report.lastGenerated}
+                {t("reports.lastGenerated", { date: report.lastGenerated })}
               </span>
             </div>
             <div className="mt-3 flex gap-2">
