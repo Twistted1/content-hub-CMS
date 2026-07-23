@@ -1369,5 +1369,171 @@
   "notFound": {
     "message": "Ops! Página não encontrada",
     "returnHome": "Voltar para o Início"
+  },
+  "privacy": {
+    "navBrand": "Content Hub",
+    "backToHome": "Voltar para o Início",
+    "title": "Política de Privacidade",
+    "lastUpdated": "Última atualização:",
+    "sections": [
+      {
+        "title": "1. Introdução",
+        "paragraphs": [
+          "A Content Hub (\"nós\", \"nosso\" ou \"nos\") está comprometida em proteger sua privacidade. Esta Política de Privacidade explica como coletamos, usamos, divulgamos e protegemos suas informações quando você usa nossa plataforma."
+        ]
+      },
+      {
+        "title": "2. Informações que Coletamos",
+        "paragraphs": [
+          "Coletamos informações que você nos fornece diretamente:"
+        ],
+        "items": [
+          "Informações da conta (nome, e-mail, senha)",
+          "Informações do perfil (nome da empresa, biografia, avatar)",
+          "Conteúdo que você cria e agenda por meio da nossa plataforma",
+          "Conexões e credenciais de contas de redes sociais",
+          "Informações de pagamento para serviços de assinatura",
+          "Comunicações com nossa equipe de suporte"
+        ]
+      },
+      {
+        "title": "3. Como Usamos Suas Informações",
+        "paragraphs": [
+          "Usamos as informações que coletamos para:"
+        ],
+        "items": [
+          "Fornecer, manter e melhorar nossos serviços",
+          "Processar transações e enviar informações relacionadas",
+          "Enviar avisos técnicos e mensagens de suporte",
+          "Responder aos seus comentários e perguntas",
+          "Analisar padrões de uso para aprimorar a experiência do usuário",
+          "Detectar e prevenir atividades fraudulentas"
+        ]
+      },
+      {
+        "title": "4. Compartilhamento de Informações",
+        "paragraphs": [
+          "Não vendemos suas informações pessoais. Podemos compartilhar suas informações com:"
+        ],
+        "items": [
+          "Prestadores de serviço que auxiliam na operação da nossa plataforma",
+          "Plataformas de redes sociais que você escolher conectar",
+          "Autoridades legais quando exigido por lei",
+          "Parceiros de negócios com seu consentimento explícito"
+        ]
+      },
+      {
+        "title": "5. Segurança dos Dados",
+        "paragraphs": [
+          "Implementamos medidas técnicas e organizacionais apropriadas para proteger suas informações pessoais contra acesso não autorizado, alteração, divulgação ou destruição. Isso inclui criptografia, servidores seguros e auditorias de segurança regulares."
+        ]
+      },
+      {
+        "title": "6. Retenção de Dados",
+        "paragraphs": [
+          "Retemos suas informações pessoais enquanto sua conta estiver ativa ou conforme necessário para fornecer os serviços a você. Você pode solicitar a exclusão de seus dados a qualquer momento entrando em contato conosco."
+        ]
+      },
+      {
+        "title": "7. Seus Direitos",
+        "paragraphs": [
+          "Dependendo da sua localização, você pode ter o direito de:"
+        ],
+        "items": [
+          "Acessar as informações pessoais que mantemos sobre você",
+          "Solicitar a correção de dados imprecisos",
+          "Solicitar a exclusão dos seus dados",
+          "Se opor ao processamento dos seus dados",
+          "Solicitar a portabilidade de dados",
+          "Retirar o consentimento a qualquer momento"
+        ]
+      },
+      {
+        "title": "8. Cookies e Rastreamento",
+        "paragraphs": [
+          "Usamos cookies e tecnologias semelhantes para melhorar sua experiência, analisar tendências e administrar o site. Você pode controlar as preferências de cookies nas configurações do seu navegador."
+        ]
+      },
+      {
+        "title": "9. Links de Terceiros",
+        "paragraphs": [
+          "Nossa plataforma pode conter links para sites de terceiros. Não somos responsáveis pelas práticas de privacidade desses sites externos. Recomendamos que você leia as respectivas políticas de privacidade."
+        ]
+      },
+      {
+        "title": "10. Alterações nesta Política",
+        "paragraphs": [
+          "Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre quaisquer alterações materiais publicando a nova política nesta página e atualizando a data de \"Última atualização\"."
+        ]
+      }
+    ],
+    "contactTitle": "11. Fale Conosco",
+    "contactPrefix": "Se você tiver dúvidas sobre esta Política de Privacidade ou nossas práticas de dados, entre em contato conosco em",
+    "contactEmail": "privacy@contenthub.io"
+  },
+  "terms": {
+    "navBrand": "Content Hub",
+    "backToHome": "Voltar para o Início",
+    "title": "Termos de Serviço",
+    "lastUpdated": "Última atualização:",
+    "sections": [
+      {
+        "title": "1. Aceitação dos Termos",
+        "paragraphs": [
+          "Ao acessar e usar a Content Hub (\"o Serviço\"), você aceita e concorda em cumprir estes Termos de Serviço. Se você não concordar com estes termos, não utilize o Serviço."
+        ]
+      },
+      {
+        "title": "2. Descrição do Serviço",
+        "paragraphs": [
+          "A Content Hub é uma plataforma de gerenciamento de conteúdo e agendamento de redes sociais que permite aos usuários criar, agendar e publicar conteúdo em várias plataformas de redes sociais. O Serviço inclui recursos como automação, análises, colaboração em equipe e assistência de conteúdo com IA."
+        ]
+      },
+      {
+        "title": "3. Contas de Usuário",
+        "paragraphs": [
+          "Você deve criar uma conta para usar o Serviço. Você é responsável por manter a confidencialidade das credenciais da sua conta e por todas as atividades que ocorrem nela. Você concorda em nos notificar imediatamente sobre qualquer uso não autorizado de sua conta."
+        ]
+      },
+      {
+        "title": "4. Planos de Assinatura",
+        "paragraphs": [
+          "Oferecemos vários planos de assinatura, incluindo os níveis Gratuito, Pro e Enterprise. Cada plano tem recursos e limitações diferentes. As assinaturas pagas são cobradas mensalmente ou anualmente. Você pode fazer upgrade ou downgrade do seu plano a qualquer momento."
+        ]
+      },
+      {
+        "title": "5. Conteúdo do Usuário",
+        "paragraphs": [
+          "Você mantém a propriedade de todo o conteúdo que criar e enviar para o Serviço. Ao usar o Serviço, você nos concede uma licença limitada para armazenar, processar e exibir seu conteúdo conforme necessário para fornecer o Serviço. Você é o único responsável por garantir que seu conteúdo esteja em conformidade com as leis aplicáveis e os direitos de terceiros."
+        ]
+      },
+      {
+        "title": "6. Usos Proibidos",
+        "paragraphs": [
+          "Você concorda em não usar o Serviço para: (a) violar quaisquer leis ou regulamentos; (b) infringir direitos de propriedade intelectual; (c) transmitir conteúdo prejudicial ou malicioso; (d) enviar spam ou assediar outras pessoas; (e) tentar obter acesso não autorizado ao Serviço; ou (f) interferir no funcionamento adequado do Serviço."
+        ]
+      },
+      {
+        "title": "7. Rescisão",
+        "paragraphs": [
+          "Reservamo-nos o direito de suspender ou encerrar sua conta a qualquer momento por violação destes termos ou por qualquer outro motivo, a nosso exclusivo critério. Após a rescisão, seu direito de usar o Serviço cessará imediatamente."
+        ]
+      },
+      {
+        "title": "8. Limitação de Responsabilidade",
+        "paragraphs": [
+          "Na máxima extensão permitida por lei, a Content Hub não será responsável por quaisquer danos indiretos, incidentais, especiais, consequenciais ou punitivos resultantes do uso do Serviço."
+        ]
+      },
+      {
+        "title": "9. Alterações nos Termos",
+        "paragraphs": [
+          "Podemos atualizar estes Termos de Serviço periodicamente. Notificaremos você sobre quaisquer alterações materiais publicando os novos termos nesta página. O uso continuado do Serviço após tais alterações constitui aceitação dos novos termos."
+        ]
+      }
+    ],
+    "contactTitle": "10. Fale Conosco",
+    "contactPrefix": "Se você tiver alguma dúvida sobre estes Termos de Serviço, entre em contato conosco em",
+    "contactEmail": "legal@contenthub.io"
   }
 }
