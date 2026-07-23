@@ -1842,5 +1842,20 @@
     "toastLoggedOut": "Desconectado com sucesso",
     "toastKeyboardShortcuts": "Atalhos de teclado: ⌘K para buscar, ⌘/ para ajuda",
     "toastHelpComingSoon": "Central de ajuda em breve"
+  },
+  "editor": {
+    "writeYourStory": "Escreva sua história...",
+    "uploadImage": "Enviar Imagem",
+    "urlPrompt": "URL",
+    "toastImageUploadFailed": "Falha ao enviar a imagem"
+  },
+  "dragDropImport": {
+    "defaultEntityName": "dados",
+    "toastInvalidFileType": "Envie um arquivo JSON",
+    "toastTemplateDetected": "Modelo Universal detectado - Processando itens",
+    "toastInvalidFormat": "Formato de {{entity}} inválido",
+    "toastImportedSuccess": "{{entity}} importado com sucesso",
+    "toastParseFailed": "Falha ao interpretar o arquivo JSON",
+    "dropToImport": "Solte o JSON para Importar {{entity}}"
   }
 }

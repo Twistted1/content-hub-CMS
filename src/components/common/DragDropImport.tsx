@@ -2,6 +2,7 @@ import { useState, useRef, ReactNode } from "react";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface DragDropImportProps {
   onImport: (data: any) => void;
@@ -11,13 +12,15 @@ interface DragDropImportProps {
   entityName?: string;
 }
 
-export function DragDropImport({ 
-  onImport, 
-  validate, 
-  children, 
+export function DragDropImport({
+  onImport,
+  validate,
+  children,
   className,
-  entityName = "data"
+  entityName,
 }: DragDropImportProps) {
+  const { t } = useTranslation();
+  const resolvedEntityName = entityName ?? t("dragDropImport.defaultEntityName");
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
 
@@ -54,7 +57,7 @@ export function DragDropImport({
     if (files && files.length > 0) {
       const file = files[0];
       if (file.type !== "application/json" && !file.name.endsWith(".json")) {
-        toast.error("Please upload a JSON file");
+        toast.error(t("dragDropImport.toastInvalidFileType"));
         return;
       }
 
@@ -62,24 +65,24 @@ export function DragDropImport({
       reader.onload = (event) => {
         try {
           const json = JSON.parse(event.target?.result as string);
-          
+
           // Detect Universal JSON Template (UJT)
           const isUJT = json.version === "1.0" && Array.isArray(json.items);
-          
+
           if (isUJT) {
-            toast.info("Universal Template detected - Processing items");
+            toast.info(t("dragDropImport.toastTemplateDetected"));
             onImport(json);
             return;
           }
 
           if (validate && !validate(json)) {
-            toast.error(`Invalid ${entityName} format`);
+            toast.error(t("dragDropImport.toastInvalidFormat", { entity: resolvedEntityName }));
             return;
           }
           onImport(json);
-          toast.success(`${entityName} imported successfully`);
+          toast.success(t("dragDropImport.toastImportedSuccess", { entity: resolvedEntityName }));
         } catch (error) {
-          toast.error("Failed to parse JSON file");
+          toast.error(t("dragDropImport.toastParseFailed"));
         }
       };
       reader.readAsText(file);
@@ -100,7 +103,7 @@ export function DragDropImport({
             <div className="p-4 rounded-full bg-primary/10 text-primary">
               <Upload className="h-10 w-10" />
             </div>
-            <h3 className="text-xl font-semibold">Drop JSON to Import {entityName}</h3>
+            <h3 className="text-xl font-semibold">{t("dragDropImport.dropToImport", { entity: resolvedEntityName })}</h3>
           </div>
         </div>
       )}

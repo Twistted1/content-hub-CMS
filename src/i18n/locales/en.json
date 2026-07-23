@@ -1842,5 +1842,20 @@
     "toastLoggedOut": "Logged out successfully",
     "toastKeyboardShortcuts": "Keyboard shortcuts: ⌘K to search, ⌘/ for help",
     "toastHelpComingSoon": "Help center coming soon"
+  },
+  "editor": {
+    "writeYourStory": "Write your story...",
+    "uploadImage": "Upload Image",
+    "urlPrompt": "URL",
+    "toastImageUploadFailed": "Failed to upload image"
+  },
+  "dragDropImport": {
+    "defaultEntityName": "data",
+    "toastInvalidFileType": "Please upload a JSON file",
+    "toastTemplateDetected": "Universal Template detected - Processing items",
+    "toastInvalidFormat": "Invalid {{entity}} format",
+    "toastImportedSuccess": "{{entity}} imported successfully",
+    "toastParseFailed": "Failed to parse JSON file",
+    "dropToImport": "Drop JSON to Import {{entity}}"
   }
 }

@@ -27,6 +27,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useRef } from 'react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface RichTextEditorProps {
   content: string;
@@ -37,6 +38,7 @@ interface RichTextEditorProps {
 }
 
 export function RichTextEditor({ content, onChange, placeholder, className, onImageUpload }: RichTextEditorProps) {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
@@ -51,7 +53,7 @@ export function RichTextEditor({ content, onChange, placeholder, className, onIm
         openOnClick: false,
       }),
       Placeholder.configure({
-        placeholder: placeholder || 'Write your story...',
+        placeholder: placeholder || t('editor.writeYourStory'),
       }),
     ],
     content,
@@ -74,7 +76,7 @@ export function RichTextEditor({ content, onChange, placeholder, className, onIm
                   view.dispatch(view.state.tr.insert(coordinates.pos, schema.nodes.image.create({ src: url })));
               }
             }).catch(error => {
-                toast.error("Failed to upload image");
+                toast.error(t('editor.toastImageUploadFailed'));
                 console.error(error);
             });
             return true;
@@ -100,7 +102,7 @@ export function RichTextEditor({ content, onChange, placeholder, className, onIm
               const url = await onImageUpload(file);
               editor.chain().focus().setImage({ src: url }).run();
           } catch (error) {
-              toast.error("Failed to upload image");
+              toast.error(t('editor.toastImageUploadFailed'));
           }
       } else if (file) {
            // Fallback if no uploader provided
@@ -114,7 +116,7 @@ export function RichTextEditor({ content, onChange, placeholder, className, onIm
 
   const setLink = () => {
     const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('URL', previousUrl);
+    const url = window.prompt(t('editor.urlPrompt'), previousUrl);
 
     // cancelled
     if (url === null) {
@@ -137,10 +139,10 @@ export function RichTextEditor({ content, onChange, placeholder, className, onIm
         type="file" 
         ref={fileInputRef} 
         onChange={handleFileChange} 
-        className="hidden" 
+        className="hidden"
         accept="image/*"
-        title="Upload Image"
-        aria-label="Upload Image"
+        title={t('editor.uploadImage')}
+        aria-label={t('editor.uploadImage')}
       />
       
       {/* 
