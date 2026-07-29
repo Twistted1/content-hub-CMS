@@ -96,3 +96,12 @@ Roles are stored in the `user_roles` table. Available roles: `admin`, `moderator
 ## Environment Variables
 
 See `.env.example` for the full list. The `VITE_` prefix means the variable is exposed to the browser bundle — never put secret keys here. All secret keys go in Supabase Edge Function secrets.
+
+## Testing
+
+- **Unit tests**: `npm run test` (Vitest). `npm run test:watch` for watch mode, `npm run test:coverage` for coverage.
+- **E2E tests**: `npm run e2e` (Playwright), against a real, disposable Supabase test project — never production.
+  1. Copy `.env.e2e.example` to `.env.e2e` and fill in the test project's URL, publishable key, and `service_role` key (Dashboard → Project Settings → API). The service_role key is needed because Supabase requires email confirmation and there's no other way to create a pre-confirmed test user for the auth-gated specs to sign in as.
+  2. `export $(cat .env.e2e | xargs) && npm run e2e` (or `npm run e2e:ui` for the interactive runner).
+  3. Without a service_role key, `e2e/global-setup.ts` skips test-user setup and the auth-gated specs (`e2e/authenticated.spec.ts`) skip themselves — only the unauthenticated smoke/validation specs run.
+  4. In CI (`.github/workflows/e2e.yml`), set repo secrets `E2E_SUPABASE_URL`, `E2E_SUPABASE_PUBLISHABLE_KEY`, and `E2E_SUPABASE_SERVICE_ROLE_KEY` pointing at the same disposable test project.

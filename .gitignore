@@ -15,6 +15,12 @@ dist-ssr
 # Environment variables - never commit real credentials
 .env
 .env.production
+.env.e2e
+
+# Playwright
+/test-results/
+/playwright-report/
+/e2e/.e2e-auth-state.json
 
 # Editor directories and files
 .vscode/*
