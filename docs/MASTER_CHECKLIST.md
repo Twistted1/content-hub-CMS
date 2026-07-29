@@ -184,28 +184,28 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
       `useTranslation` file-count (59/115) is no longer a meaningful metric
       going forward — most of the remaining 106 files are primitives that
       will never need it.
-- [ ] **CSP header — user tested the preview, found 2 things, 1 fixed, 1
-      is a separate real bug.** You checked the console on PR #7's preview
-      and found:
-      1. `vercel.live` preview-toolbar script blocked by `script-src` —
-         exactly the untested caveat I'd flagged (Vercel injects this only
-         on preview deployments, so it's invisible to local testing).
-         **Fixed** — added `vercel.live` to `script-src`/`connect-src`/
-         `frame-src`, rebuilt clean.
-      2. **`POST .../auth/v1/token` → 422 "Email logins are disabled."**
-         This is **not caused by the CSP** — the request reached Supabase
-         fine (proves `connect-src` is correct), Supabase itself rejected
-         it. **This means email/password sign-in and sign-up are currently
-         broken for every new user on production Auth**, unrelated to
-         this PR entirely. You only reach `/dashboard` on the production
-         domain because you already have a valid session from before — a
-         new user hitting production right now would hit this exact wall.
-         **Action for you, separate from CSP:** Supabase Dashboard →
-         Authentication → Sign In/Providers → Email → confirm "Enable
-         email provider" is ON, save if it wasn't. This is now the
-         highest-priority open item — it may be blocking real users today.
-      Once the email-provider toggle is confirmed and you've re-checked
-      the preview console is clean, PR #7 is good to merge.
+- [x] **Production email/password login was fully broken — found and
+      fixed 2026-07-29.** While verifying PR #7's CSP against a live
+      session, discovered `POST /auth/v1/token` returning `422:
+      email_provider_disabled` on every password-grant request — not
+      caused by the CSP (the request reached Supabase fine, proving
+      `connect-src` was correct all along). Auth logs showed this
+      rejecting every login attempt for at least the prior 5+ hours;
+      production only appeared to work because one existing browser
+      session was refreshing a still-valid token, not actually logging
+      in. **Root cause: the "Enable email provider" toggle in Supabase
+      Auth was off.** Fixed by toggling it on and saving. Re-verified via
+      fresh auth logs immediately after: real password logins now
+      succeeding (`login_method: password`, status 200) for two different
+      accounts, zero `email_provider_disabled` errors since. **This was
+      the actual production-blocking bug this whole investigation was
+      chasing** — every new user was locked out until this fix.
+- [ ] **CSP header — ready to merge, one last look recommended.**
+      `vercel.live` preview-toolbar block fixed (added to `script-src`/
+      `connect-src`/`frame-src` — Vercel only injects that script on
+      preview deployments, so it was invisible to local testing). With
+      the email-provider bug above also fixed, re-check the preview
+      console once more to confirm it's fully clean, then merge PR #7.
 - [ ] **`react-router` moderate open-redirect advisory** — fixing it is a
       v6→v7 major upgrade touching every route in the app (`f339a41`
       deferred this on purpose rather than doing a blind major-version
