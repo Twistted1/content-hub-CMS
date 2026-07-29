@@ -9,21 +9,20 @@ what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
 **Last verified:** 2026-07-29, against live production Supabase
-(`jvbucspwcjahqpoxskvr`) and `main` at commit `45acd52`.
+(`jvbucspwcjahqpoxskvr`) and `main` at commit `e88be71`.
 
 **On `main` (merged):** #2 E2E suite + dashboard crash fix, #3 RLS/FK/
 policy advisor fixes, #4 i18n completion for the 9 files that actually
-needed it, #5-#6 checklist doc updates, #8 react-router v6→v7 upgrade
-(resolves 3 open-redirect advisories). RLS performance migration
-(`fix_rls_auth_initplan_performance`) applied directly to prod,
-advisor-confirmed at 0 remaining warnings. **Production email/password
-login was found fully broken and fixed live** (Supabase Auth "Enable
-email provider" toggle was off) — see Phase 1 for details.
+needed it, #5-#6 checklist doc updates, #7 CSP header, #8 react-router
+v6→v7 upgrade (resolves 3 open-redirect advisories). RLS performance
+migration (`fix_rls_auth_initplan_performance`) applied directly to
+prod, advisor-confirmed at 0 remaining warnings. **Production email/
+password login was found fully broken and fixed live** (Supabase Auth
+"Enable email provider" toggle was off) — see Phase 1 for details.
 
-**Open, waiting on you:** #7 (CSP header) — CI green, ready to merge.
-The email-login bug above was found and fixed while verifying this PR;
-do one more console check against the live preview to confirm it's
-fully clean, then merge.
+**Open, waiting on you:** nothing code-related. Remaining items are all
+either GitHub/Supabase settings only you can change, or decisions only
+you can make — see "Open — needs a decision only you can make" below.
 
 ---
 
@@ -204,12 +203,9 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
       accounts, zero `email_provider_disabled` errors since. **This was
       the actual production-blocking bug this whole investigation was
       chasing** — every new user was locked out until this fix.
-- [ ] **CSP header — ready to merge, one last look recommended.**
-      `vercel.live` preview-toolbar block fixed (added to `script-src`/
-      `connect-src`/`frame-src` — Vercel only injects that script on
-      preview deployments, so it was invisible to local testing). With
-      the email-provider bug above also fixed, re-check the preview
-      console once more to confirm it's fully clean, then merge PR #7.
+- [x] **CSP header — merged (PR #7).** User confirmed the console was
+      clean on the live preview (signed in, no CSP violations) and
+      merged. Live on production now.
 - [x] **`react-router` v6→v7 upgrade — done, merged (PR #8).** `f339a41` deferred this
       pending a real audit rather than a blind major-version bump. Checked
       first: all 20 files importing `react-router-dom` use only the
