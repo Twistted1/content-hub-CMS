@@ -178,14 +178,22 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
       `useTranslation` file-count (59/115) is no longer a meaningful metric
       going forward — most of the remaining 106 files are primitives that
       will never need it.
-- [ ] **CSP header intentionally still missing** from `vercel.json`
-      (flagged and deliberately deferred in commit `f339a41`) — needs to
-      list every domain the app actually calls (Supabase project ref,
-      Sentry, Stripe) and live-tested before shipping, since a wrong CSP
-      silently breaks the app rather than erroring loudly.
-      **Action for you or me:** give me the go-ahead and I'll draft it
-      against the domains actually in use and we test it together before
-      it ships.
+- [ ] **CSP header drafted, PR open, not merged — needs your review.**
+      Traced every external call the app actually makes: Supabase
+      (`jvbucspwcjahqpoxskvr.supabase.co`, both `https:` and `wss:` for
+      Realtime), Sentry ingest (DSN-gated, no-ops when unset), Google Fonts
+      (`fonts.googleapis.com`/`fonts.gstatic.com`). Stripe needs **no**
+      entry — checkout/portal URLs open via `window.open()` in a new tab,
+      not fetched or embedded, so CSP doesn't touch that flow at all.
+      Built the production bundle, served it, injected the exact header,
+      and loaded the app in a real browser: **zero CSP violations**,
+      landing page renders pixel-identical with fonts intact. Could not
+      verify authenticated pages against live Supabase from this sandbox
+      (same network-policy limitation as the mobile check) — that's the
+      one gap between "tested" and "verified in production." **Before
+      merging:** open the PR's Vercel preview yourself, sign in, and click
+      through a few pages checking the browser console for any "Refused to
+      connect/load" CSP errors. If clean, merge it.
 - [ ] **`react-router` moderate open-redirect advisory** — fixing it is a
       v6→v7 major upgrade touching every route in the app (`f339a41`
       deferred this on purpose rather than doing a blind major-version
