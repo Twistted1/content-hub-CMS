@@ -9,11 +9,21 @@ what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
 **Last verified:** 2026-07-29, against live production Supabase
-(`jvbucspwcjahqpoxskvr`) and `main` at commit `34549d9`. PRs #2, #3, #4
-all merged same day: E2E suite + dashboard crash fix (#2), RLS/FK/policy
-advisor fixes (#3), i18n completion for the 9 files that actually needed
-it (#4). RLS performance migration (`fix_rls_auth_initplan_performance`)
-applied directly to prod, advisor-confirmed at 0 remaining warnings.
+(`jvbucspwcjahqpoxskvr`) and `main` at commit `45acd52`.
+
+**On `main` (merged):** #2 E2E suite + dashboard crash fix, #3 RLS/FK/
+policy advisor fixes, #4 i18n completion for the 9 files that actually
+needed it, #5-#6 checklist doc updates, #8 react-router v6→v7 upgrade
+(resolves 3 open-redirect advisories). RLS performance migration
+(`fix_rls_auth_initplan_performance`) applied directly to prod,
+advisor-confirmed at 0 remaining warnings. **Production email/password
+login was found fully broken and fixed live** (Supabase Auth "Enable
+email provider" toggle was off) — see Phase 1 for details.
+
+**Open, waiting on you:** #7 (CSP header) — CI green, ready to merge.
+The email-login bug above was found and fixed while verifying this PR;
+do one more console check against the live preview to confirm it's
+fully clean, then merge.
 
 ---
 
@@ -178,15 +188,29 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
       `useTranslation` file-count (59/115) is no longer a meaningful metric
       going forward — most of the remaining 106 files are primitives that
       will never need it.
-- [ ] **CSP header intentionally still missing** from `vercel.json`
-      (flagged and deliberately deferred in commit `f339a41`) — needs to
-      list every domain the app actually calls (Supabase project ref,
-      Sentry, Stripe) and live-tested before shipping, since a wrong CSP
-      silently breaks the app rather than erroring loudly.
-      **Action for you or me:** give me the go-ahead and I'll draft it
-      against the domains actually in use and we test it together before
-      it ships.
-- [x] **`react-router` v6→v7 upgrade — done.** `f339a41` deferred this
+- [x] **Production email/password login was fully broken — found and
+      fixed 2026-07-29.** While verifying PR #7's CSP against a live
+      session, discovered `POST /auth/v1/token` returning `422:
+      email_provider_disabled` on every password-grant request — not
+      caused by the CSP (the request reached Supabase fine, proving
+      `connect-src` was correct all along). Auth logs showed this
+      rejecting every login attempt for at least the prior 5+ hours;
+      production only appeared to work because one existing browser
+      session was refreshing a still-valid token, not actually logging
+      in. **Root cause: the "Enable email provider" toggle in Supabase
+      Auth was off.** Fixed by toggling it on and saving. Re-verified via
+      fresh auth logs immediately after: real password logins now
+      succeeding (`login_method: password`, status 200) for two different
+      accounts, zero `email_provider_disabled` errors since. **This was
+      the actual production-blocking bug this whole investigation was
+      chasing** — every new user was locked out until this fix.
+- [ ] **CSP header — ready to merge, one last look recommended.**
+      `vercel.live` preview-toolbar block fixed (added to `script-src`/
+      `connect-src`/`frame-src` — Vercel only injects that script on
+      preview deployments, so it was invisible to local testing). With
+      the email-provider bug above also fixed, re-check the preview
+      console once more to confirm it's fully clean, then merge PR #7.
+- [x] **`react-router` v6→v7 upgrade — done, merged (PR #8).** `f339a41` deferred this
       pending a real audit rather than a blind major-version bump. Checked
       first: all 20 files importing `react-router-dom` use only the
       classic API (`BrowserRouter`, `Routes`/`Route`, `Link`, `Navigate`,
