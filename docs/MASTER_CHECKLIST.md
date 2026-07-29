@@ -9,8 +9,8 @@ what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
 **Last verified:** 2026-07-29, against live production Supabase
-(`jvbucspwcjahqpoxskvr`) and this repo at commit `5456fff`. RLS
-performance migration (`fix_rls_auth_initplan_performance`) applied
+(`jvbucspwcjahqpoxskvr`) and `main` at commit `30d27a4` (PR #2, merged).
+RLS performance migration (`fix_rls_auth_initplan_performance`) applied
 directly to prod same day, advisor-confirmed at 0 remaining warnings.
 
 ---
@@ -130,15 +130,30 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
       In progress as of 2026-07-29 — you were mid-setup in Google Cloud
       Console. Email/password sign-in is unaffected either way; it already
       works today.
-- [ ] **`has_role()` is callable by any authenticated user via
-      `/rest/v1/rpc/has_role`.** Informational, not necessarily a problem —
-      it's a read-only role check, commonly exposed on purpose so the
-      frontend can ask "am I admin?" Confirm that's the intent; if so, no
-      action needed. If not, revoke `EXECUTE` from `authenticated`.
-- [ ] **15 unused indexes, 7 tables with overlapping permissive policies,
-      3 unindexed foreign keys** — lower-priority performance items from
-      the same advisor pass, not yet triaged individually. Flagging the
-      count here so it's not lost; will itemize on request.
+- [x] **`has_role()` callable by any authenticated user — resolved, not a
+      gap.** Checked: `has_role(auth.uid(), 'admin')` is called directly
+      inside the majority of this schema's RLS policies (posts, projects,
+      templates, etc.), which run as the querying `authenticated` role.
+      Revoking `EXECUTE` — the linter's generic suggestion — would break
+      every one of those policies for every signed-in user. This function
+      is load-bearing for RLS, not an accidental exposure. Leaving as-is.
+- [x] **3 unindexed foreign keys — fixed.** Added covering indexes on
+      `articles.author_id`, `oauth_states.user_id`, `pipeline_runs.post_id`.
+      Purely additive, no behavior change.
+- [x] **7 overlapping permissive SELECT policies — fixed.** `media` and
+      `posts` each had two permissive SELECT policies stacking for the same
+      role (owner/admin check + a public-visibility check), so Postgres
+      evaluated both on every query. Consolidated each pair into one policy
+      with the same OR'd condition — identical access outcome, one policy
+      instead of two. Advisor re-check: 0 `multiple_permissive_policies`
+      warnings remain.
+- [ ] **15 unused indexes** (18 now, counting the 3 just added above) —
+      deliberately left alone. "Unused" here just means this project has had
+      almost no real traffic yet; every one of these matches an obvious
+      query pattern (tasks by project, posts by automation, etc.) and
+      dropping them now risks a regression the moment usage picks up, to
+      save a trivial amount of write overhead today. Revisit once there's
+      real production traffic to judge by — not before.
 
 ### Open — needs a decision only you can make
 
@@ -200,5 +215,8 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
   Historical record, superseded by this file for anything it disagrees with.
 - `docs/PHASE_0_TESTING.md`: original Phase 0 plan. All items now checked
   above; not maintained further as a separate file.
-- PR #2 (`claude/project-completion-audit-o1xgt5` → `main`): the E2E suite
-  + dashboard crash fix + `post-images` policy fix, all in this session.
+- PR #2 (`claude/project-completion-audit-o1xgt5` → `main`): **merged**
+  2026-07-29 (squash, `30d27a4`). E2E suite, dashboard crash fix,
+  `post-images` policy fix, and RLS `auth_rls_initplan` performance fix all
+  landed on `main`. Vercel production deploy tracks `main`, so this is now
+  live.
