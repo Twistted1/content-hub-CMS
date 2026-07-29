@@ -8,9 +8,16 @@ import { useNotes } from "@/hooks/useNotes";
 import { usePlatforms } from "@/hooks/usePlatforms";
 import { usePlatformOAuth, DirectPlatform } from "@/hooks/usePlatformOAuth";
 import {
-  format, subDays, subMonths, isToday, isSameDay,
+  format, subDays, isToday, isSameDay,
   startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek,
 } from "date-fns";
+import {
+  computePlatformHealth,
+  computeConnectedPlatformsCount,
+  computeAutomationSuccessRate,
+  computeDashboardTrends,
+  computeDashboardGoals,
+} from "@/utils/dashboardStats";
 import {
   Plus, Eye, Zap, TrendingUp, TrendingDown, FileText, Calendar, Clock,
   Youtube, Instagram, Twitter, Linkedin, Facebook, Globe, Music2,
@@ -200,90 +207,56 @@ const Index = () => {
   const heatWeeks: typeof heatCells[] = [];
   for (let i = 0; i < heatCells.length; i += 7) heatWeeks.push(heatCells.slice(i, i + 7));
 
-  // Platform health — computed from real posts, not fabricated. "pct" is the
-  // share of that platform's posts which have actually been published.
-  const CORE_PLATFORM_IDS = ["youtube", "tiktok", "instagram", "twitter", "linkedin", "facebook"];
-  const platformHealth = CORE_PLATFORM_IDS.map((key) => {
-    const platformPosts = posts.filter(p => (p as any).platforms?.some((pp: any) => pp.platform === key));
-    const queued = platformPosts.filter(p => p.status === "scheduled").length;
-    const publishedCount = platformPosts.filter(p => p.status === "published").length;
-    const pct = platformPosts.length > 0 ? Math.round((publishedCount / platformPosts.length) * 100) : 0;
-    return { key, queued, pct, hasActivity: platformPosts.length > 0 };
-  }).filter(p => p.hasActivity).sort((a, b) => b.queued - a.queued);
-
-  // Connected platforms — real connection status (user_platforms + direct OAuth)
-  const connectedPlatformsCount = CORE_PLATFORM_IDS.filter((id) =>
-    userPlatforms.some(up => up.platformType === id) ||
-    ((id === "linkedin" || id === "twitter") && isConnected(id as DirectPlatform))
-  ).length;
-
-  // Automation success rate — real, from automation_runs history
-  const completedRuns = automationRuns.filter(r => r.status === "success" || r.status === "failed");
-  const successRuns = automationRuns.filter(r => r.status === "success").length;
-  const autoSuccessRate = completedRuns.length > 0 ? Math.round((successRuns / completedRuns.length) * 100) : null;
+  // Platform health, connection count, automation success rate, and
+  // month/week trend math live in src/utils/dashboardStats.ts so they're
+  // unit-testable without mounting this component.
+  const platformHealth = computePlatformHealth(posts);
+  const connectedPlatformsCount = computeConnectedPlatformsCount(userPlatforms, (id) => isConnected(id as DirectPlatform));
+  const autoSuccessRate = computeAutomationSuccessRate(automationRuns);
   const activeAutomationsCount = automations.filter((a: any) => a.status === "active").length;
 
-  // Month-over-month trend for Total Posts (created)
-  const startThisMonth = startOfMonth(now);
-  const startLastMonth = startOfMonth(subMonths(now, 1));
-  const endLastMonth = endOfMonth(subMonths(now, 1));
-  const createdThisMonth = posts.filter(p => p.createdAt && new Date(p.createdAt) >= startThisMonth).length;
-  const createdLastMonth = posts.filter(p => p.createdAt && new Date(p.createdAt) >= startLastMonth && new Date(p.createdAt) <= endLastMonth).length;
-  const totalPostsTrendUp = createdThisMonth >= createdLastMonth;
+  const {
+    totalPostsTrendUp,
+    publishedTrendUp,
+    scheduledThisWeek,
+    publishedThisMonth,
+    publishedLastMonth,
+  } = computeDashboardTrends(posts, now);
 
-  // Week-over-week trend for Published
-  const startThisWeek = startOfWeek(now);
-  const startLastWeek = startOfWeek(subDays(now, 7));
-  const endLastWeek = endOfWeek(subDays(now, 7));
-  const publishedThisWeek = posts.filter(p => p.status === "published" && p.publishedAt && new Date(p.publishedAt) >= startThisWeek).length;
-  const publishedLastWeek = posts.filter(p => p.status === "published" && p.publishedAt && new Date(p.publishedAt) >= startLastWeek && new Date(p.publishedAt) <= endLastWeek).length;
-  const publishedTrendUp = publishedThisWeek >= publishedLastWeek;
-
-  // Newly scheduled this week (real)
-  const scheduledThisWeek = posts.filter(p => p.status === "scheduled" && p.createdAt && new Date(p.createdAt) >= subDays(now, 7)).length;
-
-  // Overall publish rate (real)
   const publishRatePct = stats.totalPosts > 0 ? Math.round((stats.publishedPosts / stats.totalPosts) * 100) : 0;
 
-  // Posts published so far this calendar month (real)
-  const publishedThisMonth = posts.filter(p => p.status === "published" && p.publishedAt && new Date(p.publishedAt) >= startThisMonth).length;
-  const publishedLastMonth = posts.filter(p => p.status === "published" && p.publishedAt && new Date(p.publishedAt) >= startLastMonth && new Date(p.publishedAt) <= endLastMonth).length;
-
   // Goals — all derived from real posts/automations data, no fabricated numbers
-  const goals = [
-    {
-      label: t("dashboard.home.goalMonthlyOutput"),
-      value: `${publishedThisMonth}`,
-      target: `90 ${t("dashboard.home.postsLower")}`,
-      pct: Math.min(100, Math.round((publishedThisMonth / 90) * 100)),
-      change: publishedLastMonth > 0 ? `${publishedThisMonth - publishedLastMonth >= 0 ? "+" : ""}${publishedThisMonth - publishedLastMonth} ${t("dashboard.home.postsLower")}` : "",
-      color: "bg-emerald-500",
-    },
-    {
-      label: t("dashboard.home.goalScheduledQueue"),
-      value: `${stats.scheduledPosts}`,
-      target: `20 ${t("dashboard.home.postsLower")}`,
-      pct: Math.min(100, Math.round((stats.scheduledPosts / 20) * 100)),
-      change: scheduledThisWeek > 0 ? t("dashboard.home.addedThisWeek", { count: scheduledThisWeek }) : "",
-      color: "bg-blue-500",
-    },
-    {
-      label: t("dashboard.home.goalPublishRate"),
-      value: `${publishRatePct}%`,
-      target: "100%",
-      pct: publishRatePct,
-      change: "",
-      color: "bg-violet-500",
-    },
-    {
-      label: t("dashboard.home.goalAutomationCoverage"),
-      value: `${activeAutomationsCount}/${automations.length}`,
-      target: t("dashboard.home.automationsCount", { count: automations.length }),
-      pct: automations.length > 0 ? Math.round((activeAutomationsCount / automations.length) * 100) : 0,
-      change: "",
-      color: "bg-amber-500",
-    },
-  ];
+  const goalValues = computeDashboardGoals({
+    publishedThisMonth,
+    publishedLastMonth,
+    scheduledPosts: stats.scheduledPosts,
+    scheduledThisWeek,
+    totalPosts: stats.totalPosts,
+    publishedPosts: stats.publishedPosts,
+    activeAutomationsCount,
+    automationsCount: automations.length,
+  });
+  const goalLabels: Record<typeof goalValues[number]["key"], { label: string; target: string; color: string }> = {
+    monthlyOutput: { label: t("dashboard.home.goalMonthlyOutput"), target: `90 ${t("dashboard.home.postsLower")}`, color: "bg-emerald-500" },
+    scheduledQueue: { label: t("dashboard.home.goalScheduledQueue"), target: `20 ${t("dashboard.home.postsLower")}`, color: "bg-blue-500" },
+    publishRate: { label: t("dashboard.home.goalPublishRate"), target: "100%", color: "bg-violet-500" },
+    automationCoverage: { label: t("dashboard.home.goalAutomationCoverage"), target: t("dashboard.home.automationsCount", { count: automations.length }), color: "bg-amber-500" },
+  };
+  const goals = goalValues.map((g) => ({
+    label: goalLabels[g.key].label,
+    value: g.value,
+    target: goalLabels[g.key].target,
+    pct: g.pct,
+    change:
+      g.changeValue === null
+        ? ""
+        : g.key === "monthlyOutput"
+        ? `${g.changeValue >= 0 ? "+" : ""}${g.changeValue} ${t("dashboard.home.postsLower")}`
+        : g.key === "scheduledQueue"
+        ? t("dashboard.home.addedThisWeek", { count: g.changeValue })
+        : "",
+    color: goalLabels[g.key].color,
+  }));
 
   // Activity feed
   const activityFeed = posts.slice(0, 5).map((p, i) => ({
