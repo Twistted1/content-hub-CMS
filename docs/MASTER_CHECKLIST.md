@@ -9,7 +9,9 @@ what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
 **Last verified:** 2026-07-29, against live production Supabase
-(`jvbucspwcjahqpoxskvr`) and this repo at commit `5f2ed36`.
+(`jvbucspwcjahqpoxskvr`) and this repo at commit `5456fff`. RLS
+performance migration (`fix_rls_auth_initplan_performance`) applied
+directly to prod same day, advisor-confirmed at 0 remaining warnings.
 
 ---
 
@@ -100,16 +102,17 @@ items — re-checked directly against source and the live DB:
 
 From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
 
-- [ ] **81 RLS policies re-evaluate `auth.uid()`/`auth.role()` per row**
-      instead of once per query (`auth_rls_initplan` lint, WARN ×81 across
-      nearly every table). Standard, well-documented Supabase fix: wrap the
-      call in a subselect — `auth.uid()` → `(select auth.uid())` — inside
-      each policy's `USING`/`WITH CHECK` clause. Zero change in who can
-      access what; pure query-planner win, gets worse as table rows grow.
-      Mechanical but touches every RLS policy in the live database, so
-      **I'm not doing this unprompted** — it's a one-command migration I
-      can generate and apply the moment you say go, not a decision I need
-      help making. Say the word and it's done in this same session.
+- [x] **~~81 RLS policies re-evaluate `auth.uid()`/`auth.role()` per row~~
+      — fixed.** Wrapped every bare `auth.uid()` call (including inside
+      `has_role(...)` arguments) in `(select auth.uid())` across all 80
+      affected policies (the advisor's "81" counted the fix as one more
+      than distinct policies — one policy had two occurrences). Generated
+      the `ALTER POLICY` statements directly from live `pg_policies`
+      output rather than hand-transcribing, applied as one migration,
+      re-ran the advisor: **0 `auth_rls_initplan` warnings remain**, and
+      the security advisor pass is unchanged (no new findings, no access
+      changes) — this was purely a query-planner fix, not a permissions
+      change.
 - [ ] **Leaked-password protection is off** in Supabase Auth (checks new
       passwords against HaveIBeenPwned). This is a dashboard toggle, not a
       code change — no tool I have reaches Auth config.
