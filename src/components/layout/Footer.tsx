@@ -15,6 +15,7 @@ export function Footer() {
   const legalLinks = [
     { label: t('footer.legalPrivacy'), href: "/privacy" },
     { label: t('footer.legalTerms'), href: "/terms" },
+    { label: t('footer.legalCookies'), href: "/cookies" },
   ];
 
   const productLinks = [

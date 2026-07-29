@@ -1893,7 +1893,8 @@
     "copyright": "Content Hub. Todos os direitos reservados.",
     "madeWith": "Feito com ❤️ para criadores de conteúdo",
     "dashboardCopyright": "Content Hub CMS. Todos os direitos reservados.",
-    "support": "Suporte"
+    "support": "Suporte",
+    "legalCookies": "Política de Cookies"
   },
   "workflowTest": {
     "title": "Teste do Motor de Fluxo de Trabalho",
@@ -1985,5 +1986,52 @@
     "toastImportedSuccess": "{{entity}} importado com sucesso",
     "toastParseFailed": "Falha ao interpretar o arquivo JSON",
     "dropToImport": "Solte o JSON para Importar {{entity}}"
+  },
+  "cookies": {
+    "navBrand": "Content Hub",
+    "backToHome": "Voltar para o Início",
+    "title": "Política de Cookies",
+    "lastUpdated": "Última atualização:",
+    "sections": [
+      {
+        "title": "1. Visão Geral",
+        "paragraphs": [
+          "A Content Hub usa armazenamento local mínimo no navegador para funcionar. Esta página explica exatamente o que armazenamos no seu dispositivo e por quê. Não usamos cookies de publicidade ou rastreamento de terceiros."
+        ]
+      },
+      {
+        "title": "2. Armazenamento de Autenticação",
+        "paragraphs": [
+          "Usamos o armazenamento local do seu navegador (não cookies) para manter você conectado entre as visitas. Esse armazenamento contém seu token de sessão e é necessário para o funcionamento do Serviço — não pode ser desativado enquanto você permanecer conectado. Limpar os dados do site no seu navegador desconectará sua sessão."
+        ]
+      },
+      {
+        "title": "3. Cookies Essenciais da Plataforma",
+        "paragraphs": [
+          "Nosso provedor de hospedagem e implantação pode definir cookies estritamente necessários para rotear solicitações com segurança para o servidor correto. Eles não são usados para rastreá-lo entre sites e não contêm dados pessoais."
+        ]
+      },
+      {
+        "title": "4. Análises e Publicidade",
+        "paragraphs": [
+          "Atualmente não usamos cookies de análise ou publicidade de terceiros. Se isso mudar, atualizaremos esta política e, quando exigido por lei, solicitaremos seu consentimento primeiro."
+        ]
+      },
+      {
+        "title": "5. Gerenciando o Armazenamento",
+        "paragraphs": [
+          "Você pode limpar o armazenamento local e os cookies a qualquer momento nas configurações do seu navegador. Isso desconectará você da Content Hub, mas não afetará sua conta ou seus dados."
+        ]
+      },
+      {
+        "title": "6. Alterações nesta Política",
+        "paragraphs": [
+          "Podemos atualizar esta Política de Cookies conforme nosso uso de armazenamento local ou cookies mude. Atualizaremos a data de \"Última atualização\" acima quando isso ocorrer."
+        ]
+      }
+    ],
+    "contactTitle": "7. Fale Conosco",
+    "contactPrefix": "Se você tiver dúvidas sobre esta Política de Cookies, entre em contato conosco em",
+    "contactEmail": "privacy@contenthub.io"
   }
 }

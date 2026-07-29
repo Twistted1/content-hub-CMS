@@ -12,6 +12,7 @@ import Landing from "./pages/Landing";
 import Pricing from "./pages/Pricing";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import Cookies from "./pages/Cookies";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import Automation from "./pages/Automation";
@@ -72,6 +73,7 @@ const App = () => (
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
+              <Route path="/cookies" element={<Cookies />} />
               <Route path="/auth" element={<Auth />} />
               
               {/* Protected dashboard routes */}

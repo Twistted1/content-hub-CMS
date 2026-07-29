@@ -1893,7 +1893,8 @@
     "copyright": "Content Hub. All rights reserved.",
     "madeWith": "Made with ❤️ for content creators",
     "dashboardCopyright": "Content Hub CMS. All rights reserved.",
-    "support": "Support"
+    "support": "Support",
+    "legalCookies": "Cookie Policy"
   },
   "workflowTest": {
     "title": "Workflow Engine Test",
@@ -1985,5 +1986,52 @@
     "toastImportedSuccess": "{{entity}} imported successfully",
     "toastParseFailed": "Failed to parse JSON file",
     "dropToImport": "Drop JSON to Import {{entity}}"
+  },
+  "cookies": {
+    "navBrand": "Content Hub",
+    "backToHome": "Back to Home",
+    "title": "Cookie Policy",
+    "lastUpdated": "Last updated:",
+    "sections": [
+      {
+        "title": "1. Overview",
+        "paragraphs": [
+          "Content Hub uses minimal local browser storage to operate. This page explains exactly what we store on your device and why. We do not use third-party advertising or tracking cookies."
+        ]
+      },
+      {
+        "title": "2. Authentication Storage",
+        "paragraphs": [
+          "We use your browser's local storage (not cookies) to keep you signed in between visits. This storage contains your session token and is required for the Service to function — it cannot be disabled while remaining signed in. Clearing your browser's site data will sign you out."
+        ]
+      },
+      {
+        "title": "3. Essential Platform Cookies",
+        "paragraphs": [
+          "Our hosting and deployment provider may set strictly necessary cookies to route requests securely to the correct server. These are not used to track you across sites and contain no personal data."
+        ]
+      },
+      {
+        "title": "4. Analytics and Advertising",
+        "paragraphs": [
+          "We do not currently use third-party analytics or advertising cookies. If this changes, we will update this policy and, where required by law, request your consent first."
+        ]
+      },
+      {
+        "title": "5. Managing Storage",
+        "paragraphs": [
+          "You can clear local storage and cookies at any time through your browser's settings. Doing so will sign you out of Content Hub but will not affect your account or data."
+        ]
+      },
+      {
+        "title": "6. Changes to This Policy",
+        "paragraphs": [
+          "We may update this Cookie Policy as our use of local storage or cookies changes. We will update the \"Last updated\" date above when we do."
+        ]
+      }
+    ],
+    "contactTitle": "7. Contact Us",
+    "contactPrefix": "If you have questions about this Cookie Policy, please contact us at",
+    "contactEmail": "privacy@contenthub.io"
   }
 }
