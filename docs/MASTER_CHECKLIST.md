@@ -9,17 +9,21 @@ what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
 **Last verified:** 2026-07-29, against live production Supabase
-(`jvbucspwcjahqpoxskvr`) and `main` at commit `8a36795`.
+(`jvbucspwcjahqpoxskvr`) and `main` at commit `45acd52`.
 
 **On `main` (merged):** #2 E2E suite + dashboard crash fix, #3 RLS/FK/
 policy advisor fixes, #4 i18n completion for the 9 files that actually
-needed it, #5-#6 checklist doc updates. RLS performance migration
+needed it, #5-#6 checklist doc updates, #8 react-router v6→v7 upgrade
+(resolves 3 open-redirect advisories). RLS performance migration
 (`fix_rls_auth_initplan_performance`) applied directly to prod,
-advisor-confirmed at 0 remaining warnings.
+advisor-confirmed at 0 remaining warnings. **Production email/password
+login was found fully broken and fixed live** (Supabase Auth "Enable
+email provider" toggle was off) — see Phase 1 for details.
 
-**Open, waiting on you:** #7 (CSP header) — CI green, needs your 2-minute
-console check against the live preview before it merges. See the "CSP
-header" item below for exactly what to check.
+**Open, waiting on you:** #7 (CSP header) — CI green, ready to merge.
+The email-login bug above was found and fixed while verifying this PR;
+do one more console check against the live preview to confirm it's
+fully clean, then merge.
 
 ---
 
@@ -206,11 +210,25 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
       preview deployments, so it was invisible to local testing). With
       the email-provider bug above also fixed, re-check the preview
       console once more to confirm it's fully clean, then merge PR #7.
-- [ ] **`react-router` moderate open-redirect advisory** — fixing it is a
-      v6→v7 major upgrade touching every route in the app (`f339a41`
-      deferred this on purpose rather than doing a blind major-version
-      bump). **Decision needed:** schedule a dedicated pass for this, since
-      it's not a drop-in patch.
+- [x] **`react-router` v6→v7 upgrade — done, merged (PR #8).** `f339a41` deferred this
+      pending a real audit rather than a blind major-version bump. Checked
+      first: all 20 files importing `react-router-dom` use only the
+      classic API (`BrowserRouter`, `Routes`/`Route`, `Link`, `Navigate`,
+      `useNavigate`, `useLocation`, `useSearchParams`) — zero usage of v6's
+      data-router APIs (`createBrowserRouter`, loaders, actions), which is
+      where v7's real breaking changes live. Installed `react-router-dom@7`
+      (resolved to `7.18.2`): `npx tsc --noEmit` clean with zero errors,
+      full unit suite (63 tests) passing, build clean, and the E2E suite
+      run locally against the disposable test project — critically, both
+      navigation-dependent specs pass (`Link` client-side nav, and
+      `Navigate`-based protected-route redirect), exactly the behavior a
+      router upgrade could break. All 3 original advisories
+      (`GHSA-wrjc-x8rr-h8h6`, `GHSA-337j-9hxr-rhxg`, `GHSA-jjmj-jmhj-qwj2`)
+      were scoped `<7.18.0` and are now resolved. One new "high" advisory
+      appeared post-upgrade (`GHSA-qwww-vcr4-c8h2`, RSC-mode CSRF bypass)
+      — confirmed inapplicable: this app has zero React Server Components/
+      server-action usage (pure client-side Vite SPA), and no patched
+      version exists yet regardless (fix lands in an unreleased v8).
 - [ ] **Live delivery never observed end-to-end**: LinkedIn/X direct
       publish, webhook publishing (IG/FB/TikTok/YouTube/Rumble/Podcast/
       Website), Stripe checkout/webhook against a live account. Code paths
