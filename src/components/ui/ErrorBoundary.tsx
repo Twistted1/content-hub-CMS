@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from './button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './card';
+import i18n from '@/i18n';
 
 interface Props {
   children: ReactNode;
@@ -53,9 +54,9 @@ export class ErrorBoundary extends Component<Props, State> {
               <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
                 <AlertTriangle className="h-6 w-6 text-destructive" />
               </div>
-              <CardTitle>Something went wrong</CardTitle>
+              <CardTitle>{i18n.t('common.somethingWentWrong')}</CardTitle>
               <CardDescription>
-                We encountered an unexpected error. Please try again.
+                {i18n.t('errorBoundary.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -69,11 +70,11 @@ export class ErrorBoundary extends Component<Props, State> {
               <div className="flex gap-3">
                 <Button variant="outline" className="flex-1" onClick={this.handleGoHome}>
                   <Home className="mr-2 h-4 w-4" />
-                  Go Home
+                  {i18n.t('errorBoundary.goHome')}
                 </Button>
                 <Button className="flex-1" onClick={this.handleReset}>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Try Again
+                  {i18n.t('common.tryAgain')}
                 </Button>
               </div>
             </CardContent>

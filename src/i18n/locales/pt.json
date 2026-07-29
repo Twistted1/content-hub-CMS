@@ -17,7 +17,21 @@
     "logout": "Sair",
     "login": "Entrar",
     "signup": "Cadastrar",
-    "change": "Alterar"
+    "change": "Alterar",
+    "somethingWentWrong": "Algo deu errado",
+    "tryAgain": "Tentar Novamente",
+    "previous": "Anterior",
+    "more": "Mais",
+    "morePages": "Mais páginas",
+    "previousSlide": "Slide anterior",
+    "nextSlide": "Próximo slide",
+    "toggleSidebar": "Alternar Barra Lateral",
+    "goToPreviousPage": "Ir para a página anterior",
+    "goToNextPage": "Ir para a próxima página"
+  },
+  "errorBoundary": {
+    "description": "Encontramos um erro inesperado. Por favor, tente novamente.",
+    "goHome": "Ir para o Início"
   },
   "nav": {
     "main": "Principal",

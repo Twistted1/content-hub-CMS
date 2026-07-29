@@ -17,7 +17,21 @@
     "logout": "Logout",
     "login": "Login",
     "signup": "Sign Up",
-    "change": "Change"
+    "change": "Change",
+    "somethingWentWrong": "Something went wrong",
+    "tryAgain": "Try Again",
+    "previous": "Previous",
+    "more": "More",
+    "morePages": "More pages",
+    "previousSlide": "Previous slide",
+    "nextSlide": "Next slide",
+    "toggleSidebar": "Toggle Sidebar",
+    "goToPreviousPage": "Go to previous page",
+    "goToNextPage": "Go to next page"
+  },
+  "errorBoundary": {
+    "description": "We encountered an unexpected error. Please try again.",
+    "goHome": "Go Home"
   },
   "nav": {
     "main": "Main",
