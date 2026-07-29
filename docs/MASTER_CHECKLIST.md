@@ -9,9 +9,11 @@ what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
 **Last verified:** 2026-07-29, against live production Supabase
-(`jvbucspwcjahqpoxskvr`) and `main` at commit `30d27a4` (PR #2, merged).
-RLS performance migration (`fix_rls_auth_initplan_performance`) applied
-directly to prod same day, advisor-confirmed at 0 remaining warnings.
+(`jvbucspwcjahqpoxskvr`) and `main` at commit `34549d9`. PRs #2, #3, #4
+all merged same day: E2E suite + dashboard crash fix (#2), RLS/FK/policy
+advisor fixes (#3), i18n completion for the 9 files that actually needed
+it (#4). RLS performance migration (`fix_rls_auth_initplan_performance`)
+applied directly to prod, advisor-confirmed at 0 remaining warnings.
 
 ---
 
@@ -231,6 +233,10 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
   above; not maintained further as a separate file.
 - PR #2 (`claude/project-completion-audit-o1xgt5` → `main`): **merged**
   2026-07-29 (squash, `30d27a4`). E2E suite, dashboard crash fix,
-  `post-images` policy fix, and RLS `auth_rls_initplan` performance fix all
-  landed on `main`. Vercel production deploy tracks `main`, so this is now
-  live.
+  `post-images` policy fix, and RLS `auth_rls_initplan` performance fix.
+- PR #3: **merged** 2026-07-29 (squash, `60101e7`). Unindexed FK indexes,
+  consolidated overlapping RLS policies, `has_role()` finding resolved.
+- PR #4: **merged** 2026-07-29 (squash, `34549d9`). i18n completion for
+  the 9 files with real hardcoded text.
+- All three are on `main`; Vercel production deploy tracks `main`, so
+  everything above is live.
