@@ -200,11 +200,19 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
       write integration tests against Stripe's/the platforms' sandbox/test
       modes where they offer one (Stripe does; most social platforms
       don't) — tell me which of these you want covered that way.
-- [ ] **Mobile responsiveness** — not audited at all yet, no tool I have
-      does a real device/viewport pass. **Alternative:** I can drive
-      Playwright at a few common viewport sizes (390×844, 768×1024,
-      1280×800) and screenshot the key pages so you can eyeball layout
-      breaks, without needing a physical device. Say the word.
+- [ ] **Mobile responsiveness — partially checked, blocked on the rest.**
+      Drove Playwright at 390×844 (mobile) and 768×1024 (tablet) against
+      the unauthenticated pages: **Landing and Auth sign-in are clean** at
+      both sizes — single-column stacking, full-width buttons, no overflow
+      or cramped text. Could not check Dashboard/Templates/Calendar/Notes/
+      Projects/Settings — this sandbox's network policy blocks the headless
+      browser from reaching Supabase directly, so sign-in fails here and
+      every authenticated page just redirects to `/auth`. Not a code
+      finding, an environment limitation. **To finish this:** open the live
+      Vercel preview in your own browser, toggle the device toolbar
+      (Ctrl+Shift+M in Chrome DevTools), sign in, and click through the
+      authenticated pages — takes about 2 minutes since your browser isn't
+      sandboxed the way this session is.
 
 ---
 
