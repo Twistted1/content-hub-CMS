@@ -157,11 +157,25 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
 
 ### Open — needs a decision only you can make
 
-- [ ] **i18n: 56 files still hardcoded English** (115 total, 59 done).
-      Mechanical but large — translating and wiring `useTranslation` across
-      every remaining page/component. **Decision needed:** do this in one
-      pass, or page-by-page as you touch each one? Either is fine, just
-      pick one so it doesn't stay half-done indefinitely.
+- [x] **i18n: "56 files still hardcoded English" — done, but the real
+      number was much smaller than the metric suggested.** Checked all 56
+      before converting anything: 52 were generic shadcn/ui primitives
+      (`button.tsx`, `input.tsx`, `table.tsx`, `card.tsx`, etc.) that
+      structurally contain zero hardcoded text — their content always comes
+      from props the calling page passes in, which is already translated.
+      Wiring `useTranslation` into them would've been dead code. The actual
+      gap was 9 files with real hardcoded strings shown to users regardless
+      of language: `ErrorBoundary.tsx` (the app-wide crash screen —
+      "Something went wrong", "Try Again", "Go Home"), `ErrorState.tsx` and
+      `LoadingState.tsx` (default title/message text used across many
+      pages), and 6 shadcn primitives with hardcoded sr-only/aria-label
+      accessibility text (`breadcrumb`, `carousel`, `dialog`, `pagination`,
+      `sheet`, `sidebar` — plus `pagination.tsx`'s visible "Previous"/"Next"
+      labels). All 9 fixed, English + Portuguese keys added to both locale
+      files, i18n parity test still passes (63/63 unit tests), build clean.
+      `useTranslation` file-count (59/115) is no longer a meaningful metric
+      going forward — most of the remaining 106 files are primitives that
+      will never need it.
 - [ ] **CSP header intentionally still missing** from `vercel.json`
       (flagged and deliberately deferred in commit `f339a41`) — needs to
       list every domain the app actually calls (Supabase project ref,
