@@ -8,16 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Chrome, PlayCircle } from 'lucide-react';
-import { z } from 'zod';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-const authSchema = z.object({
-  email: z.string().trim().email({ message: "Invalid email address" }).max(255),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }).max(72),
-  fullName: z.string().trim().max(100).optional(),
-});
+import { authSchema } from '@/utils/authValidation';
 
 export default function Auth() {
   const { t } = useTranslation();

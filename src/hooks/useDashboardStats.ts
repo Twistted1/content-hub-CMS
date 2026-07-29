@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { usePosts } from "@/hooks/usePosts";
-import { useAuth } from "@/hooks/useAuth";
-import { subDays, subMonths, isAfter, parseISO, format, startOfWeek, startOfMonth } from "date-fns";
+import { subDays, format } from "date-fns";
 
 interface DashboardStats {
   totalPosts: number;
