@@ -9,11 +9,17 @@ what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
 **Last verified:** 2026-07-29, against live production Supabase
-(`jvbucspwcjahqpoxskvr`) and `main` at commit `34549d9`. PRs #2, #3, #4
-all merged same day: E2E suite + dashboard crash fix (#2), RLS/FK/policy
-advisor fixes (#3), i18n completion for the 9 files that actually needed
-it (#4). RLS performance migration (`fix_rls_auth_initplan_performance`)
-applied directly to prod, advisor-confirmed at 0 remaining warnings.
+(`jvbucspwcjahqpoxskvr`) and `main` at commit `8a36795`.
+
+**On `main` (merged):** #2 E2E suite + dashboard crash fix, #3 RLS/FK/
+policy advisor fixes, #4 i18n completion for the 9 files that actually
+needed it, #5-#6 checklist doc updates. RLS performance migration
+(`fix_rls_auth_initplan_performance`) applied directly to prod,
+advisor-confirmed at 0 remaining warnings.
+
+**Open, waiting on you:** #7 (CSP header) — CI green, needs your 2-minute
+console check against the live preview before it merges. See the "CSP
+header" item below for exactly what to check.
 
 ---
 
