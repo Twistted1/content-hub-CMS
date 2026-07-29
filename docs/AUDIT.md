@@ -1,5 +1,13 @@
 # Content Hub — Independent Technical Audit
 
+> **Superseded — see `docs/MASTER_CHECKLIST.md` for current status.**
+> Several findings below (i18n coverage, Reports mock data, `Platforms.tsx`/
+> `Users.tsx` static imports, legacy cron, lockfile/install issues) were
+> re-verified against live source and the production DB on 2026-07-29 and
+> are resolved — flagged individually in the master checklist rather than
+> corrected inline here, so this file stays an honest historical record of
+> what each audit pass actually found at the time.
+
 **Auditor stance:** external takeover engineer. All claims below are verified against source unless explicitly marked "cannot verify".
 
 ---

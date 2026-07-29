@@ -1,5 +1,9 @@
 # Phase 0 — Testing Foundation
 
+> **Superseded — all items below are done.** Live status now lives in
+> `docs/MASTER_CHECKLIST.md`. This file is kept as the original plan for
+> reference, not updated further.
+
 **Purpose:** Prerequisite to Phase 1 of the Project Master Checklist. Phase 1
 asks to "Run complete test suite," "Run end-to-end tests," and "Perform
 regression testing" — none of that is currently possible because **no test

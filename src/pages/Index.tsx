@@ -213,6 +213,9 @@ const Index = () => {
   const platformHealth = computePlatformHealth(posts);
   const connectedPlatformsCount = computeConnectedPlatformsCount(userPlatforms, (id) => isConnected(id as DirectPlatform));
   const autoSuccessRate = computeAutomationSuccessRate(automationRuns);
+  const completedAutomationRunsCount = automationRuns.filter(
+    (r) => r.status === "success" || r.status === "failed"
+  ).length;
   const activeAutomationsCount = automations.filter((a: any) => a.status === "active").length;
 
   const {
@@ -323,7 +326,7 @@ const Index = () => {
           <StatCard title={t("dashboard.home.drafts")}       value={stats.draftPosts}    badge={t("dashboard.home.draftsBadge")} sub={stats.draftPosts > 0 ? t("dashboard.home.needReview", { count: stats.draftPosts }) : t("dashboard.home.allClear")} color="text-amber-400" />
           <StatCard title={t("dashboard.stats.publishedPosts")}    value={stats.publishedPosts} badge={t("dashboard.home.publishedBadge")} sub={t("dashboard.home.vsLastWeek")} trendUp={publishedTrendUp} color="text-emerald-400" />
           <StatCard title={t("dashboard.home.connectedPlatforms")} value={connectedPlatformsCount} badge={t("dashboard.home.platformsBadge")} color="text-violet-400" />
-          <StatCard title={t("dashboard.home.autoSuccess")} value={autoSuccessRate !== null ? `${autoSuccessRate}%` : "—"} badge={t("dashboard.home.liveBadge")} sub={completedRuns.length > 0 ? t("dashboard.home.runsCount", { count: completedRuns.length }) : t("dashboard.home.noRunsYet")} trendUp={autoSuccessRate !== null ? autoSuccessRate >= 80 : undefined} color="text-primary" />
+          <StatCard title={t("dashboard.home.autoSuccess")} value={autoSuccessRate !== null ? `${autoSuccessRate}%` : "—"} badge={t("dashboard.home.liveBadge")} sub={completedAutomationRunsCount > 0 ? t("dashboard.home.runsCount", { count: completedAutomationRunsCount }) : t("dashboard.home.noRunsYet")} trendUp={autoSuccessRate !== null ? autoSuccessRate >= 80 : undefined} color="text-primary" />
         </div>
 
         {/* ── Activity Chart + Platform Health ────────────────────────── */}
