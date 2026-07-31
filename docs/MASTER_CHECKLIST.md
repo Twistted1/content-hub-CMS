@@ -207,17 +207,40 @@ Everything from earlier sections re-checked clean; these two are new:
       (`2026-07-31 17:09`, `status: success`, real `created`/`skipped`
       counts) and `automations.last_run`/`run_count` both updated. Will
       keep updating every 15 min going forward — no more silent staleness.
-- [ ] **Edge function drift between repo and live deploy.** 6 functions
-      are ACTIVE on prod but not in `supabase/functions/` in this repo:
-      `scheduled-pipeline`, `run-scheduled-automations`, `fire-webhooks`,
-      `publish-twitter`, `execute-automation`, `generate-broadcast-script`.
-      Notably, `scheduled-pipeline` — the legacy pipeline a migration
-      comment (`20260723000000_retire_legacy_pipeline.sql`) says was
-      "removed from the repo" — is still deployed and ACTIVE, just
-      unscheduled. Not causing a live bug (nothing triggers it since its
-      cron job was removed), but it's undocumented drift and should
-      either be pulled into the repo or formally deleted, not left
-      orphaned. Non-blocking, cleanup item.
+- [x] **Edge function drift — investigated and neutralized, 2026-07-31.**
+      The 6 functions live but not in `supabase/functions/`
+      (`scheduled-pipeline`, `run-scheduled-automations`, `fire-webhooks`,
+      `publish-twitter`, `execute-automation`, `generate-broadcast-script`)
+      turned out to be more than stale drift — pulling their source
+      turned up 3 real, currently-exploitable authorization gaps that
+      were live in production:
+      - **`generate-broadcast-script`** had `verify_jwt: false` — callable
+        by anyone on the internet with zero authentication, burning the
+        project's `GEMINI_API_KEY` budget on every call.
+      - **`execute-automation`** required login but did no ownership
+        check — any signed-in user calling it would trigger publishing
+        of every user's due posts, not just their own.
+      - **`fire-webhooks`** looked up a post by id with no ownership
+        check — any signed-in user could pass another user's `postId`
+        and get that post's content fired through their own configured
+        webhook, leaking private content cross-account.
+      - `publish-twitter` also let any signed-in user post to a single
+        shared X/Twitter account via static credentials. `scheduled-
+        pipeline` and `run-scheduled-automations` were confirmed dead
+        duplicate automation-runner logic (checked live `cron.job` —
+        only `schedule-content`/`schedule-from-templates` and
+        `publish-due-posts` are actually scheduled; grepped `src/` and
+        all migrations for the other 6 slugs — zero references).
+      Redeployed all 6 as inert 410 stubs (couldn't find a delete-
+      function tool in the available Supabase MCP tools, so a stub is
+      the closest thing to deletion available). Confirmed via a fresh
+      `list_edge_functions` pull that all 20 live functions are
+      accounted for and only these 6 changed. Did not commit their old
+      source into the repo — they're dead, re-introducing them as repo
+      files would just resurrect the confusion. **Formal deletion via
+      the Supabase dashboard (Edge Functions → select → Delete) is a
+      nice-to-have cleanup whenever convenient — the stubs already
+      close the exposure, so there's no urgency.**
 
 ### Open — needs a decision only you can make
 

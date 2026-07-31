@@ -13,11 +13,11 @@
 
 The core CMS is solid: build/lint/typecheck/tests are all clean, CI is green on both branches, the RLS performance and security fixes from earlier this session hold up under fresh advisor scans, production auth is working with no error signal, the CSP is syntactically sound, no secrets are exposed in source, and the content-publishing pipeline (cron jobs, Stripe billing functions) is live and running correctly.
 
-Three real, previously-undocumented issues were found — none of them crash-the-app severity:
+Four real, previously-undocumented issues were found — all fixed same day:
 
 1. ~~**Avatar upload is broken in production**~~ — **fixed 2026-07-31.** The `avatars` storage bucket didn't exist; created it live with owner-scoped policies, verified.
 2. ~~**The Automation dashboard shows 9-day-stale data**~~ — **fixed 2026-07-31.** `schedule-from-templates` now writes `automation_runs` on every cron pass instead of only the retired legacy pipeline; verified a fresh run row landing live.
-3. **Edge function drift** (still open, non-blocking) — 6 functions are deployed live but absent from the repo, including a "retired" legacy pipeline function a migration comment claims was removed but which is still ACTIVE in production. Operational hygiene, not a live bug.
+3. ~~**Edge function drift**~~ — **investigated and neutralized 2026-07-31.** What started as "6 functions live but missing from the repo" turned out to include 3 real, currently-exploitable authorization gaps (see below) — not just stale duplicates. All 6 confirmed to have zero live callers (no cron, no frontend code) and redeployed as inert 410 stubs.
 
 ---
 
@@ -41,7 +41,7 @@ Three real, previously-undocumented issues were found — none of them crash-the
 | i18n key parity | C | **PASS** | Own parity test suite passes 3/3; all 12 session-added keys verified in both locales |
 | i18n hardcoded-string sweep | C | **PARTIAL** | Minor only: 2 aria-labels (Calendar), 3 placeholder examples — no egregious untranslated sections |
 | Mobile responsiveness | C | **PARTIAL / UNVERIFIABLE** | Static-only (sandbox can't reach live auth); Calendar grid flagged as likely cramped on narrow viewports |
-| Edge functions (repo vs. live) | D | **PARTIAL — drift** | 6 live functions missing from repo, incl. a supposedly-retired pipeline still ACTIVE |
+| Edge functions (repo vs. live) | D | **FIXED — was drift, found live auth gaps** | 6 orphaned functions found; 3 had real authz gaps (unauthenticated cost-drain, cross-user publish, cross-user webhook leak); all stubbed |
 | Cron jobs | D | **PASS** | Live state matches migrations; legacy duplicate job correctly unscheduled |
 | Automation feature (data pipeline) | D | **FAIL** | Real pipeline runs correctly; its reporting table (`automation_runs`) is frozen at 9-day-old data |
 | Billing (Stripe edge functions) | D | **PASS** | `check-subscription`, `create-checkout`, `customer-portal`, `stripe-webhook` all deployed, match code |
@@ -63,10 +63,11 @@ Three real, previously-undocumented issues were found — none of them crash-the
 
 - ~~**Avatar upload broken in production**~~ — **fixed 2026-07-31**, same day as this audit. `avatars` bucket created directly on prod (`create_avatars_bucket` migration) with owner-scoped INSERT/UPDATE/DELETE policies matching the `media`/`post-images` pattern; verified live, no new advisor warnings.
 - ~~**Automation dashboard reporting is silently stale**~~ — **fixed 2026-07-31**. `schedule-from-templates` reworked to iterate per-automation and write `automation_runs` (+ bump `automations.run_count`/`last_run`) on every cron pass, reusing the same insert-then-complete shape the manual "Run Now" path already used. Deployed and verified live: a fresh run row landed with real `created`/`skipped` counts.
+- ~~**6 orphaned edge functions, 3 with live authorization gaps**~~ — **fixed 2026-07-31**. Confirmed via live `cron.job` + a repo-wide grep that none of `scheduled-pipeline`, `run-scheduled-automations`, `fire-webhooks`, `publish-twitter`, `execute-automation`, `generate-broadcast-script` had any live caller. Reading their source surfaced 3 real gaps that were reachable in production right now: `generate-broadcast-script` had `verify_jwt: false` (callable by anyone on the internet, no auth, burning the `GEMINI_API_KEY` budget); `execute-automation` required login but did no ownership check (any signed-in user could trigger publishing of every user's due posts); `fire-webhooks` looked up posts with no ownership check (any signed-in user could leak another user's post content through their own webhook by guessing a `postId`). Redeployed all 6 as inert 410 stubs — no delete-function tool was available, so a stub is the closest equivalent to deletion. Verified via a fresh `list_edge_functions` pull that all 20 live functions are accounted for and only these 6 changed.
 
 ## Remaining Non-Blockers
 
-- Edge function / repo drift (6 live functions undocumented in repo, including the "retired" `scheduled-pipeline` still ACTIVE) — operational hygiene risk, not a live bug, but should be reconciled so the repo reflects reality.
+- Formal deletion of the 6 stubbed edge functions via the Supabase dashboard (Edge Functions → select → Delete) — cosmetic cleanup only; the stubs already close the exposure, so there's no urgency.
 - 1 unresolved HIGH npm advisory (react-router RSC-CSRF) — confirmed inapplicable, no action needed until a patched v8 exists.
 - Branch protection on `main` — status unconfirmed by tooling; likely already set up per prior session, needs a 10-second manual check.
 - Google OAuth — setup in progress, no code blocker, email/password unaffected.
@@ -83,6 +84,6 @@ High confidence in the security/RLS/auth/build/CI findings — these were verifi
 
 1. ~~**Fix avatar upload**~~ — done, 2026-07-31.
 2. ~~**Reconnect automation reporting**~~ — done, 2026-07-31.
-3. **Reconcile edge function drift** — pull the 6 undeployed-from-repo functions' source into `supabase/functions/`, and decide whether `scheduled-pipeline` should be formally deleted (not just unscheduled) now that it's confirmed orphaned.
+3. ~~**Reconcile edge function drift**~~ — done, 2026-07-31 (stubbed, see above). Optional: formally delete the 6 stubs via the dashboard whenever convenient.
 4. **Confirm branch protection on `main`** — 10-second check in GitHub Settings → Branches, since tooling can't verify it.
 5. **Your own browser, live Vercel preview:** confirm CSP shows zero console violations end-to-end, and click through authenticated pages (esp. Calendar) at mobile width.
