@@ -23,17 +23,17 @@ prod, advisor-confirmed at 0 remaining warnings. **Production email/
 password login was found fully broken and fixed live** (Supabase Auth
 "Enable email provider" toggle was off) — see Phase 1 for details.
 
-**Phase 3 audit (2026-07-31) found 2 new live blockers** — avatar
-upload is broken (missing storage bucket) and the Automation dashboard
-is showing 9-day-stale data (reporting table disconnected from the
-pipeline that actually runs now). Everything else re-checked (RLS,
+**Phase 3 audit (2026-07-31) found 2 new live blockers.** Avatar
+upload (missing storage bucket) — **fixed same day**, bucket created
+directly on prod with owner-scoped policies. The Automation dashboard
+showing 9-day-stale data is still open — needs a decision on which
+table is the real source of truth. Everything else re-checked (RLS,
 auth, CI, i18n, CSP, secrets) held up with no regressions. See "Open —
 found in Phase 3 audit, today" below.
 
 **Open, waiting on you:** nothing code-related is blocking core CMS use.
-Remaining items are GitHub/Supabase settings only you can change,
-decisions only you can make, or the two new bugs above (I can fix the
-avatar bucket now if you say go) — see the two "Open" sections below.
+Remaining items are GitHub/Supabase settings only you can change, or
+decisions only you can make — see the two "Open" sections below.
 
 ---
 
@@ -183,14 +183,16 @@ Independently re-verified by 5 parallel agents against live source/live
 Supabase/live GitHub state (full report: `docs/PHASE_3_READINESS_REPORT.md`).
 Everything from earlier sections re-checked clean; these two are new:
 
-- [ ] **Avatar upload is broken in production.**
-      `src/components/settings/ProfileSettings.tsx:142,146` writes to
-      `supabase.storage.from("avatars")`, but no `avatars` bucket exists
-      on prod (`storage.buckets` only has `media` and `post-images`).
-      Anyone who tries to set a profile picture hits a failure toast.
-      Fix is additive and low-risk: create the bucket with owner-scoped
-      RLS policies matching the `media`/`post-images` pattern. **Say go
-      and I'll do it.**
+- [x] **Avatar upload was broken in production — fixed.** The `avatars`
+      bucket never existed (`storage.buckets` only had `media` and
+      `post-images`). Created it directly on prod
+      (`create_avatars_bucket` migration): public read (matches the
+      `getPublicUrl` call in `ProfileSettings.tsx`), 5MB limit, image
+      mime types only, owner-scoped INSERT/UPDATE/DELETE policies keyed
+      on `auth.uid()` as the folder prefix (same pattern as `media`/
+      `post-images`), admin override on update/delete. Verified live:
+      bucket exists with correct config, security advisor re-run shows
+      no new warnings.
 - [ ] **Automation dashboard is showing 9-day-stale data.** The pipeline
       that actually runs today (`schedule-from-templates` cron, every
       15 min) never writes to `automation_runs` — only the legacy

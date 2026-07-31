@@ -63,10 +63,8 @@ None of these block the app from functioning for its primary job (creating, sche
 - react-router v6→v7 — verified low-risk (classic API only), 3 original advisories resolved.
 - Legacy duplicate cron job — verified unscheduled, matches migration.
 
-## Remaining Blockers
-
-- **Avatar upload broken in production** (`src/components/settings/ProfileSettings.tsx:142,146` calls `supabase.storage.from("avatars")`, but no `avatars` bucket exists in prod). Any user who tries to set a profile picture gets a failure toast. Straightforward fix: create the bucket with owner-scoped RLS policies, matching the `media`/`post-images` pattern.
-- **Automation dashboard reporting is silently stale** (`automation_runs` last written 2026-07-22; current pipeline `schedule-from-templates` never updates it). Misleading, not crashing — but every "last run" / "success rate" figure on the Automation page and dashboard is wrong today.
+- ~~**Avatar upload broken in production**~~ — **fixed 2026-07-31**, same day as this audit. `avatars` bucket created directly on prod (`create_avatars_bucket` migration) with owner-scoped INSERT/UPDATE/DELETE policies matching the `media`/`post-images` pattern; verified live, no new advisor warnings.
+- **Automation dashboard reporting is silently stale** (`automation_runs` last written 2026-07-22; current pipeline `schedule-from-templates` never updates it). Misleading, not crashing — but every "last run" / "success rate" figure on the Automation page and dashboard is wrong today. Still open — needs a decision on source of truth (see Recommended Next Actions).
 
 ## Remaining Non-Blockers
 
@@ -85,7 +83,7 @@ High confidence in the security/RLS/auth/build/CI findings — these were verifi
 
 ## Recommended Next Actions
 
-1. **Fix avatar upload** — create an `avatars` storage bucket with owner-scoped RLS policies (low-risk, additive). I can do this now if you say go.
+1. ~~**Fix avatar upload**~~ — done, 2026-07-31.
 2. **Reconnect automation reporting** — either have `schedule-from-templates`/`publish-due-posts` write to `automation_runs`, or repoint the dashboard/Automation page at a table the live pipeline actually updates. Needs a short design decision from you on which table is the source of truth going forward.
 3. **Reconcile edge function drift** — pull the 6 undeployed-from-repo functions' source into `supabase/functions/`, and decide whether `scheduled-pipeline` should be formally deleted (not just unscheduled) now that it's confirmed orphaned.
 4. **Confirm branch protection on `main`** — 10-second check in GitHub Settings → Branches, since tooling can't verify it.
