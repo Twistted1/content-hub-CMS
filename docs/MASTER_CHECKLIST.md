@@ -137,14 +137,11 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
       the security advisor pass is unchanged (no new findings, no access
       changes) — this was purely a query-planner fix, not a permissions
       change.
-- [ ] **Leaked-password protection is off** in Supabase Auth (checks new
-      passwords against HaveIBeenPwned). **Correction:** not actually a
-      quick toggle — checked the dashboard directly (Authentication →
-      Sign In/Providers → Email) and it's greyed out with "Only available
-      on Pro plan and above." This project is on the Free plan. Stays open
-      until either you upgrade to Pro, or you decide it's fine to leave off
-      (reasonable call at this stage — it's a hardening item, not a live
-      vulnerability).
+- [x] **Leaked-password protection — decided, staying off.** Requires
+      Supabase Pro (project's on Free); greyed out in the dashboard
+      (Authentication → Sign In/Providers → Email). **2026-07-31: you
+      decided not to upgrade for now.** Not a live vulnerability, just
+      a hardening item — revisit if/when the project moves to Pro.
 - [ ] **Google Sign-In not configured.** App code already supports it
       (`signInWithGoogle` in `useAuth.ts`, wired into `Auth.tsx`) — just
       needs OAuth credentials from Google Cloud Console (Client ID +

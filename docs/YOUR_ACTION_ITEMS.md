@@ -9,9 +9,10 @@ browser/accounts can verify.
    but the pattern was `Main` (capital M), so it silently applied to 0
    branches. Fixed to lowercase `main`, confirmed `test`/`e2e` checks
    attached, verified "Currently applies to 1 branch."
-2. **Leaked-password protection** — off, and it's a Supabase Pro-plan
-   feature (project's on Free). Your call: upgrade, or leave it off for now
-   (not a live vulnerability, just a hardening item).
+2. ~~Leaked-password protection~~ — **decided, 2026-07-31: staying off.**
+   Requires Supabase Pro; you chose not to upgrade for now. Not a live
+   vulnerability, just a hardening item — revisit if the project moves
+   to Pro later.
 3. **Google Sign-In** — app code already supports it; needs your Google
    Cloud Console OAuth Client ID + Secret pasted into Supabase
    Authentication → Sign In/Providers → Google. You were mid-setup here
