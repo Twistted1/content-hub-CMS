@@ -60,7 +60,7 @@ serve(async (req) => {
   // Helper: upsert subscription record
   const upsertSubscription = async (
     userId: string,
-    tier: "free" | "pro" | "enterprise",
+    tier: "free" | "starter" | "pro",
     endDate: string | null
   ) => {
     const { error } = await supabase
@@ -81,15 +81,23 @@ serve(async (req) => {
     }
   };
 
-  // Product ID → tier mapping (matches check-subscription function)
-  const PRODUCT_IDS: Record<string, "pro" | "enterprise"> = {
-    prod_Tu23n9E83kU6SH: "pro",
-    prod_Tu24enzVGb9KJl: "enterprise",
+  // Price ID → tier mapping (matches check-subscription function's PRICE_TO_TIER)
+  const PRICE_TO_TIER: Record<string, "starter" | "pro"> = {
+    price_1TUbGi99SwZHUFarbpocgTj2: "starter",
+    price_1TUbHN99SwZHUFarK9uTjwbD: "starter",
+    price_1TUbI699SwZHUFar0ur6blfp: "pro",
+    price_1TUbIu99SwZHUFarlyuyIqnp: "pro",
   };
+  // Legacy product IDs (old $29 pro / $99 enterprise) — fold into "pro" for back-compat
+  const LEGACY_PRO_PRODUCTS = new Set(["prod_Tu23n9E83kU6SH", "prod_Tu24enzVGb9KJl"]);
 
-  const resolveTier = (subscription: Stripe.Subscription): "free" | "pro" | "enterprise" => {
-    const productId = subscription.items.data[0]?.price?.product as string;
-    return PRODUCT_IDS[productId] ?? "free";
+  const resolveTier = (subscription: Stripe.Subscription): "free" | "starter" | "pro" => {
+    const item = subscription.items.data[0];
+    const priceId = item?.price?.id;
+    const productId = item?.price?.product as string;
+    if (priceId && PRICE_TO_TIER[priceId]) return PRICE_TO_TIER[priceId];
+    if (productId && LEGACY_PRO_PRODUCTS.has(productId)) return "pro";
+    return "free";
   };
 
   try {
