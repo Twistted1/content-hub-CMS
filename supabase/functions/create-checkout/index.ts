@@ -61,12 +61,23 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Check if customer already exists
+    // Find or create the Stripe customer, tagged with the Supabase user id so the
+    // webhook can identify the user without relying on email matching.
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId;
+    let customerId: string;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
       logStep("Found existing customer", { customerId });
+      if (customers.data[0].metadata?.supabase_user_id !== user.id) {
+        await stripe.customers.update(customerId, { metadata: { supabase_user_id: user.id } });
+      }
+    } else {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: { supabase_user_id: user.id },
+      });
+      customerId = customer.id;
+      logStep("Created new customer", { customerId });
     }
 
     // Build redirect URLs from a server-controlled allowlist to prevent open-redirect attacks
@@ -85,7 +96,6 @@ serve(async (req) => {
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
       line_items: [
         {
           price: priceId,

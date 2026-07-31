@@ -43,18 +43,25 @@ serve(async (req) => {
     { auth: { persistSession: false } }
   );
 
-  // Helper: resolve user_id from Stripe customer email
-  const getUserIdByEmail = async (email: string): Promise<string | null> => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("user_id")
-      .eq("email", email)
-      .single();
+  // Helper: resolve the Supabase user_id for a Stripe customer. Customers created via
+  // create-checkout are tagged with metadata.supabase_user_id; fall back to matching
+  // auth.users by email for any customer created before that tagging existed.
+  const getUserId = async (customer: Stripe.Customer): Promise<string | null> => {
+    const metaId = customer.metadata?.supabase_user_id;
+    if (metaId) return metaId;
+
+    if (!customer.email) return null;
+    const { data, error } = await supabase.auth.admin.listUsers({ perPage: 1000 });
     if (error) {
-      logStep("Could not find user by email", { email, error: error.message });
+      logStep("Fallback user lookup failed", { email: customer.email, error: error.message });
       return null;
     }
-    return data?.user_id ?? null;
+    const match = data.users.find((u) => u.email === customer.email);
+    if (!match) {
+      logStep("Could not find user by email", { email: customer.email });
+      return null;
+    }
+    return match.id;
   };
 
   // Helper: upsert subscription record
@@ -107,8 +114,7 @@ serve(async (req) => {
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
         const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
-        if (!customer.email) break;
-        const userId = await getUserIdByEmail(customer.email);
+        const userId = await getUserId(customer);
         if (!userId) break;
 
         const isActive = subscription.status === "active" || subscription.status === "trialing";
@@ -123,8 +129,7 @@ serve(async (req) => {
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
         const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
-        if (!customer.email) break;
-        const userId = await getUserIdByEmail(customer.email);
+        const userId = await getUserId(customer);
         if (!userId) break;
 
         await upsertSubscription(userId, "free", null);
@@ -134,8 +139,8 @@ serve(async (req) => {
       // ── Invoice paid (successful renewal) ─────────────────────────────────
       case "invoice.paid": {
         const invoice = event.data.object as Stripe.Invoice;
-        if (!invoice.customer_email) break;
-        const userId = await getUserIdByEmail(invoice.customer_email);
+        const invoiceCustomer = await stripe.customers.retrieve(invoice.customer as string) as Stripe.Customer;
+        const userId = await getUserId(invoiceCustomer);
         if (!userId) break;
 
         // Re-check subscription to get current tier on renewal
