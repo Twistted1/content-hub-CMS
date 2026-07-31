@@ -9,17 +9,15 @@
 
 ## Executive Summary
 
-**Verdict: CONDITIONAL GO.**
+**Verdict: GO.** (Was CONDITIONAL GO at audit time; both blockers below were fixed and verified live same day.)
 
 The core CMS is solid: build/lint/typecheck/tests are all clean, CI is green on both branches, the RLS performance and security fixes from earlier this session hold up under fresh advisor scans, production auth is working with no error signal, the CSP is syntactically sound, no secrets are exposed in source, and the content-publishing pipeline (cron jobs, Stripe billing functions) is live and running correctly.
 
-Three real, previously-undocumented issues were found — none of them crash-the-app severity, but one is a genuinely broken user-facing feature in production today:
+Three real, previously-undocumented issues were found — none of them crash-the-app severity:
 
-1. **Avatar upload is broken in production** — the storage bucket the code writes to (`avatars`) does not exist. Blocker for anyone using profile settings.
-2. **The Automation dashboard shows 9-day-stale data** — the pipeline that actually runs today (`schedule-from-templates` + `publish-due-posts`) never writes to `automation_runs`; only the retired legacy pipeline did. The automation itself works; its reporting doesn't.
-3. **Edge function drift** — 6 functions are deployed live but absent from the repo, including a "retired" legacy pipeline function a migration comment claims was removed but which is still ACTIVE in production.
-
-None of these block the app from functioning for its primary job (creating, scheduling, and publishing content). They do block calling the automation/profile surfaces "done."
+1. ~~**Avatar upload is broken in production**~~ — **fixed 2026-07-31.** The `avatars` storage bucket didn't exist; created it live with owner-scoped policies, verified.
+2. ~~**The Automation dashboard shows 9-day-stale data**~~ — **fixed 2026-07-31.** `schedule-from-templates` now writes `automation_runs` on every cron pass instead of only the retired legacy pipeline; verified a fresh run row landing live.
+3. **Edge function drift** (still open, non-blocking) — 6 functions are deployed live but absent from the repo, including a "retired" legacy pipeline function a migration comment claims was removed but which is still ACTIVE in production. Operational hygiene, not a live bug.
 
 ---
 
@@ -64,7 +62,7 @@ None of these block the app from functioning for its primary job (creating, sche
 - Legacy duplicate cron job — verified unscheduled, matches migration.
 
 - ~~**Avatar upload broken in production**~~ — **fixed 2026-07-31**, same day as this audit. `avatars` bucket created directly on prod (`create_avatars_bucket` migration) with owner-scoped INSERT/UPDATE/DELETE policies matching the `media`/`post-images` pattern; verified live, no new advisor warnings.
-- **Automation dashboard reporting is silently stale** (`automation_runs` last written 2026-07-22; current pipeline `schedule-from-templates` never updates it). Misleading, not crashing — but every "last run" / "success rate" figure on the Automation page and dashboard is wrong today. Still open — needs a decision on source of truth (see Recommended Next Actions).
+- ~~**Automation dashboard reporting is silently stale**~~ — **fixed 2026-07-31**. `schedule-from-templates` reworked to iterate per-automation and write `automation_runs` (+ bump `automations.run_count`/`last_run`) on every cron pass, reusing the same insert-then-complete shape the manual "Run Now" path already used. Deployed and verified live: a fresh run row landed with real `created`/`skipped` counts.
 
 ## Remaining Non-Blockers
 
@@ -84,7 +82,7 @@ High confidence in the security/RLS/auth/build/CI findings — these were verifi
 ## Recommended Next Actions
 
 1. ~~**Fix avatar upload**~~ — done, 2026-07-31.
-2. **Reconnect automation reporting** — either have `schedule-from-templates`/`publish-due-posts` write to `automation_runs`, or repoint the dashboard/Automation page at a table the live pipeline actually updates. Needs a short design decision from you on which table is the source of truth going forward.
+2. ~~**Reconnect automation reporting**~~ — done, 2026-07-31.
 3. **Reconcile edge function drift** — pull the 6 undeployed-from-repo functions' source into `supabase/functions/`, and decide whether `scheduled-pipeline` should be formally deleted (not just unscheduled) now that it's confirmed orphaned.
 4. **Confirm branch protection on `main`** — 10-second check in GitHub Settings → Branches, since tooling can't verify it.
 5. **Your own browser, live Vercel preview:** confirm CSP shows zero console violations end-to-end, and click through authenticated pages (esp. Calendar) at mobile width.

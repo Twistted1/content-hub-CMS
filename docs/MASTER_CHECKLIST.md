@@ -23,13 +23,13 @@ prod, advisor-confirmed at 0 remaining warnings. **Production email/
 password login was found fully broken and fixed live** (Supabase Auth
 "Enable email provider" toggle was off) — see Phase 1 for details.
 
-**Phase 3 audit (2026-07-31) found 2 new live blockers.** Avatar
-upload (missing storage bucket) — **fixed same day**, bucket created
-directly on prod with owner-scoped policies. The Automation dashboard
-showing 9-day-stale data is still open — needs a decision on which
-table is the real source of truth. Everything else re-checked (RLS,
-auth, CI, i18n, CSP, secrets) held up with no regressions. See "Open —
-found in Phase 3 audit, today" below.
+**Phase 3 audit (2026-07-31) found 2 new live blockers — both fixed
+same day.** Avatar upload (missing storage bucket) and the Automation
+dashboard's 9-day-stale reporting (cron pipeline now writes
+`automation_runs` on every pass) are both resolved and verified live.
+Everything else re-checked (RLS, auth, CI, i18n, CSP, secrets) held up
+with no regressions. See "Open — found in Phase 3 audit, today" below
+for the remaining non-blocking cleanup item (edge function drift).
 
 **Open, waiting on you:** nothing code-related is blocking core CMS use.
 Remaining items are GitHub/Supabase settings only you can change, or
@@ -193,16 +193,20 @@ Everything from earlier sections re-checked clean; these two are new:
       `post-images`), admin override on update/delete. Verified live:
       bucket exists with correct config, security advisor re-run shows
       no new warnings.
-- [ ] **Automation dashboard is showing 9-day-stale data.** The pipeline
-      that actually runs today (`schedule-from-templates` cron, every
-      15 min) never writes to `automation_runs` — only the legacy
-      pipeline did, and it was unscheduled on 2026-07-23. So the real
-      automation works fine, but the Automation page and dashboard
-      "last run"/"success rate" numbers have been frozen since
-      2026-07-22 and nobody would know without checking the table
-      directly. Needs a decision: point `schedule-from-templates` at
-      `automation_runs` going forward, or repoint the UI at whatever
-      table should be the real source of truth.
+- [x] **Automation dashboard was showing 9-day-stale data — fixed.**
+      `schedule-from-templates` now writes to `automation_runs` on every
+      cron pass (every 15 min), using the same insert-then-complete
+      shape the manual "Run Now" button already used — reworked its
+      loop from grouped-by-user-platform to per-automation so each
+      active scheduled automation gets its own run row (status,
+      `result: {created, skipped, platforms}`), and bumps
+      `automations.run_count`/`last_run`. Deployed (v5, `verify_jwt`
+      preserved as `false` to match the cron job's header-only auth).
+      Verified live: manually triggered the same `net.http_post` the
+      cron job uses, confirmed a fresh `automation_runs` row landed
+      (`2026-07-31 17:09`, `status: success`, real `created`/`skipped`
+      counts) and `automations.last_run`/`run_count` both updated. Will
+      keep updating every 15 min going forward — no more silent staleness.
 - [ ] **Edge function drift between repo and live deploy.** 6 functions
       are ACTIVE on prod but not in `supabase/functions/` in this repo:
       `scheduled-pipeline`, `run-scheduled-automations`, `fire-webhooks`,
