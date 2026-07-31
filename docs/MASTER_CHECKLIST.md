@@ -8,8 +8,11 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-07-29, against live production Supabase
-(`jvbucspwcjahqpoxskvr`) and `main` at commit `e88be71`.
+**Last verified:** 2026-07-31, via a 5-agent independent Phase 3 audit
+against live production Supabase (`jvbucspwcjahqpoxskvr`), live GitHub
+CI/branch state, and current source on `claude/project-completion-audit-o1xgt5`
+@ `9115c17` (in sync with `main`). Full report:
+`docs/PHASE_3_READINESS_REPORT.md`.
 
 **On `main` (merged):** #2 E2E suite + dashboard crash fix, #3 RLS/FK/
 policy advisor fixes, #4 i18n completion for the 9 files that actually
@@ -20,9 +23,17 @@ prod, advisor-confirmed at 0 remaining warnings. **Production email/
 password login was found fully broken and fixed live** (Supabase Auth
 "Enable email provider" toggle was off) — see Phase 1 for details.
 
-**Open, waiting on you:** nothing code-related. Remaining items are all
-either GitHub/Supabase settings only you can change, or decisions only
-you can make — see "Open — needs a decision only you can make" below.
+**Phase 3 audit (2026-07-31) found 2 new live blockers** — avatar
+upload is broken (missing storage bucket) and the Automation dashboard
+is showing 9-day-stale data (reporting table disconnected from the
+pipeline that actually runs now). Everything else re-checked (RLS,
+auth, CI, i18n, CSP, secrets) held up with no regressions. See "Open —
+found in Phase 3 audit, today" below.
+
+**Open, waiting on you:** nothing code-related is blocking core CMS use.
+Remaining items are GitHub/Supabase settings only you can change,
+decisions only you can make, or the two new bugs above (I can fix the
+avatar bucket now if you say go) — see the two "Open" sections below.
 
 ---
 
@@ -165,6 +176,42 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
       dropping them now risks a regression the moment usage picks up, to
       save a trivial amount of write overhead today. Revisit once there's
       real production traffic to judge by — not before.
+
+### Open — found in Phase 3 audit, today
+
+Independently re-verified by 5 parallel agents against live source/live
+Supabase/live GitHub state (full report: `docs/PHASE_3_READINESS_REPORT.md`).
+Everything from earlier sections re-checked clean; these two are new:
+
+- [ ] **Avatar upload is broken in production.**
+      `src/components/settings/ProfileSettings.tsx:142,146` writes to
+      `supabase.storage.from("avatars")`, but no `avatars` bucket exists
+      on prod (`storage.buckets` only has `media` and `post-images`).
+      Anyone who tries to set a profile picture hits a failure toast.
+      Fix is additive and low-risk: create the bucket with owner-scoped
+      RLS policies matching the `media`/`post-images` pattern. **Say go
+      and I'll do it.**
+- [ ] **Automation dashboard is showing 9-day-stale data.** The pipeline
+      that actually runs today (`schedule-from-templates` cron, every
+      15 min) never writes to `automation_runs` — only the legacy
+      pipeline did, and it was unscheduled on 2026-07-23. So the real
+      automation works fine, but the Automation page and dashboard
+      "last run"/"success rate" numbers have been frozen since
+      2026-07-22 and nobody would know without checking the table
+      directly. Needs a decision: point `schedule-from-templates` at
+      `automation_runs` going forward, or repoint the UI at whatever
+      table should be the real source of truth.
+- [ ] **Edge function drift between repo and live deploy.** 6 functions
+      are ACTIVE on prod but not in `supabase/functions/` in this repo:
+      `scheduled-pipeline`, `run-scheduled-automations`, `fire-webhooks`,
+      `publish-twitter`, `execute-automation`, `generate-broadcast-script`.
+      Notably, `scheduled-pipeline` — the legacy pipeline a migration
+      comment (`20260723000000_retire_legacy_pipeline.sql`) says was
+      "removed from the repo" — is still deployed and ACTIVE, just
+      unscheduled. Not causing a live bug (nothing triggers it since its
+      cron job was removed), but it's undocumented drift and should
+      either be pulled into the repo or formally deleted, not left
+      orphaned. Non-blocking, cleanup item.
 
 ### Open — needs a decision only you can make
 
