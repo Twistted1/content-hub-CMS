@@ -60,10 +60,12 @@ All done. This was blocking Phase 1's testing items ("run test suite",
 - [x] **0.5 CI** — `.github/workflows/ci.yml` (lint, typecheck, unit tests,
       build) and `e2e.yml` (Playwright against the test project), both
       green on `main`.
-      - [ ] **Branch protection requiring CI to pass before merge** — this
-        is a GitHub repo setting, not something I can flip via any tool I
-        have. **Action for you:** repo Settings → Branches → add a rule on
-        `main` requiring the `test` and `e2e` checks. Two minutes, one-time.
+      - [x] **Branch protection requiring CI to pass before merge — done,
+        2026-07-31.** Rule existed but silently applied to 0 branches
+        (pattern was `Main`, capital M — GitHub patterns are
+        case-sensitive, actual branch is lowercase `main`). Fixed the
+        pattern and confirmed `test`/`e2e` required checks are attached;
+        you verified the page now shows "Currently applies to 1 branch."
 - [x] **0.6 Coverage baseline** — threshold set at 15% (lines/functions/
       branches/statements) in `vitest.config.ts`, matching the "low enough
       to pass, ratchet up later" plan.

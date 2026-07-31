@@ -5,10 +5,10 @@ from everything that's already done. Nothing code-related is blocking;
 these are dashboard settings, business decisions, or things only your own
 browser/accounts can verify.
 
-1. **Branch protection on `main`** — GitHub Settings → Branches → require
-   the `test` and `e2e` checks before merge. You were mid-setup on this
-   before the Phase 3 audit; unconfirmed whether it's finished (no tool
-   can check ruleset/branch-protection state).
+1. ~~Branch protection on `main`~~ — **done, 2026-07-31.** Rule existed
+   but the pattern was `Main` (capital M), so it silently applied to 0
+   branches. Fixed to lowercase `main`, confirmed `test`/`e2e` checks
+   attached, verified "Currently applies to 1 branch."
 2. **Leaked-password protection** — off, and it's a Supabase Pro-plan
    feature (project's on Free). Your call: upgrade, or leave it off for now
    (not a live vulnerability, just a hardening item).
