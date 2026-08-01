@@ -11,9 +11,9 @@ export function DashboardLayout({ children, hideHeader = false }: DashboardLayou
   return (
     <div className="min-h-screen flex bg-background selection:bg-primary/30">
       <Sidebar />
-      <div className="flex-1 flex flex-col pl-72 transition-all duration-500">
+      <div className="flex-1 flex flex-col md:pl-72 transition-all duration-500 min-w-0">
         {!hideHeader && <Header />}
-        <main className={`flex-1 ${hideHeader ? "h-screen" : "p-6"}`}>
+        <main className={`flex-1 min-w-0 ${hideHeader ? "h-screen pt-16 md:pt-0" : "p-4 md:p-6"}`}>
           {children}
         </main>
         <DashboardFooter />

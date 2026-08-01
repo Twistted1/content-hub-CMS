@@ -148,25 +148,14 @@ serve(async (req) => {
     // automation we treat their selected platforms as opted-in.
     let autoQuery = admin
       .from("automations")
-      .select("id, user_id, platforms, status, trigger")
+      .select("id, user_id, platforms, status, trigger, run_count")
       .eq("status", "active")
       .eq("trigger", "scheduled");
     if (!authz.isService && authz.userId) autoQuery = autoQuery.eq("user_id", authz.userId);
     const { data: automations, error: autoErr } = await autoQuery;
     if (autoErr) throw autoErr;
 
-    // Group platforms per user
-    const userPlatforms = new Map<string, Set<string>>();
-    for (const a of automations || []) {
-      const set = userPlatforms.get(a.user_id) || new Set<string>();
-      (a.platforms || []).forEach((p: string) => {
-        const norm = String(p).toLowerCase().replace(/^x$/, "twitter");
-        if (SCHEDULES[norm]) set.add(norm);
-      });
-      userPlatforms.set(a.user_id, set);
-    }
-
-    if (userPlatforms.size === 0) {
+    if (!automations || automations.length === 0) {
       return new Response(JSON.stringify({ ok: true, message: "No active scheduled automations", created: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -174,63 +163,102 @@ serve(async (req) => {
 
     let totalCreated = 0;
     let totalSkipped = 0;
-    const perUser: any[] = [];
+    const perAutomation: any[] = [];
 
-    for (const [userId, platforms] of userPlatforms.entries()) {
+    for (const a of automations) {
+      const userId = a.user_id;
+      const platforms = new Set<string>();
+      (a.platforms || []).forEach((p: string) => {
+        const norm = String(p).toLowerCase().replace(/^x$/, "twitter");
+        if (SCHEDULES[norm]) platforms.add(norm);
+      });
+
+      // Record this pass so "last run" / "success rate" reflect what the cron
+      // pipeline actually does, same as the manual "Run Now" write path.
+      const { data: run } = await admin
+        .from("automation_runs")
+        .insert({ automation_id: a.id, user_id: userId, status: "running" })
+        .select()
+        .single();
+
       let created = 0, skipped = 0;
-      for (const platform of platforms) {
-        const slots = slotsForRange(platform, now, horizon);
-        if (slots.length === 0) continue;
+      try {
+        for (const platform of platforms) {
+          const slots = slotsForRange(platform, now, horizon);
+          if (slots.length === 0) continue;
 
-        // Find existing posts for this (user, platform) in the window — via post_platforms join.
-        const { data: existing } = await admin
-          .from("post_platforms")
-          .select("post_id, platform, posts!inner(user_id, scheduled_at)")
-          .eq("platform", platform as any)
-          .eq("posts.user_id", userId)
-          .gte("posts.scheduled_at", now.toISOString())
-          .lt("posts.scheduled_at", horizon.toISOString());
+          // Find existing posts for this (user, platform) in the window — via post_platforms join.
+          const { data: existing } = await admin
+            .from("post_platforms")
+            .select("post_id, platform, posts!inner(user_id, scheduled_at)")
+            .eq("platform", platform as any)
+            .eq("posts.user_id", userId)
+            .gte("posts.scheduled_at", now.toISOString())
+            .lt("posts.scheduled_at", horizon.toISOString());
 
-        const taken = new Set<string>((existing || []).map((r: any) => new Date(r.posts.scheduled_at).toISOString()));
+          const taken = new Set<string>((existing || []).map((r: any) => new Date(r.posts.scheduled_at).toISOString()));
 
-        for (const slot of slots) {
-          const iso = slot.toISOString();
-          if (taken.has(iso)) { skipped++; continue; }
+          for (const slot of slots) {
+            const iso = slot.toISOString();
+            if (taken.has(iso)) { skipped++; continue; }
 
-          // Fire content-pipeline for this single slot. Force `awaiting_review`.
-          try {
-            const resp = await fetch(`${SUPABASE_URL}/functions/v1/content-pipeline`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${SERVICE_KEY}`,
-              },
-              body: JSON.stringify({
-                topic: platform === "website"
-                  ? `${WEBSITE_CATEGORY_BY_DAY[DAY_NAMES[slot.getUTCDay()]].category}: ${WEBSITE_CATEGORY_BY_DAY[DAY_NAMES[slot.getUTCDay()]].focus}`
-                  : `${platform.charAt(0).toUpperCase() + platform.slice(1)} post for ${slot.toUTCString()}`,
-                platforms: [platform],
-                scheduleMode: "awaiting_review",
-                scheduledAt: iso,
-                user_id: userId,
-              }),
-            });
-            if (resp.ok) created++;
-            else {
-              const t = await resp.text();
-              console.error(`content-pipeline failed for ${userId}/${platform}/${iso}: ${resp.status} ${t}`);
+            // Fire content-pipeline for this single slot. Force `awaiting_review`.
+            try {
+              const resp = await fetch(`${SUPABASE_URL}/functions/v1/content-pipeline`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${SERVICE_KEY}`,
+                },
+                body: JSON.stringify({
+                  topic: platform === "website"
+                    ? `${WEBSITE_CATEGORY_BY_DAY[DAY_NAMES[slot.getUTCDay()]].category}: ${WEBSITE_CATEGORY_BY_DAY[DAY_NAMES[slot.getUTCDay()]].focus}`
+                    : `${platform.charAt(0).toUpperCase() + platform.slice(1)} post for ${slot.toUTCString()}`,
+                  platforms: [platform],
+                  scheduleMode: "awaiting_review",
+                  scheduledAt: iso,
+                  user_id: userId,
+                }),
+              });
+              if (resp.ok) created++;
+              else {
+                const t = await resp.text();
+                console.error(`content-pipeline failed for ${userId}/${platform}/${iso}: ${resp.status} ${t}`);
+              }
+            } catch (e: any) {
+              console.error("content-pipeline call error:", e);
             }
-          } catch (e: any) {
-            console.error("content-pipeline call error:", e);
           }
         }
+
+        if (run?.id) {
+          await admin.from("automation_runs").update({
+            status: "success",
+            completed_at: new Date().toISOString(),
+            result: { created, skipped, platforms: [...platforms] },
+          }).eq("id", run.id);
+        }
+        await admin.from("automations").update({
+          run_count: (a.run_count || 0) + 1,
+          last_run: new Date().toISOString(),
+        }).eq("id", a.id);
+      } catch (e: any) {
+        console.error(`automation ${a.id} failed:`, e);
+        if (run?.id) {
+          await admin.from("automation_runs").update({
+            status: "failed",
+            completed_at: new Date().toISOString(),
+            error_message: e?.message || String(e),
+          }).eq("id", run.id);
+        }
       }
-      perUser.push({ userId, created, skipped });
+
+      perAutomation.push({ automationId: a.id, userId, created, skipped });
       totalCreated += created;
       totalSkipped += skipped;
     }
 
-    return new Response(JSON.stringify({ ok: true, created: totalCreated, skipped: totalSkipped, perUser }), {
+    return new Response(JSON.stringify({ ok: true, created: totalCreated, skipped: totalSkipped, perAutomation }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {

@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
-import { Twitter, Linkedin, Github, Youtube, Mail } from 'lucide-react';
+import { Twitter, Linkedin, Github, Youtube, Instagram, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const socialLinks = [
-  { icon: Twitter, href: "https://twitter.com/contenthubcms", label: "Twitter" },
+  { icon: Twitter, href: "https://x.com/novusexchange", label: "X" },
   { icon: Linkedin, href: "https://linkedin.com/company/contenthubcms", label: "LinkedIn" },
   { icon: Github, href: "https://github.com/contenthubcms", label: "GitHub" },
-  { icon: Youtube, href: "https://youtube.com/@contenthubcms", label: "YouTube" },
+  { icon: Youtube, href: "https://youtube.com/@novusexchange", label: "YouTube" },
+  { icon: Instagram, href: "https://instagram.com/novusexchange", label: "Instagram" },
 ];
 
 export function Footer() {

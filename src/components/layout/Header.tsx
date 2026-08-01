@@ -18,21 +18,21 @@ export function Header() {
   }, []);
 
   return (
-    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
+    <header className="h-16 bg-card border-b border-border flex items-center justify-between gap-2 pl-16 pr-3 md:px-6">
       {/* Workspace Selector */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
-          <span className="text-xs uppercase tracking-wide">{t("header.workspace")}</span>
-          <span className="font-medium text-foreground">{t("header.myWorkspace")}</span>
-          <ChevronDown className="h-4 w-4" />
+      <div className="flex items-center gap-4 min-w-0">
+        <Button variant="ghost" className="flex items-center gap-2 text-muted-foreground hover:text-foreground min-w-0">
+          <span className="text-xs uppercase tracking-wide hidden sm:inline">{t("header.workspace")}</span>
+          <span className="font-medium text-foreground truncate">{t("header.myWorkspace")}</span>
+          <ChevronDown className="h-4 w-4 shrink-0" />
         </Button>
       </div>
 
       {/* Search & Actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4 shrink-0">
         <SearchCommand />
 
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
           <span>{time}</span>
           <span className="text-xs uppercase">{t("header.local")}</span>
         </div>

@@ -8,8 +8,13 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-07-29, against live production Supabase
-(`jvbucspwcjahqpoxskvr`) and `main` at commit `e88be71`.
+**Last verified:** 2026-08-01. Phase 3 (2026-07-31) was a 5-agent
+independent audit against live production Supabase
+(`jvbucspwcjahqpoxskvr`), live GitHub CI/branch state, and source @
+`9115c17`. Full report: `docs/PHASE_3_READINESS_REPORT.md`. **Phase 4
+(2026-08-01, see below) found and fixed a real gap that Phase 3 missed: the
+Stripe subscription webhook had never successfully written a subscription,
+ever** — see "Phase 4" section for details and what's still unverified.
 
 **On `main` (merged):** #2 E2E suite + dashboard crash fix, #3 RLS/FK/
 policy advisor fixes, #4 i18n completion for the 9 files that actually
@@ -20,9 +25,75 @@ prod, advisor-confirmed at 0 remaining warnings. **Production email/
 password login was found fully broken and fixed live** (Supabase Auth
 "Enable email provider" toggle was off) — see Phase 1 for details.
 
-**Open, waiting on you:** nothing code-related. Remaining items are all
-either GitHub/Supabase settings only you can change, or decisions only
-you can make — see "Open — needs a decision only you can make" below.
+**Phase 3 audit (2026-07-31) found 2 new live blockers — both fixed
+same day.** Avatar upload (missing storage bucket) and the Automation
+dashboard's 9-day-stale reporting (cron pipeline now writes
+`automation_runs` on every pass) are both resolved and verified live.
+Everything else re-checked (RLS, auth, CI, i18n, CSP, secrets) held up
+with no regressions. See "Open — found in Phase 3 audit, today" below
+for the remaining non-blocking cleanup item (edge function drift).
+
+**Open, waiting on you:** nothing code-related is blocking core CMS use.
+Remaining items are GitHub/Supabase settings only you can change, or
+decisions only you can make — see the two "Open" sections below.
+
+---
+
+## Phase 4 — Revenue path + CSP reporting (2026-08-01)
+
+**This corrects a false "PASS" in the 2026-07-31 Phase 3 report.** That
+report's scorecard says Stripe billing functions are "live and running
+correctly." They were not — see below. Nobody re-read the actual
+`stripe-webhook` logic against the live schema in Phase 3; it was passed on
+the strength of "the function deploys and the cron/webhook registrations
+exist," not on tracing what happens when a real event arrives.
+
+- [x] **`stripe-webhook` has never successfully recorded a subscription,
+      ever — found and fixed.** Two independent bugs, either one alone would
+      have been fatal:
+      1. `getUserIdByEmail` queried `profiles.eq("email", ...)` — the
+         `profiles` table has no `email` column at all. Every lookup threw,
+         `upsertSubscription` never ran, for every event since this function
+         was written.
+      2. The product-ID → tier mapping only recognized old/stale Stripe
+         price IDs, so even a working lookup would have written `tier:
+         "free"` regardless of what the customer actually purchased.
+      **Fix:** `create-checkout` now finds-or-creates the Stripe customer
+      explicitly and tags it with `metadata.supabase_user_id`;
+      `stripe-webhook` reads that directly instead of matching by email
+      (falls back to matching `auth.users` by email for pre-existing
+      customers created before this change). Tier mapping updated to match
+      `check-subscription`'s current starter/pro price IDs. Both functions
+      deployed to production (`stripe-webhook` v26, `create-checkout` v30).
+      **Verified:** all 4 live Stripe price IDs checked against the new
+      mapping (correct amounts/tiers), webhook endpoint confirmed
+      registered for exactly the 5 events the code handles.
+      **Not yet verified: an actual live/test-mode purchase completing
+      end-to-end.** The Stripe MCP tool blocks creating checkout
+      sessions/subscriptions programmatically (an intentional guardrail
+      against an agent initiating financial transactions). Confirming this
+      fully requires either you running one real test-mode purchase, or you
+      authorizing me to drive a browser through Stripe's hosted test
+      Checkout with a test card. **This is the single highest-priority
+      remaining item** — it's the revenue path, and until someone completes
+      a purchase and watches a `subscriptions` row update, "billing works"
+      is still an inference, not an observation.
+- [x] **CSP reporting endpoint — added.** The Phase 3 report flagged CSP as
+      "PASS (syntax)" but unverifiable — no reporting mechanism meant "zero
+      violations" couldn't be distinguished from "reports go nowhere."
+      Added: `csp_reports` table (RLS: admin-only SELECT, written only by
+      the edge function's service-role client), a `csp-report` edge
+      function handling both the legacy `report-uri` shape and the modern
+      batched Reporting API (`report-to`) shape, and `vercel.json` now sends
+      `report-uri` + `report-to` + a `Reporting-Endpoints` header.
+      **Fully verified end-to-end, 2026-08-01:** you triggered a real
+      `eval("1")` CSP violation from a real browser against the PR #10
+      Vercel preview (blocked by `script-src`, no `unsafe-eval`); the
+      resulting report landed in `csp_reports` seconds later —
+      `blocked_uri: "eval"`, `violated_directive: "script-src"`,
+      `disposition: "enforce"`, `document_uri` matching the preview URL.
+      The full pipeline (browser → report → edge function → table) is
+      confirmed live, not just structurally verified.
 
 ---
 
@@ -49,10 +120,12 @@ All done. This was blocking Phase 1's testing items ("run test suite",
 - [x] **0.5 CI** — `.github/workflows/ci.yml` (lint, typecheck, unit tests,
       build) and `e2e.yml` (Playwright against the test project), both
       green on `main`.
-      - [ ] **Branch protection requiring CI to pass before merge** — this
-        is a GitHub repo setting, not something I can flip via any tool I
-        have. **Action for you:** repo Settings → Branches → add a rule on
-        `main` requiring the `test` and `e2e` checks. Two minutes, one-time.
+      - [x] **Branch protection requiring CI to pass before merge — done,
+        2026-07-31.** Rule existed but silently applied to 0 branches
+        (pattern was `Main`, capital M — GitHub patterns are
+        case-sensitive, actual branch is lowercase `main`). Fixed the
+        pattern and confirmed `test`/`e2e` required checks are attached;
+        you verified the page now shows "Currently applies to 1 branch."
 - [x] **0.6 Coverage baseline** — threshold set at 15% (lines/functions/
       branches/statements) in `vitest.config.ts`, matching the "low enough
       to pass, ratchet up later" plan.
@@ -124,14 +197,11 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
       the security advisor pass is unchanged (no new findings, no access
       changes) — this was purely a query-planner fix, not a permissions
       change.
-- [ ] **Leaked-password protection is off** in Supabase Auth (checks new
-      passwords against HaveIBeenPwned). **Correction:** not actually a
-      quick toggle — checked the dashboard directly (Authentication →
-      Sign In/Providers → Email) and it's greyed out with "Only available
-      on Pro plan and above." This project is on the Free plan. Stays open
-      until either you upgrade to Pro, or you decide it's fine to leave off
-      (reasonable call at this stage — it's a hardening item, not a live
-      vulnerability).
+- [x] **Leaked-password protection — decided, staying off.** Requires
+      Supabase Pro (project's on Free); greyed out in the dashboard
+      (Authentication → Sign In/Providers → Email). **2026-07-31: you
+      decided not to upgrade for now.** Not a live vulnerability, just
+      a hardening item — revisit if/when the project moves to Pro.
 - [ ] **Google Sign-In not configured.** App code already supports it
       (`signInWithGoogle` in `useAuth.ts`, wired into `Auth.tsx`) — just
       needs OAuth credentials from Google Cloud Console (Client ID +
@@ -165,6 +235,71 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
       dropping them now risks a regression the moment usage picks up, to
       save a trivial amount of write overhead today. Revisit once there's
       real production traffic to judge by — not before.
+
+### Open — found in Phase 3 audit, today
+
+Independently re-verified by 5 parallel agents against live source/live
+Supabase/live GitHub state (full report: `docs/PHASE_3_READINESS_REPORT.md`).
+Everything from earlier sections re-checked clean; these two are new:
+
+- [x] **Avatar upload was broken in production — fixed.** The `avatars`
+      bucket never existed (`storage.buckets` only had `media` and
+      `post-images`). Created it directly on prod
+      (`create_avatars_bucket` migration): public read (matches the
+      `getPublicUrl` call in `ProfileSettings.tsx`), 5MB limit, image
+      mime types only, owner-scoped INSERT/UPDATE/DELETE policies keyed
+      on `auth.uid()` as the folder prefix (same pattern as `media`/
+      `post-images`), admin override on update/delete. Verified live:
+      bucket exists with correct config, security advisor re-run shows
+      no new warnings.
+- [x] **Automation dashboard was showing 9-day-stale data — fixed.**
+      `schedule-from-templates` now writes to `automation_runs` on every
+      cron pass (every 15 min), using the same insert-then-complete
+      shape the manual "Run Now" button already used — reworked its
+      loop from grouped-by-user-platform to per-automation so each
+      active scheduled automation gets its own run row (status,
+      `result: {created, skipped, platforms}`), and bumps
+      `automations.run_count`/`last_run`. Deployed (v5, `verify_jwt`
+      preserved as `false` to match the cron job's header-only auth).
+      Verified live: manually triggered the same `net.http_post` the
+      cron job uses, confirmed a fresh `automation_runs` row landed
+      (`2026-07-31 17:09`, `status: success`, real `created`/`skipped`
+      counts) and `automations.last_run`/`run_count` both updated. Will
+      keep updating every 15 min going forward — no more silent staleness.
+- [x] **Edge function drift — investigated and neutralized, 2026-07-31.**
+      The 6 functions live but not in `supabase/functions/`
+      (`scheduled-pipeline`, `run-scheduled-automations`, `fire-webhooks`,
+      `publish-twitter`, `execute-automation`, `generate-broadcast-script`)
+      turned out to be more than stale drift — pulling their source
+      turned up 3 real, currently-exploitable authorization gaps that
+      were live in production:
+      - **`generate-broadcast-script`** had `verify_jwt: false` — callable
+        by anyone on the internet with zero authentication, burning the
+        project's `GEMINI_API_KEY` budget on every call.
+      - **`execute-automation`** required login but did no ownership
+        check — any signed-in user calling it would trigger publishing
+        of every user's due posts, not just their own.
+      - **`fire-webhooks`** looked up a post by id with no ownership
+        check — any signed-in user could pass another user's `postId`
+        and get that post's content fired through their own configured
+        webhook, leaking private content cross-account.
+      - `publish-twitter` also let any signed-in user post to a single
+        shared X/Twitter account via static credentials. `scheduled-
+        pipeline` and `run-scheduled-automations` were confirmed dead
+        duplicate automation-runner logic (checked live `cron.job` —
+        only `schedule-content`/`schedule-from-templates` and
+        `publish-due-posts` are actually scheduled; grepped `src/` and
+        all migrations for the other 6 slugs — zero references).
+      Redeployed all 6 as inert 410 stubs (couldn't find a delete-
+      function tool in the available Supabase MCP tools, so a stub is
+      the closest thing to deletion available). Confirmed via a fresh
+      `list_edge_functions` pull that all 20 live functions are
+      accounted for and only these 6 changed. Did not commit their old
+      source into the repo — they're dead, re-introducing them as repo
+      files would just resurrect the confusion. **Formal deletion via
+      the Supabase dashboard (Edge Functions → select → Delete) is a
+      nice-to-have cleanup whenever convenient — the stubs already
+      close the exposure, so there's no urgency.**
 
 ### Open — needs a decision only you can make
 
