@@ -85,15 +85,15 @@ exist," not on tracing what happens when a real event arrives.
       the edge function's service-role client), a `csp-report` edge
       function handling both the legacy `report-uri` shape and the modern
       batched Reporting API (`report-to`) shape, and `vercel.json` now sends
-      `report-uri` + `report-to` + a `Reporting-Endpoints` header. Verified
-      the table/RLS pipeline directly (inserted a row shaped exactly like
-      the function's output, confirmed the admin-only policy, cleaned up
-      the test row); could not curl the deployed function directly from
-      this sandbox (egress policy blocks arbitrary requests to
-      `*.supabase.co` outside the Supabase MCP tool). **To finish
-      verifying:** once this branch is on production, trigger a real
-      violation (e.g. an inline `<script>` with no nonce) from a real
-      browser and confirm a row lands in `csp_reports`.
+      `report-uri` + `report-to` + a `Reporting-Endpoints` header.
+      **Fully verified end-to-end, 2026-08-01:** you triggered a real
+      `eval("1")` CSP violation from a real browser against the PR #10
+      Vercel preview (blocked by `script-src`, no `unsafe-eval`); the
+      resulting report landed in `csp_reports` seconds later —
+      `blocked_uri: "eval"`, `violated_directive: "script-src"`,
+      `disposition: "enforce"`, `document_uri` matching the preview URL.
+      The full pipeline (browser → report → edge function → table) is
+      confirmed live, not just structurally verified.
 
 ---
 
