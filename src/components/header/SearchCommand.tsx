@@ -76,17 +76,25 @@ export function SearchCommand() {
   return (
     <>
       {/* Search trigger */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={t("header.searchPlaceholder")}
+        className="sm:hidden flex h-9 w-9 items-center justify-center rounded-md bg-secondary border border-border text-muted-foreground shrink-0"
+      >
+        <Search className="h-4 w-4" />
+      </button>
       <div
-        className="relative cursor-pointer"
+        className="relative cursor-pointer hidden sm:block"
         onClick={() => setOpen(true)}
       >
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder={t("header.searchPlaceholder")}
-          className="w-80 pl-10 bg-secondary border-border cursor-pointer"
+          className="w-48 md:w-80 pl-10 bg-secondary border-border cursor-pointer"
           readOnly
         />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:flex gap-1">
           <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded text-muted-foreground">⌘</kbd>
           <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded text-muted-foreground">K</kbd>
         </div>

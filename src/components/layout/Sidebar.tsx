@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -18,11 +19,14 @@ import {
   Zap,
   ChevronRight,
   Diamond,
+  Menu,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { toast } from "sonner";
 
 const mainNavItems = [
@@ -55,11 +59,12 @@ interface NavItemProps {
   href: string;
 }
 
-const NavItem = ({ icon: Icon, labelKey, href }: NavItemProps) => {
+const NavItem = ({ icon: Icon, labelKey, href, onNavigate }: NavItemProps & { onNavigate?: () => void }) => {
   const { t } = useTranslation();
   return (
     <NavLink
       to={href}
+      onClick={onNavigate}
       className={cn(
         "group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300",
         "text-muted-foreground hover:text-white hover:bg-white/[0.05] border border-transparent hover:border-white/[0.05]"
@@ -77,20 +82,20 @@ const NavItem = ({ icon: Icon, labelKey, href }: NavItemProps) => {
   );
 };
 
-const NavSection = ({ title, items }: { title: string; items: NavItemProps[] }) => (
+const NavSection = ({ title, items, onNavigate }: { title: string; items: NavItemProps[]; onNavigate?: () => void }) => (
   <div className="space-y-1.5">
     <h3 className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 mb-3">
       {title}
     </h3>
     <div className="space-y-1">
       {items.map((item) => (
-        <NavItem key={item.href} {...item} />
+        <NavItem key={item.href} {...item} onNavigate={onNavigate} />
       ))}
     </div>
   </div>
 );
 
-export function Sidebar() {
+const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
@@ -106,7 +111,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-72 bg-[#05060b]/80 backdrop-blur-2xl border-r border-white/[0.06] flex flex-col premium-shadow">
+    <>
       <div className="flex items-center gap-3.5 px-6 py-8">
         <div className="flex flex-col gap-[4px] justify-center cursor-pointer w-9 h-11 transition-transform hover:scale-105">
           <div className="w-full h-[5px] bg-[#e62b2b] rounded-full"></div>
@@ -126,9 +131,9 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-4 space-y-9 custom-scrollbar">
-        <NavSection title={t("nav.main")} items={mainNavItems} />
-        <NavSection title={t("nav.tools")} items={toolsNavItems} />
-        <NavSection title={t("nav.admin")} items={adminNavItems} />
+        <NavSection title={t("nav.main")} items={mainNavItems} onNavigate={onNavigate} />
+        <NavSection title={t("nav.tools")} items={toolsNavItems} onNavigate={onNavigate} />
+        <NavSection title={t("nav.admin")} items={adminNavItems} onNavigate={onNavigate} />
 
         {/* Upgrade Card */}
         <div className="mt-8 mx-2 p-5 rounded-3xl bg-gradient-to-br from-white/[0.05] to-transparent border border-white/[0.08] relative overflow-hidden group">
@@ -153,6 +158,40 @@ export function Sidebar() {
           <span>{t("common.logout")}</span>
         </button>
       </div>
+    </>
+  );
+};
+
+export function Sidebar() {
+  const { t } = useTranslation();
+  const isMobile = useIsMobile();
+  const [open, setOpen] = useState(false);
+
+  if (isMobile) {
+    return (
+      <>
+        <button
+          onClick={() => setOpen(true)}
+          aria-label={t("nav.openMenu")}
+          className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl bg-[#05060b]/90 backdrop-blur-xl border border-white/[0.08] text-white premium-shadow"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent
+            side="left"
+            className="w-72 max-w-[85vw] p-0 flex flex-col bg-[#05060b] border-white/[0.06] text-white"
+          >
+            <SidebarContent onNavigate={() => setOpen(false)} />
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  return (
+    <aside className="fixed left-0 top-0 z-40 h-screen w-72 bg-[#05060b]/80 backdrop-blur-2xl border-r border-white/[0.06] flex flex-col premium-shadow">
+      <SidebarContent />
     </aside>
   );
 }
