@@ -8,11 +8,13 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-07-31, via a 5-agent independent Phase 3 audit
-against live production Supabase (`jvbucspwcjahqpoxskvr`), live GitHub
-CI/branch state, and current source on `claude/project-completion-audit-o1xgt5`
-@ `9115c17` (in sync with `main`). Full report:
-`docs/PHASE_3_READINESS_REPORT.md`.
+**Last verified:** 2026-08-01. Phase 3 (2026-07-31) was a 5-agent
+independent audit against live production Supabase
+(`jvbucspwcjahqpoxskvr`), live GitHub CI/branch state, and source @
+`9115c17`. Full report: `docs/PHASE_3_READINESS_REPORT.md`. **Phase 4
+(2026-08-01, see below) found and fixed a real gap that Phase 3 missed: the
+Stripe subscription webhook had never successfully written a subscription,
+ever** — see "Phase 4" section for details and what's still unverified.
 
 **On `main` (merged):** #2 E2E suite + dashboard crash fix, #3 RLS/FK/
 policy advisor fixes, #4 i18n completion for the 9 files that actually
@@ -34,6 +36,64 @@ for the remaining non-blocking cleanup item (edge function drift).
 **Open, waiting on you:** nothing code-related is blocking core CMS use.
 Remaining items are GitHub/Supabase settings only you can change, or
 decisions only you can make — see the two "Open" sections below.
+
+---
+
+## Phase 4 — Revenue path + CSP reporting (2026-08-01)
+
+**This corrects a false "PASS" in the 2026-07-31 Phase 3 report.** That
+report's scorecard says Stripe billing functions are "live and running
+correctly." They were not — see below. Nobody re-read the actual
+`stripe-webhook` logic against the live schema in Phase 3; it was passed on
+the strength of "the function deploys and the cron/webhook registrations
+exist," not on tracing what happens when a real event arrives.
+
+- [x] **`stripe-webhook` has never successfully recorded a subscription,
+      ever — found and fixed.** Two independent bugs, either one alone would
+      have been fatal:
+      1. `getUserIdByEmail` queried `profiles.eq("email", ...)` — the
+         `profiles` table has no `email` column at all. Every lookup threw,
+         `upsertSubscription` never ran, for every event since this function
+         was written.
+      2. The product-ID → tier mapping only recognized old/stale Stripe
+         price IDs, so even a working lookup would have written `tier:
+         "free"` regardless of what the customer actually purchased.
+      **Fix:** `create-checkout` now finds-or-creates the Stripe customer
+      explicitly and tags it with `metadata.supabase_user_id`;
+      `stripe-webhook` reads that directly instead of matching by email
+      (falls back to matching `auth.users` by email for pre-existing
+      customers created before this change). Tier mapping updated to match
+      `check-subscription`'s current starter/pro price IDs. Both functions
+      deployed to production (`stripe-webhook` v26, `create-checkout` v30).
+      **Verified:** all 4 live Stripe price IDs checked against the new
+      mapping (correct amounts/tiers), webhook endpoint confirmed
+      registered for exactly the 5 events the code handles.
+      **Not yet verified: an actual live/test-mode purchase completing
+      end-to-end.** The Stripe MCP tool blocks creating checkout
+      sessions/subscriptions programmatically (an intentional guardrail
+      against an agent initiating financial transactions). Confirming this
+      fully requires either you running one real test-mode purchase, or you
+      authorizing me to drive a browser through Stripe's hosted test
+      Checkout with a test card. **This is the single highest-priority
+      remaining item** — it's the revenue path, and until someone completes
+      a purchase and watches a `subscriptions` row update, "billing works"
+      is still an inference, not an observation.
+- [x] **CSP reporting endpoint — added.** The Phase 3 report flagged CSP as
+      "PASS (syntax)" but unverifiable — no reporting mechanism meant "zero
+      violations" couldn't be distinguished from "reports go nowhere."
+      Added: `csp_reports` table (RLS: admin-only SELECT, written only by
+      the edge function's service-role client), a `csp-report` edge
+      function handling both the legacy `report-uri` shape and the modern
+      batched Reporting API (`report-to`) shape, and `vercel.json` now sends
+      `report-uri` + `report-to` + a `Reporting-Endpoints` header. Verified
+      the table/RLS pipeline directly (inserted a row shaped exactly like
+      the function's output, confirmed the admin-only policy, cleaned up
+      the test row); could not curl the deployed function directly from
+      this sandbox (egress policy blocks arbitrary requests to
+      `*.supabase.co` outside the Supabase MCP tool). **To finish
+      verifying:** once this branch is on production, trigger a real
+      violation (e.g. an inline `<script>` with no nonce) from a real
+      browser and confirm a row lands in `csp_reports`.
 
 ---
 
