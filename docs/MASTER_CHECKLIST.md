@@ -8,13 +8,17 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-08-01. Phase 3 (2026-07-31) was a 5-agent
+**Last verified:** 2026-08-06 (Phase 5). Phase 3 (2026-07-31) was a 5-agent
 independent audit against live production Supabase
 (`jvbucspwcjahqpoxskvr`), live GitHub CI/branch state, and source @
-`9115c17`. Full report: `docs/PHASE_3_READINESS_REPORT.md`. **Phase 4
-(2026-08-01, see below) found and fixed a real gap that Phase 3 missed: the
-Stripe subscription webhook had never successfully written a subscription,
-ever** — see "Phase 4" section for details and what's still unverified.
+`9115c17`. Full report: `docs/PHASE_3_READINESS_REPORT.md`. Phase 4
+(2026-08-01) found and fixed a real gap that Phase 3 missed: the Stripe
+subscription webhook had never successfully written a subscription,
+ever. **Phase 5 (2026-08-06) was a user-driven UI/UX pass — real bugs
+in the Billing page, the Calendar, and the light theme, found by the
+user clicking around production, not by an audit.** See "Phase 5"
+section below for what changed and what's still open (light theme is
+now disabled, not fixed — see that section for why).
 
 **On `main` (merged):** #2 E2E suite + dashboard crash fix, #3 RLS/FK/
 policy advisor fixes, #4 i18n completion for the 9 files that actually
@@ -36,6 +40,79 @@ for the remaining non-blocking cleanup item (edge function drift).
 **Open, waiting on you:** nothing code-related is blocking core CMS use.
 Remaining items are GitHub/Supabase settings only you can change, or
 decisions only you can make — see the two "Open" sections below.
+
+---
+
+## Phase 5 — User-driven UI/UX pass (2026-08-06)
+
+Not an audit — the user walked through production themselves and reported
+real, reproducible bugs one at a time. All merged to `main`, live on
+`content-cms-hub.vercel.app`.
+
+- [x] **Billing page was fully mocked.** `currentPlan` was hardcoded to
+      `"pro"` in component state, completely disconnected from the real
+      `subscriptions` table or Stripe — every account saw "Pro" regardless
+      of actual subscription status. Payment methods/invoices were fake
+      local state; "Cancel Subscription" just fired a toast with no real
+      effect. Rewired the whole page onto `useSubscription()` and real
+      Stripe Checkout/Customer Portal. Removed the fake hand-rolled
+      card-entry form (was collecting raw card numbers into React state).
+- [x] **"Novee" branding removed** from Landing/Pricing copy (en + pt) —
+      replaced with "AI Assistant", matching what's actually in the app.
+      Also fixed LinkedIn URL and contact email to the real
+      novusexchange.com domain.
+- [x] **Demo login / Supabase debug info** on the Auth page was rendering
+      unconditionally, including on production. Gated behind the same
+      `isPreviewHost` check already used elsewhere.
+- [x] **Calendar was always showing fake data.** A recurring weekly
+      "posting template" overlay (`scheduleTemplateEvents` in
+      `Calendar.tsx`) injected synthetic events into every month
+      regardless of real data — so the calendar never looked empty even
+      with zero real posts. This was mistaken for "the calendar is full of
+      content" when it was actually always-on filler. Removed entirely;
+      calendar now renders only real posts from the DB.
+- [x] **All 40 real posts in the live DB deleted at the user's explicit
+      request** (confirmed via `AskUserQuestion` before running the
+      delete — this was a real, irreversible `DELETE FROM posts`, not a
+      UI change). DB is now genuinely empty of posts, as intended.
+- [x] **Calendar UI redesign**, from a marked-up screenshot: mini calendar
+      sidebar widget was oversized/unevenly padded — shrunk and centered.
+      Event chips changed from rounded pills to square corners
+      (`rounded-none`). Platform chip colors (Twitter/X, Facebook,
+      LinkedIn, Instagram, YouTube) moved from bright Tailwind 500/600/700
+      shades to deeper 800/900 tones — same per-platform hue, less
+      saturated/primary-looking.
+- [x] **Light theme was fundamentally broken, then disabled.** Root cause:
+      the `.glass`/`.glass-card` utility classes (used app-wide) tint
+      themselves with a literal white overlay assuming a dark page behind
+      them, and headings throughout use hardcoded `text-white` — both
+      totally reasonable *while light theme never actually rendered*
+      (the `.light` CSS block didn't exist until Phase 4/5 added it).
+      The moment light mode started working, all of that surfaced as
+      broken: cards near-invisible, text unreadable. Fixed the root
+      `.glass-card` tint (now uses `--foreground`, works in both themes)
+      and swept the Sidebar + Overview/Dashboard page onto theme tokens —
+      but **11 other pages** (Articles, Automation, ContentModel,
+      Platforms, ContentPipeline, Settings, AIAssistant, WorkflowTest,
+      ScheduleCalendar, plus most of Calendar.tsx) still have the same
+      hardcoded-`text-white` pattern, unswept. Rather than ship it
+      half-working, **light theme is now fully disabled**: `ThemeProvider
+      forcedTheme="dark"` in `App.tsx` is the hard guarantee (resolved
+      theme is always dark no matter what any component requests), and
+      both UI paths to it (Settings > Appearance radio group, header
+      dropdown quick-toggle) are disabled/grayed out with an explanatory
+      note. **To actually re-enable light theme**: sweep the remaining 11
+      pages' hardcoded `text-white`/`bg-black/`/`bg-white/[0.0x]` onto
+      theme tokens (same pattern as the Phase 5 Index.tsx fix), verify
+      each page visually in both themes, then remove `forcedTheme` and
+      re-enable the two toggle UIs.
+- [x] **Production deploy pipeline confirmed working end-to-end**: this
+      branch → GitHub push → Vercel auto-deploy (GitHub integration
+      already wired up, no action needed) → `content-cms-hub.vercel.app`
+      (bound to `main`). Merged this branch into `main` twice during this
+      session to get changes live for the user to review in their own
+      browser — see "How to reach a running instance" below, which this
+      phase's work supersedes for the "how do I see this" question.
 
 ---
 
@@ -381,18 +458,20 @@ Everything from earlier sections re-checked clean; these two are new:
 
 ---
 
-## How to reach a running instance of this branch
+## How to reach a running instance
 
-- **Your browser, right now, no setup:** the Vercel preview for this PR
-  redeploys on every push —
+- **Production, no setup — https://content-cms-hub.vercel.app** — bound to
+  `main` via Vercel's GitHub integration (auto-redeploys on every push to
+  `main`, no manual deploy step). This is the real answer as of Phase 5.
+- **Branch preview** —
   https://content-cms-hub-git-claude-project-c-8508cb-twistted1s-projects.vercel.app
-  This is the real, live way to click through what's in PR #2.
-- **My sandbox's dev server:** running on `localhost:5173` inside this
-  session's container. That's not reachable from your browser — it's not a
-  choice, it's that a `localhost` inside my container is only visible to
-  processes inside that same container (same reason `localhost` on your
-  laptop isn't visible to your phone). The Vercel URL above is the actual
-  answer to "let me see it running."
+  tracks `claude/project-completion-audit-o1xgt5` specifically, useful for
+  reviewing this branch's work before it's merged to `main`.
+- **A sandboxed session's dev server** (`localhost:5173` inside that
+  session's container) is never reachable from your browser — not a
+  choice, a `localhost` inside a container is only visible to processes in
+  that same container. The two URLs above are the actual way to see
+  anything running.
 
 ---
 
