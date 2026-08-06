@@ -504,7 +504,8 @@
       "light": "Light",
       "dark": "Dark",
       "system": "System",
-      "toastChanged": "Theme changed to {{theme}}"
+      "toastChanged": "Theme changed to {{theme}}",
+      "lightDisabledNote": "Light theme is temporarily disabled while it's being reworked — dark only for now."
     },
     "display": {
       "title": "Display Preferences",

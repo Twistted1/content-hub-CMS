@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { useUserPreferencesStore } from "@/stores/useUserPreferencesStore";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
@@ -37,11 +36,6 @@ export function AppearanceSettings() {
   const { appearance, updateAppearance } = useUserPreferencesStore();
   const { t } = useTranslation();
 
-  const handleThemeChange = (theme: typeof appearance.theme) => {
-    updateAppearance({ theme });
-    toast.success(t("settings.theme.toastChanged", { theme: t(`settings.theme.${theme}`) }));
-  };
-
   const handleLanguageChange = (value: string) => {
     updateAppearance({ language: value });
     i18n.changeLanguage(value);
@@ -57,34 +51,27 @@ export function AppearanceSettings() {
             {t("settings.theme.title")}
           </CardTitle>
           <CardDescription>
-            {t("settings.theme.description")}
+            {t("settings.theme.description")} {t("settings.theme.lightDisabledNote")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <RadioGroup
-            value={appearance.theme}
-            onValueChange={(value) =>
-              handleThemeChange(value as typeof appearance.theme)
-            }
+            value="dark"
             className="grid grid-cols-3 gap-4"
           >
             <Label
               htmlFor="light"
-              className={cn(
-                "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                appearance.theme === "light" && "border-primary"
-              )}
+              aria-disabled="true"
+              title={t("settings.theme.lightDisabledNote")}
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 opacity-40 cursor-not-allowed"
             >
-              <RadioGroupItem value="light" id="light" className="sr-only" />
+              <RadioGroupItem value="light" id="light" className="sr-only" disabled />
               <Sun className="h-6 w-6 mb-3" />
               <span className="text-sm font-medium">{t("settings.theme.light")}</span>
             </Label>
             <Label
               htmlFor="dark"
-              className={cn(
-                "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                appearance.theme === "dark" && "border-primary"
-              )}
+              className="flex flex-col items-center justify-between rounded-md border-2 border-primary bg-popover p-4 cursor-default"
             >
               <RadioGroupItem value="dark" id="dark" className="sr-only" />
               <Moon className="h-6 w-6 mb-3" />
@@ -92,12 +79,11 @@ export function AppearanceSettings() {
             </Label>
             <Label
               htmlFor="system"
-              className={cn(
-                "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                appearance.theme === "system" && "border-primary"
-              )}
+              aria-disabled="true"
+              title={t("settings.theme.lightDisabledNote")}
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 opacity-40 cursor-not-allowed"
             >
-              <RadioGroupItem value="system" id="system" className="sr-only" />
+              <RadioGroupItem value="system" id="system" className="sr-only" disabled />
               <Monitor className="h-6 w-6 mb-3" />
               <span className="text-sm font-medium">{t("settings.theme.system")}</span>
             </Label>

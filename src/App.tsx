@@ -59,7 +59,7 @@ function ThemeSync() {
 }
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+  <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
     <ThemeSync />
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
