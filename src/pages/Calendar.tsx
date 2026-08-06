@@ -9,7 +9,7 @@ import {
   Clapperboard, Briefcase, Users as UsersIcon, Sprout, Diamond, Globe,
 } from "lucide-react";
 import { BrandIcon } from "@/components/platforms/BrandIcon";
-import { formatSlotTime, getSlotsForDate, getWebsiteCategoryForDate } from "@/utils/scheduling";
+import { getWebsiteCategoryForDate } from "@/utils/scheduling";
 import { useTranslation } from "react-i18next";
 import { useUserPreferencesStore } from "@/stores/useUserPreferencesStore";
 
@@ -827,26 +827,6 @@ export default function ContentCalendar() {
     e.target.value = "";
   };
 
-  const scheduleTemplateEvents: CalEvent[] = getDaysInMonth(current.getFullYear(), current.getMonth()).flatMap((day) => {
-    if (day.getMonth() !== current.getMonth()) return [];
-
-    return getSlotsForDate(day).map((slot) => ({
-      id: `template-${fmtKey(day)}-${slot.platform}-${slot.time}`,
-      originalId: `template-${fmtKey(day)}-${slot.platform}-${slot.time}`,
-      title: slot.platform === "website" ? slot.category || "Website" : slot.label,
-      description: slot.focus || "Scheduled from weekly platform template",
-      date: fmtKey(day),
-      startTime: slot.time.split("-")[0],
-      category: "content",
-      status: "template",
-      platform: slot.platform,
-      completed: false,
-      allDay: false,
-      caption: "",
-      isTemplate: true,
-    }));
-  });
-
   // Map DB posts → calendar events
   const postEvents: CalEvent[] = posts.map((post: any) => {
     const { date, startTime } = splitScheduledAt(post.scheduledAt);
@@ -869,11 +849,7 @@ export default function ContentCalendar() {
     };
   });
 
-  const postSlotKeys = new Set(postEvents.map((event) => `${event.date}-${event.startTime}-${event.platform}`));
-  const events: CalEvent[] = [
-    ...postEvents,
-    ...scheduleTemplateEvents.filter((event) => !postSlotKeys.has(`${event.date}-${event.startTime}-${event.platform}`)),
-  ];
+  const events: CalEvent[] = postEvents;
 
   const navigate = useCallback((dir: number) => {
     const next = new Date(current);
