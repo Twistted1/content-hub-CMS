@@ -6,7 +6,6 @@ import {
   HelpCircle,
   LogOut,
   Moon,
-  Sun,
   Keyboard,
   Bell,
   Shield,
@@ -33,15 +32,9 @@ import { useTranslation } from "react-i18next";
 export function UserDropdown() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { profile, appearance, updateAppearance } = useUserPreferencesStore();
+  const { profile } = useUserPreferencesStore();
   const { signOut } = useAuth();
   const [open, setOpen] = useState(false);
-
-  const toggleDarkMode = () => {
-    const newTheme = appearance.theme === "dark" ? "light" : "dark";
-    updateAppearance({ theme: newTheme });
-    toast.success(newTheme === "dark" ? t("header.toastDarkEnabled") : t("header.toastLightEnabled"));
-  };
 
   const handleLogout = async () => {
     const { error } = await signOut();
@@ -144,20 +137,16 @@ export function UserDropdown() {
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem className="justify-between" onClick={(e) => e.preventDefault()}>
+        <DropdownMenuItem
+          className="justify-between opacity-50 cursor-not-allowed"
+          onClick={(e) => e.preventDefault()}
+          title={t("settings.theme.lightDisabledNote")}
+        >
           <div className="flex items-center">
-            {appearance.theme === "dark" ? (
-              <Moon className="mr-2 h-4 w-4" />
-            ) : (
-              <Sun className="mr-2 h-4 w-4" />
-            )}
+            <Moon className="mr-2 h-4 w-4" />
             <span>{t("header.darkMode")}</span>
           </div>
-          <Switch
-            checked={appearance.theme === "dark"}
-            onCheckedChange={toggleDarkMode}
-            className="ml-2"
-          />
+          <Switch checked={true} disabled className="ml-2" />
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />

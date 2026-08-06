@@ -504,7 +504,8 @@
       "light": "Claro",
       "dark": "Escuro",
       "system": "Sistema",
-      "toastChanged": "Tema alterado para {{theme}}"
+      "toastChanged": "Tema alterado para {{theme}}",
+      "lightDisabledNote": "O tema claro está temporariamente desativado enquanto é refeito — apenas escuro por enquanto."
     },
     "display": {
       "title": "Preferências de Exibição",
