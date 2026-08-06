@@ -13,7 +13,6 @@ import {
   Calendar,
 } from "lucide-react";
 import React from "react";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { usePlatforms } from "@/hooks/usePlatforms";
 import { useNavigate } from "react-router-dom";
@@ -83,16 +82,19 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
       onClick={handleCardClick}
     >
       <div
-        className={cn("h-1.5", `bg-${platform.id}`)}
+        className="h-1.5"
+        style={{ backgroundColor: getPlatformColor(platform.id) }}
       />
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div
-              className={cn("p-2.5 rounded-xl", `bg-${platform.id}`, "bg-opacity-20")}
+              className="p-2.5 rounded-xl"
+              style={{ backgroundColor: `${getPlatformColor(platform.id)}33` }}
             >
               <platform.icon
-                className={cn("h-5 w-5", `text-${platform.id}`)}
+                className="h-5 w-5"
+                style={{ color: getPlatformColor(platform.id) }}
               />
             </div>
             <div>
