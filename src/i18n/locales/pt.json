@@ -299,6 +299,15 @@
       "currentPlanButton": "Plano Atual",
       "upgrade": "Upgrade",
       "downgrade": "Downgrade",
+      "renewsOn": "Renova em {{date}}",
+      "onFreePlan": "Você está no plano Gratuito.",
+      "manageBillingTitle": "Gerenciar Cobrança",
+      "manageBillingDesc": "Atualize métodos de pagamento, veja faturas e cancele sua assinatura no portal seguro de cobrança da Stripe.",
+      "openBillingPortal": "Abrir Portal de Cobrança",
+      "noBillingYet": "Você está no plano Gratuito — assine o plano Inicial ou Pro para acessar o portal de cobrança.",
+      "toastRedirectingCheckout": "Abrindo checkout seguro em uma nova aba…",
+      "toastCheckoutError": "Não foi possível iniciar o checkout. Tente novamente.",
+      "toastPortalError": "Não foi possível abrir o portal de cobrança. Tente novamente.",
       "paymentMethodsTitle": "Métodos de Pagamento",
       "paymentMethodsDesc": "Gerencie seus métodos de pagamento",
       "addCard": "Adicionar Cartão",
@@ -370,7 +379,7 @@
             "Plataformas ilimitadas",
             "Postagens agendadas ilimitadas",
             "Análises e relatórios avançados",
-            "Novee AI ilimitado",
+            "Assistente IA ilimitado",
             "Fluxos de automação completos",
             "Acesso à API",
             "Suporte prioritário"
@@ -1741,7 +1750,7 @@
           "Análises básicas",
           "1 membro da equipe",
           "Suporte da comunidade",
-          "Novee AI (10 solicitações/dia)"
+          "Assistente IA (10 solicitações/dia)"
         ],
         "cta": "Começar"
       },
@@ -1754,7 +1763,7 @@
           "Análises padrão",
           "Até 2 membros da equipe",
           "Suporte por e-mail",
-          "Novee AI (100 solicitações/dia)",
+          "Assistente IA (100 solicitações/dia)",
           "Fluxos de automação básicos"
         ],
         "cta": "Começar com o Inicial"
@@ -1768,7 +1777,7 @@
           "Análises e relatórios avançados",
           "Membros de equipe ilimitados",
           "Suporte prioritário",
-          "Novee AI (ilimitado)",
+          "Assistente IA (ilimitado)",
           "Fluxos de automação completos",
           "Calendário de conteúdo",
           "Acesso à API"
@@ -1826,7 +1835,7 @@
         "description": "Trabalhe em conjunto de forma integrada com acesso baseado em funções e fluxos de aprovação."
       },
       {
-        "title": "Assistente Novee AI",
+        "title": "Assistente IA",
         "description": "Obtenha sugestões inteligentes de conteúdo, assistência de escrita e dicas de otimização."
       },
       {
@@ -1848,7 +1857,7 @@
           "50 postagens agendadas/mês",
           "Análises básicas",
           "1 membro da equipe",
-          "Novee AI (10 solicitações/dia)"
+          "Assistente IA (10 solicitações/dia)"
         ],
         "cta": "Começar Grátis"
       },
@@ -1861,7 +1870,7 @@
           "300 postagens agendadas/mês",
           "Análises padrão",
           "Até 2 membros da equipe",
-          "Novee AI (100 solicitações/dia)",
+          "Assistente IA (100 solicitações/dia)",
           "Fluxos de automação básicos",
           "Suporte por e-mail"
         ],
@@ -1876,7 +1885,7 @@
           "Postagens agendadas ilimitadas",
           "Análises e relatórios avançados",
           "Membros de equipe ilimitados",
-          "Novee AI (ilimitado)",
+          "Assistente IA (ilimitado)",
           "Fluxos de automação personalizados",
           "Suporte prioritário"
         ],

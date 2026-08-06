@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 const socialLinks = [
   { icon: Twitter, href: "https://x.com/novusexchange", label: "X" },
-  { icon: Linkedin, href: "https://linkedin.com/company/contenthubcms", label: "LinkedIn" },
+  { icon: Linkedin, href: "https://linkedin.com/company/novusexchange", label: "LinkedIn" },
   { icon: Github, href: "https://github.com/contenthubcms", label: "GitHub" },
   { icon: Youtube, href: "https://youtube.com/@novusexchange", label: "YouTube" },
   { icon: Instagram, href: "https://instagram.com/novusexchange", label: "Instagram" },
@@ -27,7 +27,7 @@ export function Footer() {
 
   const companyLinks = [
     { label: t('footer.companyAbout'), href: "/#features" },
-    { label: t('footer.companyContact'), href: "mailto:hello@contenthub.io" },
+    { label: t('footer.companyContact'), href: "mailto:contact@novusexchange.com" },
   ];
 
   return (
@@ -119,11 +119,11 @@ export function Footer() {
               {t('footer.newsletterDesc')}
             </p>
             <a
-              href="mailto:hello@contenthub.io"
+              href="mailto:contact@novusexchange.com"
               className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
             >
               <Mail className="h-4 w-4" />
-              hello@contenthub.io
+              contact@novusexchange.com
             </a>
           </div>
         </div>

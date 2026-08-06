@@ -274,32 +274,36 @@ export default function Auth() {
             {t("auth.google")}
           </Button>
 
-          <Button
-            variant="secondary"
-            className="mt-3 w-full"
-            onClick={handleDemoSignIn}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
-            {t("auth.enterDemo")}
-          </Button>
-
-          <Alert className="mt-4">
-            <Info className="h-4 w-4" />
-            <AlertDescription className="text-xs">
-              <strong>{t("auth.googleInfoTitle")}</strong>{' '}
-              {t("auth.googleInfoPrefix")}{' '}
-              <a
-                href="https://supabase.com/dashboard/project/jvbucspwcjahqpoxskvr/auth/providers"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline text-primary"
+          {isPreviewHost && (
+            <>
+              <Button
+                variant="secondary"
+                className="mt-3 w-full"
+                onClick={handleDemoSignIn}
+                disabled={isSubmitting}
               >
-                {t("auth.supabaseDashboard")}
-              </a>
-              {t("auth.googleInfoSuffix")}
-            </AlertDescription>
-          </Alert>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
+                {t("auth.enterDemo")}
+              </Button>
+
+              <Alert className="mt-4">
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  <strong>{t("auth.googleInfoTitle")}</strong>{' '}
+                  {t("auth.googleInfoPrefix")}{' '}
+                  <a
+                    href="https://supabase.com/dashboard/project/jvbucspwcjahqpoxskvr/auth/providers"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-primary"
+                  >
+                    {t("auth.supabaseDashboard")}
+                  </a>
+                  {t("auth.googleInfoSuffix")}
+                </AlertDescription>
+              </Alert>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

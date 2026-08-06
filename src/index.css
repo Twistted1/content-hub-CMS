@@ -5,7 +5,8 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root,
+  .dark {
     --background: 230 25% 4%;
     --foreground: 0 0% 98%;
 
@@ -48,10 +49,60 @@
     --platform-website: 160 84% 39%;
     --platform-rumble: 89 53% 52%;
     --platform-podcast: 270 77% 54%;
-    
+
     /* Premium Gradients */
     --grad-primary: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%);
     --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+    --grad-dark: linear-gradient(180deg, rgba(10, 12, 26, 0.8) 0%, rgba(10, 12, 26, 1) 100%);
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 230 25% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 230 25% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 230 25% 8%;
+
+    --primary: 263.4 85% 55%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 230 20% 96%;
+    --secondary-foreground: 230 25% 12%;
+
+    --muted: 230 20% 95%;
+    --muted-foreground: 230 10% 40%;
+
+    --accent: 263.4 50% 95%;
+    --accent-foreground: 263.4 50% 25%;
+
+    --destructive: 0 84% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 230 20% 88%;
+    --input: 230 20% 88%;
+    --ring: 263.4 85% 55%;
+
+    --radius: 1rem;
+
+    --platform-youtube: 0 100% 50%;
+    --platform-twitter: 203 89% 53%;
+    --platform-facebook: 214 89% 52%;
+    --platform-linkedin: 210 90% 40%;
+    --platform-instagram-orange: 28 92% 56%;
+    --platform-instagram-pink: 335 71% 52%;
+    --platform-instagram-purple: 277 54% 45%;
+    --platform-tiktok-cyan: 178 91% 55%;
+    --platform-tiktok-pink: 349 99% 58%;
+    --platform-website: 160 84% 39%;
+    --platform-rumble: 89 53% 52%;
+    --platform-podcast: 270 77% 54%;
+
+    /* Premium Gradients */
+    --grad-primary: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%);
+    --grad-surface: linear-gradient(180deg, rgba(10, 12, 26, 0.04) 0%, rgba(10, 12, 26, 0) 100%);
     --grad-dark: linear-gradient(180deg, rgba(10, 12, 26, 0.8) 0%, rgba(10, 12, 26, 1) 100%);
   }
 }
