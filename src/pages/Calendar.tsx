@@ -9,8 +9,9 @@ import {
   Clapperboard, Briefcase, Users as UsersIcon, Sprout, Diamond, Globe,
 } from "lucide-react";
 import { BrandIcon } from "@/components/platforms/BrandIcon";
-import { formatSlotTime, getSlotsForDate, getWebsiteCategoryForDate } from "@/utils/scheduling";
+import { getWebsiteCategoryForDate } from "@/utils/scheduling";
 import { useTranslation } from "react-i18next";
+import { useUserPreferencesStore } from "@/stores/useUserPreferencesStore";
 
 /* ── helpers ────────────────────────────────────────────── */
 
@@ -36,8 +37,16 @@ function getWeekDays(date: Date) {
 function fmtKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
 function isSame(a: Date, b: Date) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
 function isToday(d: Date) { return isSame(d, new Date()); }
-function fmt12(t: string) { const [h, m] = t.split(":").map(Number); return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`; }
-function fmtHour(t: string) { const h = parseInt(t.split(":")[0]); return `${h % 12 || 12} ${h >= 12 ? "pm" : "am"}`; }
+function fmt12(t: string, format: "12h" | "24h" = "12h") {
+  const [h, m] = t.split(":").map(Number);
+  if (format === "24h") return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
+}
+function fmtHour(t: string, format: "12h" | "24h" = "12h") {
+  if (format === "24h") return t.slice(0, 5);
+  const h = parseInt(t.split(":")[0]);
+  return `${h % 12 || 12} ${h >= 12 ? "pm" : "am"}`;
+}
 function splitScheduledAt(raw?: string | null) {
   if (!raw) return { date: fmtKey(new Date()), startTime: "" };
   const [datePart, timePart = ""] = raw.split("T");
@@ -83,13 +92,13 @@ const CAT: Record<CatKey, { color: string; bg: string; border: string; label: st
 };
 
 const PLAT: Record<string, { bar: string; card: string; accent: string; iconColor: string; badge: string; badgeText: string; label: string; short: string; Icon: any }> = {
-  youtube:   { bar: "bg-red-600/15 border-l-4 border-red-600", card: "bg-red-600 text-white shadow-red-600/25", accent: "0 100% 50%", iconColor: "text-red-500", badge: "bg-red-600 shadow-lg shadow-red-600/30", badgeText: "text-white", label: "YouTube", short: "YT", Icon: (props: any) => <BrandIcon name="youtube" {...props} /> },
+  youtube:   { bar: "bg-red-800/15 border-l-4 border-red-800", card: "bg-red-800 text-white shadow-red-800/25", accent: "0 60% 32%", iconColor: "text-red-500", badge: "bg-red-800 shadow-lg shadow-red-800/30", badgeText: "text-white", label: "YouTube", short: "YT", Icon: (props: any) => <BrandIcon name="youtube" {...props} /> },
   tiktok:    { bar: "bg-black/30 border-l-4 border-black", card: "bg-black text-white shadow-black/40", accent: "0 0% 0%", iconColor: "text-white", badge: "bg-black shadow-lg shadow-black/40", badgeText: "text-white", label: "TikTok", short: "TT", Icon: (props: any) => <BrandIcon name="tiktok" {...props} /> },
-  instagram: { bar: "bg-pink-500/15 border-l-4 border-pink-500", card: "bg-pink-500 text-white shadow-pink-500/25", accent: "335 71% 52%", iconColor: "text-pink-400", badge: "bg-pink-500 shadow-lg shadow-pink-500/30", badgeText: "text-white", label: "Instagram", short: "IG", Icon: (props: any) => <BrandIcon name="instagram" {...props} /> },
-  twitter:   { bar: "bg-blue-500/15 border-l-4 border-blue-500", card: "bg-blue-500 text-white shadow-blue-500/25", accent: "203 89% 53%", iconColor: "text-blue-400", badge: "bg-blue-500 shadow-lg shadow-blue-500/30", badgeText: "text-white", label: "Twitter/X", short: "X", Icon: (props: any) => <BrandIcon name="twitter" {...props} /> },
-  x:         { bar: "bg-blue-500/15 border-l-4 border-blue-500", card: "bg-blue-500 text-white shadow-blue-500/25", accent: "203 89% 53%", iconColor: "text-blue-400", badge: "bg-blue-500 shadow-lg shadow-blue-500/30", badgeText: "text-white", label: "Twitter/X", short: "X", Icon: (props: any) => <BrandIcon name="twitter" {...props} /> },
-  facebook:  { bar: "bg-blue-600/15 border-l-4 border-blue-600", card: "bg-blue-600 text-white shadow-blue-600/25", accent: "214 89% 52%", iconColor: "text-blue-400", badge: "bg-blue-600 shadow-lg shadow-blue-600/30", badgeText: "text-white", label: "Facebook", short: "FB", Icon: (props: any) => <BrandIcon name="facebook" {...props} /> },
-  linkedin:  { bar: "bg-blue-700/15 border-l-4 border-blue-700", card: "bg-blue-700 text-white shadow-blue-700/25", accent: "210 90% 40%", iconColor: "text-blue-500", badge: "bg-blue-700 shadow-lg shadow-blue-700/30", badgeText: "text-white", label: "LinkedIn", short: "LI", Icon: (props: any) => <BrandIcon name="linkedin" {...props} /> },
+  instagram: { bar: "bg-pink-800/15 border-l-4 border-pink-800", card: "bg-pink-800 text-white shadow-pink-800/25", accent: "335 55% 32%", iconColor: "text-pink-400", badge: "bg-pink-800 shadow-lg shadow-pink-800/30", badgeText: "text-white", label: "Instagram", short: "IG", Icon: (props: any) => <BrandIcon name="instagram" {...props} /> },
+  twitter:   { bar: "bg-blue-800/15 border-l-4 border-blue-800", card: "bg-blue-800 text-white shadow-blue-800/25", accent: "203 65% 32%", iconColor: "text-blue-400", badge: "bg-blue-800 shadow-lg shadow-blue-800/30", badgeText: "text-white", label: "Twitter/X", short: "X", Icon: (props: any) => <BrandIcon name="twitter" {...props} /> },
+  x:         { bar: "bg-blue-800/15 border-l-4 border-blue-800", card: "bg-blue-800 text-white shadow-blue-800/25", accent: "203 65% 32%", iconColor: "text-blue-400", badge: "bg-blue-800 shadow-lg shadow-blue-800/30", badgeText: "text-white", label: "Twitter/X", short: "X", Icon: (props: any) => <BrandIcon name="twitter" {...props} /> },
+  facebook:  { bar: "bg-blue-900/15 border-l-4 border-blue-900", card: "bg-blue-900 text-white shadow-blue-900/25", accent: "214 65% 28%", iconColor: "text-blue-400", badge: "bg-blue-900 shadow-lg shadow-blue-900/30", badgeText: "text-white", label: "Facebook", short: "FB", Icon: (props: any) => <BrandIcon name="facebook" {...props} /> },
+  linkedin:  { bar: "bg-sky-900/15 border-l-4 border-sky-900", card: "bg-sky-900 text-white shadow-sky-900/25", accent: "210 65% 24%", iconColor: "text-blue-500", badge: "bg-sky-900 shadow-lg shadow-sky-900/30", badgeText: "text-white", label: "LinkedIn", short: "LI", Icon: (props: any) => <BrandIcon name="linkedin" {...props} /> },
   website:   { bar: "bg-website/15 border-l-4 border-website", card: "bg-website text-white shadow-website/25", accent: "160 84% 39%", iconColor: "text-website", badge: "bg-website shadow-lg shadow-website/30", badgeText: "text-white", label: "Website", short: "WEB", Icon: Globe },
   rumble:    { bar: "bg-rumble/15 border-l-4 border-rumble", card: "bg-rumble text-white shadow-rumble/25", accent: "89 53% 52%", iconColor: "text-rumble", badge: "bg-rumble shadow-lg shadow-rumble/30", badgeText: "text-white", label: "Rumble", short: "RUM", Icon: (props: any) => <BrandIcon name="rumble" {...props} /> },
   podcast:   { bar: "bg-podcast/15 border-l-4 border-podcast", card: "bg-podcast text-white shadow-podcast/25", accent: "270 77% 54%", iconColor: "text-podcast", badge: "bg-podcast shadow-lg shadow-podcast/30", badgeText: "text-white", label: "Podcast", short: "POD", Icon: (props: any) => <BrandIcon name="podcast" {...props} /> },
@@ -151,16 +160,16 @@ function getFilters(t: (key: string) => string): { value: string; label: string;
 function MiniCal({ current, selected, events, onSelect, onNav }: { current: Date; selected: Date; events: CalEvent[]; onSelect: (d: Date) => void; onNav: (dir: number) => void }) {
   const days = getDaysInMonth(current.getFullYear(), current.getMonth());
   return (
-    <div className="glass-card rounded-2xl p-4 mb-6">
-      <div className="flex items-center justify-between mb-5 px-1">
-        <button onClick={() => onNav(-1)} aria-label="Previous Month" className="w-8 h-8 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">‹</button>
+    <div className="glass-card rounded-2xl p-3 mb-6 mx-auto max-w-[272px]">
+      <div className="flex items-center justify-between mb-4 px-1">
+        <button onClick={() => onNav(-1)} aria-label="Previous Month" className="w-7 h-7 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">‹</button>
         <span className="text-xs font-black text-white tracking-[0.2em] uppercase">{MONTHS[current.getMonth()].slice(0,3)} {current.getFullYear()}</span>
-        <button onClick={() => onNav(1)} aria-label="Next Month" className="w-8 h-8 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">›</button>
+        <button onClick={() => onNav(1)} aria-label="Next Month" className="w-7 h-7 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">›</button>
       </div>
-      <div className="grid grid-cols-7 mb-2">
-        {DAYS_SHORT.map((d, i) => <div key={i} className="text-center text-[10px] text-muted-foreground font-black py-1">{d}</div>)}
+      <div className="grid grid-cols-7 justify-items-center mb-2">
+        {DAYS_SHORT.map((d, i) => <div key={i} className="text-center text-[10px] text-muted-foreground font-black py-1 w-7">{d}</div>)}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 justify-items-center">
         {days.map((day, i) => {
           const sel = isSame(day, selected);
           const today = isToday(day);
@@ -170,11 +179,11 @@ function MiniCal({ current, selected, events, onSelect, onNav }: { current: Date
             <button
               key={i}
               onClick={() => onSelect(new Date(day))}
-              className={`relative flex items-center justify-center w-8 h-8 mx-auto rounded-xl text-xs font-bold transition-all
+              className={`relative flex items-center justify-center w-7 h-7 rounded-xl text-xs font-bold transition-all
                 ${today ? "bg-primary text-white shadow-lg shadow-primary/30" : sel ? "bg-white/20 text-white" : inMonth ? "text-muted-foreground hover:bg-white/5 hover:text-white" : "text-white/10"}`}
             >
               {day.getDate()}
-              {hasEvt && !today && <span className="absolute bottom-1 w-1 h-1 rounded-full bg-primary/60" />}
+              {hasEvt && !today && <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-primary/60" />}
             </button>
           );
         })}
@@ -187,6 +196,7 @@ function MiniCal({ current, selected, events, onSelect, onNav }: { current: Date
 
 function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth, onAddEvent, onClickEvent, filter, onFilter }: any) {
   const { t } = useTranslation();
+  const { appearance } = useUserPreferencesStore();
   const FILTERS = getFilters(t);
   const todayEvents = getEventsForDay(events, new Date());
   const done = todayEvents.filter((e: CalEvent) => e.completed).length;
@@ -263,7 +273,7 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
                   <div className="flex items-center justify-between ml-7">
                     {evt.startTime && (
                       <p className="text-[10px] text-muted-foreground font-black">
-                        {fmt12(evt.startTime)}
+                        {fmt12(evt.startTime, appearance.timeFormat)}
                       </p>
                     )}
                     {p && (
@@ -287,6 +297,7 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
 
 function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, onDropEvent }: any) {
   const { t } = useTranslation();
+  const { appearance } = useUserPreferencesStore();
   const days = getDaysInMonth(current.getFullYear(), current.getMonth());
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
@@ -348,14 +359,14 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                       }}
                       onDragEnd={() => { setDraggingId(null); setDragOverKey(null); }}
                       onClick={(e) => { e.stopPropagation(); if (!evt.isTemplate) onClickEvent(evt); }}
-                      className={`flex h-8 min-w-0 items-center gap-1.5 rounded-md px-2 text-[9px] font-black transition-all group/evt relative shadow-lg
+                      className={`flex h-8 min-w-0 items-center gap-1.5 rounded-none px-2 text-[9px] font-black transition-all group/evt relative shadow-lg
                         ${p ? p.card : "bg-muted text-muted-foreground border border-border"} 
                         ${isReview ? "ring-1 ring-white/35" : ""} 
                         ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-grab active:cursor-grabbing"}
                         ${isDragging ? "opacity-20 scale-90" : "hover:brightness-110"}`}
                     >
                       {p ? <p.Icon className="h-3.5 w-3.5 shrink-0 text-white" /> : <div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />}
-                      <span className="shrink-0 opacity-85 tabular-nums">{evt.startTime ? fmtHour(evt.startTime) : "all"}</span>
+                      <span className="shrink-0 opacity-85 tabular-nums">{evt.startTime ? fmtHour(evt.startTime, appearance.timeFormat) : "all"}</span>
                       <span className="truncate tracking-tight">{evt.title}</span>
                     </div>
                   );
@@ -381,6 +392,7 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
 /* ── week view ───────────────────────────────────────────── */
 
 function WeekView({ current, events, onClickEvent }: any) {
+  const { appearance } = useUserPreferencesStore();
   const weekDays = getWeekDays(current);
   return (
     <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar">
@@ -407,7 +419,7 @@ function WeekView({ current, events, onClickEvent }: any) {
                       onClick={() => { if (!evt.isTemplate) onClickEvent(evt); }}
                       className={`px-2.5 py-2 rounded-xl text-[10px] font-bold transition-all ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-pointer hover:brightness-125"} ${barColor} border border-white/10`}
                     >
-                      {evt.startTime && <span className="text-white/50 mr-1">{fmtHour(evt.startTime)}</span>}
+                      {evt.startTime && <span className="text-white/50 mr-1">{fmtHour(evt.startTime, appearance.timeFormat)}</span>}
                       <span className="text-white/90">{evt.title}</span>
                       {p && <span className={`block text-[9px] mt-1 px-1.5 py-0.5 rounded w-fit font-black uppercase ${p.badge} ${p.badgeText}`}>{p.label}</span>}
                     </div>
@@ -426,6 +438,7 @@ function WeekView({ current, events, onClickEvent }: any) {
 
 function DayView({ current, events, onClickEvent }: any) {
   const { t } = useTranslation();
+  const { appearance } = useUserPreferencesStore();
   const dayEvts = getEventsForDay(events, current);
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-8">
@@ -446,7 +459,7 @@ function DayView({ current, events, onClickEvent }: any) {
               onClick={() => { if (!evt.isTemplate) onClickEvent(evt); }}
               className={`flex gap-6 p-5 rounded-2xl transition-all border border-white/10 ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-pointer hover:brightness-110"} ${barColor}`}
             >
-              <div className="w-16 shrink-0 text-sm font-black text-white/40 tabular-nums">{evt.startTime ? fmt12(evt.startTime) : t("calendar.allDay")}</div>
+              <div className="w-16 shrink-0 text-sm font-black text-white/40 tabular-nums">{evt.startTime ? fmt12(evt.startTime, appearance.timeFormat) : t("calendar.allDay")}</div>
               <div className="flex-1">
                 <h3 className="text-base font-black text-white tracking-tight">{evt.title}</h3>
                 {evt.description && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{evt.description}</p>}
@@ -814,26 +827,6 @@ export default function ContentCalendar() {
     e.target.value = "";
   };
 
-  const scheduleTemplateEvents: CalEvent[] = getDaysInMonth(current.getFullYear(), current.getMonth()).flatMap((day) => {
-    if (day.getMonth() !== current.getMonth()) return [];
-
-    return getSlotsForDate(day).map((slot) => ({
-      id: `template-${fmtKey(day)}-${slot.platform}-${slot.time}`,
-      originalId: `template-${fmtKey(day)}-${slot.platform}-${slot.time}`,
-      title: slot.platform === "website" ? slot.category || "Website" : slot.label,
-      description: slot.focus || "Scheduled from weekly platform template",
-      date: fmtKey(day),
-      startTime: slot.time.split("-")[0],
-      category: "content",
-      status: "template",
-      platform: slot.platform,
-      completed: false,
-      allDay: false,
-      caption: "",
-      isTemplate: true,
-    }));
-  });
-
   // Map DB posts → calendar events
   const postEvents: CalEvent[] = posts.map((post: any) => {
     const { date, startTime } = splitScheduledAt(post.scheduledAt);
@@ -856,11 +849,7 @@ export default function ContentCalendar() {
     };
   });
 
-  const postSlotKeys = new Set(postEvents.map((event) => `${event.date}-${event.startTime}-${event.platform}`));
-  const events: CalEvent[] = [
-    ...postEvents,
-    ...scheduleTemplateEvents.filter((event) => !postSlotKeys.has(`${event.date}-${event.startTime}-${event.platform}`)),
-  ];
+  const events: CalEvent[] = postEvents;
 
   const navigate = useCallback((dir: number) => {
     const next = new Date(current);

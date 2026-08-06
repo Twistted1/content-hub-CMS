@@ -299,6 +299,15 @@
       "currentPlanButton": "Current Plan",
       "upgrade": "Upgrade",
       "downgrade": "Downgrade",
+      "renewsOn": "Renews on {{date}}",
+      "onFreePlan": "You're on the Free plan.",
+      "manageBillingTitle": "Manage Billing",
+      "manageBillingDesc": "Update payment methods, view invoices, and cancel your subscription in Stripe's secure billing portal.",
+      "openBillingPortal": "Open Billing Portal",
+      "noBillingYet": "You're on the Free plan — subscribe to Starter or Pro to access the billing portal.",
+      "toastRedirectingCheckout": "Opening secure checkout in a new tab…",
+      "toastCheckoutError": "Couldn't start checkout. Please try again.",
+      "toastPortalError": "Couldn't open the billing portal. Please try again.",
       "paymentMethodsTitle": "Payment Methods",
       "paymentMethodsDesc": "Manage your payment methods",
       "addCard": "Add Card",
@@ -370,7 +379,7 @@
             "Unlimited platforms",
             "Unlimited scheduled posts",
             "Advanced analytics & reports",
-            "Unlimited Novee AI",
+            "Unlimited AI Assistant",
             "Full automation workflows",
             "API access",
             "Priority support"
@@ -1741,7 +1750,7 @@
           "Basic analytics",
           "1 team member",
           "Community support",
-          "Novee AI (10 requests/day)"
+          "AI Assistant (10 requests/day)"
         ],
         "cta": "Get Started"
       },
@@ -1754,7 +1763,7 @@
           "Standard analytics",
           "Up to 2 team members",
           "Email support",
-          "Novee AI (100 requests/day)",
+          "AI Assistant (100 requests/day)",
           "Basic automation workflows"
         ],
         "cta": "Start with Starter"
@@ -1768,7 +1777,7 @@
           "Advanced analytics & reports",
           "Unlimited team members",
           "Priority support",
-          "Novee AI (unlimited)",
+          "AI Assistant (unlimited)",
           "Full automation workflows",
           "Content calendar",
           "API access"
@@ -1826,7 +1835,7 @@
         "description": "Work together seamlessly with role-based access and approval workflows."
       },
       {
-        "title": "Novee AI Assistant",
+        "title": "AI Assistant",
         "description": "Get intelligent content suggestions, writing assistance, and optimization tips."
       },
       {
@@ -1848,7 +1857,7 @@
           "50 scheduled posts/month",
           "Basic analytics",
           "1 team member",
-          "Novee AI (10 requests/day)"
+          "AI Assistant (10 requests/day)"
         ],
         "cta": "Get Started Free"
       },
@@ -1861,7 +1870,7 @@
           "300 scheduled posts/month",
           "Standard analytics",
           "Up to 2 team members",
-          "Novee AI (100 requests/day)",
+          "AI Assistant (100 requests/day)",
           "Basic automation workflows",
           "Email support"
         ],
@@ -1876,7 +1885,7 @@
           "Unlimited scheduled posts",
           "Advanced analytics & reports",
           "Unlimited team members",
-          "Novee AI (unlimited)",
+          "AI Assistant (unlimited)",
           "Custom automation workflows",
           "Priority support"
         ],

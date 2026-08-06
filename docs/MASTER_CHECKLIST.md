@@ -202,15 +202,11 @@ From `mcp__Supabase__get_advisors` against `jvbucspwcjahqpoxskvr`, just run:
       (Authentication → Sign In/Providers → Email). **2026-07-31: you
       decided not to upgrade for now.** Not a live vulnerability, just
       a hardening item — revisit if/when the project moves to Pro.
-- [ ] **Google Sign-In not configured.** App code already supports it
-      (`signInWithGoogle` in `useAuth.ts`, wired into `Auth.tsx`) — just
-      needs OAuth credentials from Google Cloud Console (Client ID +
-      Secret), pasted into Authentication → Sign In/Providers → Google in
-      the Supabase dashboard. Redirect URI to register on the Google side:
-      `https://jvbucspwcjahqpoxskvr.supabase.co/auth/v1/callback`.
-      In progress as of 2026-07-29 — you were mid-setup in Google Cloud
-      Console. Email/password sign-in is unaffected either way; it already
-      works today.
+- [x] **Google Sign-In — configured and working.** Was mid-setup as of
+      2026-07-29; confirmed done by direct evidence, not just a config
+      check: `auth.identities` has a real `google`-provider row, created
+      `2026-07-31 19:03:20`, a genuine completed Google sign-in. This
+      note was stale for two days after you actually finished it.
 - [x] **`has_role()` callable by any authenticated user — resolved, not a
       gap.** Checked: `has_role(auth.uid(), 'admin')` is called directly
       inside the majority of this schema's RLS policies (posts, projects,
