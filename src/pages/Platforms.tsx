@@ -372,7 +372,7 @@ export default function Platforms() {
 
             {/* Connected Platforms Tab */}
             <TabsContent value="connected" className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
                 {connectedPlatforms.map((platform) => (
                   <PlatformCard
                     key={platform.id}
