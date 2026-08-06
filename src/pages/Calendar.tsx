@@ -92,13 +92,13 @@ const CAT: Record<CatKey, { color: string; bg: string; border: string; label: st
 };
 
 const PLAT: Record<string, { bar: string; card: string; accent: string; iconColor: string; badge: string; badgeText: string; label: string; short: string; Icon: any }> = {
-  youtube:   { bar: "bg-red-600/15 border-l-4 border-red-600", card: "bg-red-600 text-white shadow-red-600/25", accent: "0 100% 50%", iconColor: "text-red-500", badge: "bg-red-600 shadow-lg shadow-red-600/30", badgeText: "text-white", label: "YouTube", short: "YT", Icon: (props: any) => <BrandIcon name="youtube" {...props} /> },
+  youtube:   { bar: "bg-red-800/15 border-l-4 border-red-800", card: "bg-red-800 text-white shadow-red-800/25", accent: "0 60% 32%", iconColor: "text-red-500", badge: "bg-red-800 shadow-lg shadow-red-800/30", badgeText: "text-white", label: "YouTube", short: "YT", Icon: (props: any) => <BrandIcon name="youtube" {...props} /> },
   tiktok:    { bar: "bg-black/30 border-l-4 border-black", card: "bg-black text-white shadow-black/40", accent: "0 0% 0%", iconColor: "text-white", badge: "bg-black shadow-lg shadow-black/40", badgeText: "text-white", label: "TikTok", short: "TT", Icon: (props: any) => <BrandIcon name="tiktok" {...props} /> },
-  instagram: { bar: "bg-pink-500/15 border-l-4 border-pink-500", card: "bg-pink-500 text-white shadow-pink-500/25", accent: "335 71% 52%", iconColor: "text-pink-400", badge: "bg-pink-500 shadow-lg shadow-pink-500/30", badgeText: "text-white", label: "Instagram", short: "IG", Icon: (props: any) => <BrandIcon name="instagram" {...props} /> },
-  twitter:   { bar: "bg-blue-500/15 border-l-4 border-blue-500", card: "bg-blue-500 text-white shadow-blue-500/25", accent: "203 89% 53%", iconColor: "text-blue-400", badge: "bg-blue-500 shadow-lg shadow-blue-500/30", badgeText: "text-white", label: "Twitter/X", short: "X", Icon: (props: any) => <BrandIcon name="twitter" {...props} /> },
-  x:         { bar: "bg-blue-500/15 border-l-4 border-blue-500", card: "bg-blue-500 text-white shadow-blue-500/25", accent: "203 89% 53%", iconColor: "text-blue-400", badge: "bg-blue-500 shadow-lg shadow-blue-500/30", badgeText: "text-white", label: "Twitter/X", short: "X", Icon: (props: any) => <BrandIcon name="twitter" {...props} /> },
-  facebook:  { bar: "bg-blue-600/15 border-l-4 border-blue-600", card: "bg-blue-600 text-white shadow-blue-600/25", accent: "214 89% 52%", iconColor: "text-blue-400", badge: "bg-blue-600 shadow-lg shadow-blue-600/30", badgeText: "text-white", label: "Facebook", short: "FB", Icon: (props: any) => <BrandIcon name="facebook" {...props} /> },
-  linkedin:  { bar: "bg-blue-700/15 border-l-4 border-blue-700", card: "bg-blue-700 text-white shadow-blue-700/25", accent: "210 90% 40%", iconColor: "text-blue-500", badge: "bg-blue-700 shadow-lg shadow-blue-700/30", badgeText: "text-white", label: "LinkedIn", short: "LI", Icon: (props: any) => <BrandIcon name="linkedin" {...props} /> },
+  instagram: { bar: "bg-pink-800/15 border-l-4 border-pink-800", card: "bg-pink-800 text-white shadow-pink-800/25", accent: "335 55% 32%", iconColor: "text-pink-400", badge: "bg-pink-800 shadow-lg shadow-pink-800/30", badgeText: "text-white", label: "Instagram", short: "IG", Icon: (props: any) => <BrandIcon name="instagram" {...props} /> },
+  twitter:   { bar: "bg-blue-800/15 border-l-4 border-blue-800", card: "bg-blue-800 text-white shadow-blue-800/25", accent: "203 65% 32%", iconColor: "text-blue-400", badge: "bg-blue-800 shadow-lg shadow-blue-800/30", badgeText: "text-white", label: "Twitter/X", short: "X", Icon: (props: any) => <BrandIcon name="twitter" {...props} /> },
+  x:         { bar: "bg-blue-800/15 border-l-4 border-blue-800", card: "bg-blue-800 text-white shadow-blue-800/25", accent: "203 65% 32%", iconColor: "text-blue-400", badge: "bg-blue-800 shadow-lg shadow-blue-800/30", badgeText: "text-white", label: "Twitter/X", short: "X", Icon: (props: any) => <BrandIcon name="twitter" {...props} /> },
+  facebook:  { bar: "bg-blue-900/15 border-l-4 border-blue-900", card: "bg-blue-900 text-white shadow-blue-900/25", accent: "214 65% 28%", iconColor: "text-blue-400", badge: "bg-blue-900 shadow-lg shadow-blue-900/30", badgeText: "text-white", label: "Facebook", short: "FB", Icon: (props: any) => <BrandIcon name="facebook" {...props} /> },
+  linkedin:  { bar: "bg-sky-900/15 border-l-4 border-sky-900", card: "bg-sky-900 text-white shadow-sky-900/25", accent: "210 65% 24%", iconColor: "text-blue-500", badge: "bg-sky-900 shadow-lg shadow-sky-900/30", badgeText: "text-white", label: "LinkedIn", short: "LI", Icon: (props: any) => <BrandIcon name="linkedin" {...props} /> },
   website:   { bar: "bg-website/15 border-l-4 border-website", card: "bg-website text-white shadow-website/25", accent: "160 84% 39%", iconColor: "text-website", badge: "bg-website shadow-lg shadow-website/30", badgeText: "text-white", label: "Website", short: "WEB", Icon: Globe },
   rumble:    { bar: "bg-rumble/15 border-l-4 border-rumble", card: "bg-rumble text-white shadow-rumble/25", accent: "89 53% 52%", iconColor: "text-rumble", badge: "bg-rumble shadow-lg shadow-rumble/30", badgeText: "text-white", label: "Rumble", short: "RUM", Icon: (props: any) => <BrandIcon name="rumble" {...props} /> },
   podcast:   { bar: "bg-podcast/15 border-l-4 border-podcast", card: "bg-podcast text-white shadow-podcast/25", accent: "270 77% 54%", iconColor: "text-podcast", badge: "bg-podcast shadow-lg shadow-podcast/30", badgeText: "text-white", label: "Podcast", short: "POD", Icon: (props: any) => <BrandIcon name="podcast" {...props} /> },
@@ -160,16 +160,16 @@ function getFilters(t: (key: string) => string): { value: string; label: string;
 function MiniCal({ current, selected, events, onSelect, onNav }: { current: Date; selected: Date; events: CalEvent[]; onSelect: (d: Date) => void; onNav: (dir: number) => void }) {
   const days = getDaysInMonth(current.getFullYear(), current.getMonth());
   return (
-    <div className="glass-card rounded-2xl p-4 mb-6">
-      <div className="flex items-center justify-between mb-5 px-1">
-        <button onClick={() => onNav(-1)} aria-label="Previous Month" className="w-8 h-8 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">‹</button>
+    <div className="glass-card rounded-2xl p-3 mb-6 mx-auto max-w-[272px]">
+      <div className="flex items-center justify-between mb-4 px-1">
+        <button onClick={() => onNav(-1)} aria-label="Previous Month" className="w-7 h-7 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">‹</button>
         <span className="text-xs font-black text-white tracking-[0.2em] uppercase">{MONTHS[current.getMonth()].slice(0,3)} {current.getFullYear()}</span>
-        <button onClick={() => onNav(1)} aria-label="Next Month" className="w-8 h-8 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">›</button>
+        <button onClick={() => onNav(1)} aria-label="Next Month" className="w-7 h-7 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">›</button>
       </div>
-      <div className="grid grid-cols-7 mb-2">
-        {DAYS_SHORT.map((d, i) => <div key={i} className="text-center text-[10px] text-muted-foreground font-black py-1">{d}</div>)}
+      <div className="grid grid-cols-7 justify-items-center mb-2">
+        {DAYS_SHORT.map((d, i) => <div key={i} className="text-center text-[10px] text-muted-foreground font-black py-1 w-7">{d}</div>)}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 justify-items-center">
         {days.map((day, i) => {
           const sel = isSame(day, selected);
           const today = isToday(day);
@@ -179,11 +179,11 @@ function MiniCal({ current, selected, events, onSelect, onNav }: { current: Date
             <button
               key={i}
               onClick={() => onSelect(new Date(day))}
-              className={`relative flex items-center justify-center w-8 h-8 mx-auto rounded-xl text-xs font-bold transition-all
+              className={`relative flex items-center justify-center w-7 h-7 rounded-xl text-xs font-bold transition-all
                 ${today ? "bg-primary text-white shadow-lg shadow-primary/30" : sel ? "bg-white/20 text-white" : inMonth ? "text-muted-foreground hover:bg-white/5 hover:text-white" : "text-white/10"}`}
             >
               {day.getDate()}
-              {hasEvt && !today && <span className="absolute bottom-1 w-1 h-1 rounded-full bg-primary/60" />}
+              {hasEvt && !today && <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-primary/60" />}
             </button>
           );
         })}
@@ -359,7 +359,7 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                       }}
                       onDragEnd={() => { setDraggingId(null); setDragOverKey(null); }}
                       onClick={(e) => { e.stopPropagation(); if (!evt.isTemplate) onClickEvent(evt); }}
-                      className={`flex h-8 min-w-0 items-center gap-1.5 rounded-md px-2 text-[9px] font-black transition-all group/evt relative shadow-lg
+                      className={`flex h-8 min-w-0 items-center gap-1.5 rounded-none px-2 text-[9px] font-black transition-all group/evt relative shadow-lg
                         ${p ? p.card : "bg-muted text-muted-foreground border border-border"} 
                         ${isReview ? "ring-1 ring-white/35" : ""} 
                         ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-grab active:cursor-grabbing"}
