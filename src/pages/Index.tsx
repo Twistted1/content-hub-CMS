@@ -135,7 +135,7 @@ function StatCard({ title, value, badge, sub, trendUp, color }: {
         <div className={cn("w-2 h-2 rounded-full animate-pulse shadow-[0_0_8px]", trendUp ? "bg-emerald-400 shadow-emerald-400/50" : "bg-rose-400 shadow-rose-400/50")} />
       </div>
       <div>
-        <p className={cn("text-4xl font-black tracking-tighter mb-1", color ?? "text-white")}>{value}</p>
+        <p className={cn("text-4xl font-black tracking-tighter mb-1", color ?? "text-foreground")}>{value}</p>
         <p className="text-[11px] text-muted-foreground font-black uppercase tracking-widest opacity-60">{title}</p>
       </div>
       {sub && (
@@ -277,7 +277,7 @@ const Index = () => {
       <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
         {/* ── Greeting Banner ─────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/[0.08] bg-black/40 backdrop-blur-3xl p-10 group">
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/[0.08] bg-zinc-950/80 backdrop-blur-3xl p-10 group">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-blue-600/10 opacity-50" />
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 blur-[100px] rounded-full animate-pulse" />
           
@@ -293,14 +293,14 @@ const Index = () => {
               </h1>
               <div className="flex items-center gap-6 mt-6">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-50">{t("dashboard.home.todaysPulse")}</span>
+                  <span className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">{t("dashboard.home.todaysPulse")}</span>
                   <p className="text-sm text-white font-bold">
                     <span className="text-primary">{todayQueue.length}</span> {t("dashboard.home.itemsInQueueSuffix")}
                   </p>
                 </div>
                 <div className="w-[1px] h-8 bg-white/10" />
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-50">{t("dashboard.home.strategyHealth")}</span>
+                  <span className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">{t("dashboard.home.strategyHealth")}</span>
                   <p className="text-sm text-white font-bold">
                     <span className="text-emerald-400">{stats.scheduledPosts}</span> {t("dashboard.home.readyToDeploySuffix")}
                   </p>
@@ -334,7 +334,7 @@ const Index = () => {
           <div className="xl:col-span-2 glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-xl font-black text-white tracking-tight uppercase head-neon">{t("dashboard.home.velocityInsights")}</h2>
+                <h2 className="text-xl font-black text-foreground tracking-tight uppercase head-neon">{t("dashboard.home.velocityInsights")}</h2>
                 <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">{t("dashboard.home.growthTrajectory")}</p>
               </div>
             </div>
@@ -374,7 +374,7 @@ const Index = () => {
 
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.platformHealth")}</h2>
+              <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.platformHealth")}</h2>
               <button onClick={() => navigate("/platforms")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
@@ -417,7 +417,7 @@ const Index = () => {
           {/* Distribution donut */}
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.distribution")}</h2>
+              <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.distribution")}</h2>
               <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
@@ -438,7 +438,7 @@ const Index = () => {
                         <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-[0_0_10px]" style={{ backgroundColor: s.hex, boxShadow: `0 0 10px ${s.hex}66` }} />
                         <span className="text-muted-foreground/80">{s.name}</span>
                       </div>
-                      <span className="text-white">{s.value}</span>
+                      <span className="text-foreground">{s.value}</span>
                     </div>
                   ))}
                 </div>
@@ -458,7 +458,7 @@ const Index = () => {
                 <div className="p-2 rounded-xl bg-primary/10">
                   <Clock className="w-5 h-5 text-primary" />
                 </div>
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.todaysQueueTitle")}</h2>
+                <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.todaysQueueTitle")}</h2>
               </div>
               <button onClick={() => navigate("/pipeline")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
@@ -486,7 +486,7 @@ const Index = () => {
                       <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center bg-white/[0.03] border border-white/[0.08] group-hover:border-primary/40 transition-all", cfg?.color ?? "text-muted-foreground")}>
                         <Icon className="w-4 h-4" />
                       </div>
-                      <span className="text-xs text-white flex-1 truncate font-bold group-hover:text-primary transition-colors">{post.title}</span>
+                      <span className="text-xs text-foreground flex-1 truncate font-bold group-hover:text-primary transition-colors">{post.title}</span>
                       <span className={cn("text-[8px] font-black uppercase px-2 py-1 rounded-lg border shrink-0 tracking-widest", sc)}>
                         {post.status === "scheduled" ? t("dashboard.home.scheduled") : post.status.toUpperCase()}
                       </span>
@@ -503,7 +503,7 @@ const Index = () => {
               <div className="p-2 rounded-xl bg-blue-500/10">
                 <Calendar className="w-5 h-5 text-blue-400" />
               </div>
-              <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.orchestrator")}</h2>
+              <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.orchestrator")}</h2>
             </div>
             <MiniCalendar posts={posts} />
           </div>
@@ -514,7 +514,7 @@ const Index = () => {
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.deploymentIntensity")}</h2>
+                <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.deploymentIntensity")}</h2>
                 <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">{t("dashboard.home.publishingMatrix")}</p>
               </div>
               <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
@@ -539,7 +539,7 @@ const Index = () => {
 
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.liveStream")}</h2>
+              <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.liveStream")}</h2>
               <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_15px_rgba(52,211,153,0.1)]">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">{t("dashboard.home.liveStatus")}</span>
@@ -559,7 +559,7 @@ const Index = () => {
                      : <FileText className="w-5 h-5" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white font-bold group-hover:text-primary transition-colors leading-tight">{item.text}</p>
+                    <p className="text-sm text-foreground font-bold group-hover:text-primary transition-colors leading-tight">{item.text}</p>
                     <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1.5 opacity-50">{item.ago}</p>
                   </div>
                 </div>
@@ -634,7 +634,7 @@ const Index = () => {
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.strategicTargets")}</h2>
+                <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.strategicTargets")}</h2>
                 <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">{t("dashboard.home.benchmarks")}</p>
               </div>
               <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
@@ -649,7 +649,7 @@ const Index = () => {
                       <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg">{g.change}</span>
                     </div>
                   )}
-                  <p className="text-3xl font-black text-white tracking-tighter mb-1">{g.value}</p>
+                  <p className="text-3xl font-black text-foreground tracking-tighter mb-1">{g.value}</p>
                   <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60 mb-1">{g.label}</p>
                   <p className="text-[9px] text-muted-foreground/40 font-bold">{t("dashboard.home.target", { value: g.target })}</p>
                   <div className="h-2 bg-white/[0.05] rounded-full overflow-hidden mt-4">
@@ -666,7 +666,7 @@ const Index = () => {
                 <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400">
                   <Zap className="w-5 h-5 shadow-[0_0_15px_rgba(245,158,11,0.2)]" />
                 </div>
-                <h2 className="text-lg font-black text-white tracking-tight uppercase">{t("dashboard.home.neuralPathways")}</h2>
+                <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.neuralPathways")}</h2>
               </div>
               <button onClick={() => navigate("/automation")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
@@ -683,7 +683,7 @@ const Index = () => {
                 {automations.slice(0, 6).map((a: any) => (
                   <div key={a.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] transition-all group">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white group-hover:text-primary transition-colors truncate">{a.name}</p>
+                      <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">{a.name}</p>
                       <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-50">{a.platforms?.join(", ") ?? t("dashboard.home.multiPlatform")}</p>
                     </div>
                     <div className={cn("w-10 h-5 rounded-full relative ml-4 shrink-0 cursor-pointer transition-all", a.status === "active" ? "bg-primary shadow-[0_0_15px_rgba(155,135,245,0.4)]" : "bg-white/10")}>

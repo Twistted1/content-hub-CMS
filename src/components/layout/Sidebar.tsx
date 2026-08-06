@@ -67,9 +67,9 @@ const NavItem = ({ icon: Icon, labelKey, href, onNavigate }: NavItemProps & { on
       onClick={onNavigate}
       className={cn(
         "group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300",
-        "text-muted-foreground hover:text-white hover:bg-white/[0.05] border border-transparent hover:border-white/[0.05]"
+        "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/[0.05] border border-transparent hover:border-white/[0.05]"
       )}
-      activeClassName="bg-white/[0.08] text-white border-white/[0.1] shadow-lg shadow-black/20"
+      activeClassName="bg-white/[0.08] text-sidebar-foreground border-white/[0.1] shadow-lg shadow-black/20"
     >
       <div className="flex items-center gap-3">
         <div className="p-1 rounded-lg bg-white/[0.03] group-hover:bg-primary/10 transition-colors">
@@ -119,7 +119,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
           <div className="w-full h-[5px] bg-[#8a94a6] rounded-full"></div>
         </div>
         <div>
-          <h1 className="text-xl font-black text-white tracking-tighter uppercase whitespace-nowrap leading-none">
+          <h1 className="text-xl font-black text-sidebar-foreground tracking-tighter uppercase whitespace-nowrap leading-none">
             CONTENT <span className="text-primary">HUB</span>
           </h1>
           <div className="flex items-center gap-1.5 mt-1">
@@ -140,7 +140,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
             <Sparkles className="h-12 w-12 text-primary" />
           </div>
-          <h4 className="text-sm font-bold text-white mb-1 relative z-10">{t("nav.proVersion")}</h4>
+          <h4 className="text-sm font-bold text-sidebar-foreground mb-1 relative z-10">{t("nav.proVersion")}</h4>
           <p className="text-[11px] text-muted-foreground mb-4 relative z-10">{t("nav.proVersionDesc")}</p>
           <button className="w-full py-2.5 rounded-xl bg-white text-black text-xs font-black hover:bg-primary hover:text-white transition-all shadow-lg shadow-white/5 active:scale-95 relative z-10">
             {t("nav.upgradeNow")}
@@ -149,10 +149,10 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
       </nav>
 
       {/* Logout */}
-      <div className="p-4 border-t border-white/[0.06] bg-white/[0.02]">
+      <div className="p-4 border-t border-sidebar-border/[0.06] bg-white/[0.02]">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-400 hover:text-white hover:bg-destructive/10 hover:text-destructive w-full transition-all duration-300 group"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive w-full transition-all duration-300 group"
         >
           <LogOut className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
           <span>{t("common.logout")}</span>
@@ -173,14 +173,14 @@ export function Sidebar() {
         <button
           onClick={() => setOpen(true)}
           aria-label={t("nav.openMenu")}
-          className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl bg-[#05060b]/90 backdrop-blur-xl border border-white/[0.08] text-white premium-shadow"
+          className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar/90 backdrop-blur-xl border border-sidebar-border/[0.08] text-sidebar-foreground premium-shadow"
         >
           <Menu className="h-5 w-5" />
         </button>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent
             side="left"
-            className="w-72 max-w-[85vw] p-0 flex flex-col bg-[#05060b] border-white/[0.06] text-white"
+            className="w-72 max-w-[85vw] p-0 flex flex-col bg-sidebar border-sidebar-border/[0.06] text-sidebar-foreground"
           >
             <SidebarContent onNavigate={() => setOpen(false)} />
           </SheetContent>
@@ -190,7 +190,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-72 bg-[#05060b]/80 backdrop-blur-2xl border-r border-white/[0.06] flex flex-col premium-shadow">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-72 bg-sidebar/80 backdrop-blur-2xl border-r border-sidebar-border/[0.06] flex flex-col premium-shadow">
       <SidebarContent />
     </aside>
   );
