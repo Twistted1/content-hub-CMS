@@ -50,6 +50,15 @@
     --platform-rumble: 89 53% 52%;
     --platform-podcast: 270 77% 54%;
 
+    --sidebar-background: 230 30% 3%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 263.4 85% 60%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 0 0% 100%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 100%;
+    --sidebar-ring: 263.4 85% 60%;
+
     /* Premium Gradients */
     --grad-primary: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%);
     --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
@@ -100,6 +109,18 @@
     --platform-rumble: 89 53% 52%;
     --platform-podcast: 270 77% 54%;
 
+    /* Sidebar stays on the dark brand rail in both themes, by design —
+       matches the permanently-dark-nav pattern (Vercel, Linear, etc.)
+       instead of going fully white and washing out the icon/logo contrast. */
+    --sidebar-background: 230 30% 3%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 263.4 85% 55%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 0 0% 100%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 100%;
+    --sidebar-ring: 263.4 85% 55%;
+
     /* Premium Gradients */
     --grad-primary: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%);
     --grad-surface: linear-gradient(180deg, rgba(10, 12, 26, 0.04) 0%, rgba(10, 12, 26, 0) 100%);
@@ -142,18 +163,26 @@
     @apply bg-white/20;
   }
 
-  /* Glass Effects */
+  /* Glass Effects — tinted off --foreground, not a hardcoded white, so the
+     overlay is a light tint on dark backgrounds (dark theme) and a dark
+     tint on light backgrounds (light theme) instead of going invisible
+     when the page background flips. */
   .glass {
-    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.08];
+    background-color: hsl(var(--foreground) / 0.03);
+    @apply backdrop-blur-xl border border-foreground/[0.08];
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   }
-  
+
   .glass-card {
-    @apply bg-gradient-to-b from-white/[0.06] to-transparent backdrop-blur-xl border border-white/[0.1];
+    background-image: linear-gradient(to bottom, hsl(var(--foreground) / 0.06), transparent);
+    @apply backdrop-blur-xl border border-foreground/[0.1];
   }
 
   .glass-hover {
-    @apply transition-all duration-500 hover:bg-white/[0.08] hover:border-white/[0.2] hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-0.5;
+    @apply transition-all duration-500 hover:border-foreground/[0.2] hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-0.5;
+  }
+  .glass-hover:hover {
+    background-color: hsl(var(--foreground) / 0.08);
   }
 
   .premium-shadow {
