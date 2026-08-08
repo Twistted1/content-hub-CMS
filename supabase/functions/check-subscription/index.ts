@@ -23,6 +23,26 @@ const logStep = (step: string, details?: unknown) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
+// Retries transient failures (network blips, Stripe 5xx/429) up to twice with backoff.
+// Does NOT retry 4xx client errors since retrying those just repeats the same failure.
+async function withRetry<T>(label: string, fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const status = (err as { statusCode?: number })?.statusCode;
+      const isClientError = typeof status === "number" && status >= 400 && status < 500;
+      const message = err instanceof Error ? err.message : String(err);
+      logStep(`${label} failed (attempt ${i + 1}/${attempts})`, { message, status });
+      if (isClientError || i === attempts - 1) throw err;
+      await new Promise((r) => setTimeout(r, 300 * Math.pow(3, i)));
+    }
+  }
+  throw lastErr;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -53,8 +73,10 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    
+    const customers = await withRetry("customers.list", () =>
+      stripe.customers.list({ email: user.email!, limit: 1 })
+    );
+
     if (customers.data.length === 0) {
       logStep("No customer found, returning unsubscribed state");
       return new Response(JSON.stringify({ subscribed: false, tier: "free" }), {
@@ -66,11 +88,13 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 1,
-    });
+    const subscriptions = await withRetry("subscriptions.list", () =>
+      stripe.subscriptions.list({
+        customer: customerId,
+        status: "active",
+        limit: 1,
+      })
+    );
     const hasActiveSub = subscriptions.data.length > 0;
     let tier: "free" | "starter" | "pro" = "free";
     let billingInterval: "monthly" | "yearly" | null = null;
@@ -108,7 +132,8 @@ serve(async (req) => {
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR", { message: errorMessage });
+    const stack = error instanceof Error ? error.stack : undefined;
+    logStep("ERROR", { message: errorMessage, stack });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
