@@ -161,9 +161,19 @@ const AutomationPage = () => {
       
       if (userPosts && userPosts.length > 0) {
         const postIds = userPosts.map(p => p.id);
-        await supabase.from('post_platforms').delete().in('post_id', postIds);
-        await supabase.from('media').delete().in('post_id', postIds);
-        await supabase.from('posts').delete().in('id', postIds);
+        // Errors here used to be silently swallowed (no `error` check on
+        // any of the three awaits) - if a delete failed partway (e.g. an
+        // RLS rule blocking it), the "cleanup" step would report success
+        // anyway and the insert loop below would stack a brand-new week of
+        // content on top of whatever survived, duplicating every slot.
+        // Surface any failure instead so a broken run stops before it can
+        // corrupt the calendar.
+        const { error: platformsDelErr } = await supabase.from('post_platforms').delete().in('post_id', postIds);
+        if (platformsDelErr) throw platformsDelErr;
+        const { error: mediaDelErr } = await supabase.from('media').delete().in('post_id', postIds);
+        if (mediaDelErr) throw mediaDelErr;
+        const { error: postsDelErr } = await supabase.from('posts').delete().in('id', postIds);
+        if (postsDelErr) throw postsDelErr;
       }
       setPipelineLogs(prev => [...prev, "   ✅ Database sanitized and ready."]);
 
