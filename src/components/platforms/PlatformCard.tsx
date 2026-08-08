@@ -2,7 +2,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ResponsiveContainer, BarChart, Bar } from "recharts";
 import {
   CheckCircle2,
   Clock,
@@ -76,7 +75,7 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
 
   return (
     <Card
-      className={`bg-card border-border overflow-hidden transition-all duration-300 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 cursor-pointer ${
+      className={`h-full flex flex-col bg-card border-border overflow-hidden transition-all duration-300 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 cursor-pointer ${
         isSelected ? "ring-2 ring-primary" : ""
       }`}
       onClick={handleCardClick}
@@ -125,136 +124,124 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: t("platforms.statTotalPostsShort"), value: platform.totalPosts },
-            { label: t("platforms.statScheduledShort"), value: platform.scheduledCount },
-            { label: t("platforms.statPublishedShort"), value: platform.publishedCount },
-          ].map((stat) => (
-            <div key={stat.label} className="p-2 rounded-lg bg-muted/50 text-center">
-              <p className="text-lg font-bold text-foreground">{stat.value}</p>
-              <p className="text-[10px] text-muted-foreground">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Mini Chart: posts created per day, last 7 days */}
-        {platform.weeklyData.some((d) => d.posts > 0) && (
-          <div className="h-16 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={platform.weeklyData}>
-                <Bar
-                  dataKey="posts"
-                  fill={getPlatformColor(platform.id)}
-                  radius={[2, 2, 0, 0]}
-                  opacity={0.8}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+      <CardContent className="flex-1 flex flex-col justify-between gap-4">
+        <div className="space-y-4">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: t("platforms.statTotalPostsShort"), value: platform.totalPosts },
+              { label: t("platforms.statScheduledShort"), value: platform.scheduledCount },
+              { label: t("platforms.statPublishedShort"), value: platform.publishedCount },
+            ].map((stat) => (
+              <div key={stat.label} className="p-2 rounded-lg bg-muted/50 text-center">
+                <p className="text-lg font-bold text-foreground">{stat.value}</p>
+                <p className="text-[10px] text-muted-foreground">{stat.label}</p>
+              </div>
+            ))}
           </div>
-        )}
 
-        {/* Latest Post */}
-        {platform.latestPost && (
-          <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
-            <p className="text-[10px] text-muted-foreground mb-1.5 flex items-center gap-1">
-              <FileText className="h-3 w-3" />
-              {t("platforms.latestPost")}
-            </p>
-            <p className="text-xs font-medium text-foreground mb-1 truncate">
-              "{platform.latestPost.title}"
-            </p>
-            <Badge variant="outline" className="text-[10px] capitalize">
-              {t(`calendar.status${platform.latestPost.status.charAt(0).toUpperCase()}${platform.latestPost.status.slice(1)}`, { defaultValue: platform.latestPost.status.replace("_", " ") })}
+          {/* Latest Post */}
+          {platform.latestPost && (
+            <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
+              <p className="text-[10px] text-muted-foreground mb-1.5 flex items-center gap-1">
+                <FileText className="h-3 w-3" />
+                {t("platforms.latestPost")}
+              </p>
+              <p className="text-xs font-medium text-foreground mb-1 truncate">
+                "{platform.latestPost.title}"
+              </p>
+              <Badge variant="outline" className="text-[10px] capitalize">
+                {t(`calendar.status${platform.latestPost.status.charAt(0).toUpperCase()}${platform.latestPost.status.slice(1)}`, { defaultValue: platform.latestPost.status.replace("_", " ") })}
+              </Badge>
+            </div>
+          )}
+
+          {/* Schedule Info */}
+          <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-primary/5 border border-primary/10">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span className="text-xs text-foreground">
+                {platform.scheduledCount} {t("platforms.postsScheduledSuffix")}
+              </span>
+            </div>
+            <Badge variant="outline" className="text-[10px]">
+              {platform.publishedCount} {t("platforms.publishedSuffix")}
             </Badge>
           </div>
-        )}
-
-        {/* Schedule Info */}
-        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-primary/5 border border-primary/10">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" />
-            <span className="text-xs text-foreground">
-              {platform.scheduledCount} {t("platforms.postsScheduledSuffix")}
-            </span>
-          </div>
-          <Badge variant="outline" className="text-[10px]">
-            {platform.publishedCount} {t("platforms.publishedSuffix")}
-          </Badge>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-2 border-t border-border">
-          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            {platform.lastActivity
-              ? t("platforms.lastActivity", { time: formatDistanceToNow(new Date(platform.lastActivity), { addSuffix: true }) })
-              : t("platforms.noActivityYet")}
-          </div>
-          <div onClick={stopPropagation}>
-            <Switch
-              checked={localStatus === "active"}
-              disabled={!platform.dbId}
-              onCheckedChange={(checked) => {
-                const newStatus = checked ? "active" : "paused";
-                setLocalStatus(newStatus);
+        <div className="space-y-4">
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2 border-t border-border">
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              {platform.lastActivity
+                ? t("platforms.lastActivity", { time: formatDistanceToNow(new Date(platform.lastActivity), { addSuffix: true }) })
+                : t("platforms.noActivityYet")}
+            </div>
+            <div onClick={stopPropagation}>
+              <Switch
+                checked={localStatus === "active"}
+                disabled={!platform.dbId}
+                onCheckedChange={(checked) => {
+                  const newStatus = checked ? "active" : "paused";
+                  setLocalStatus(newStatus);
 
-                if (platform.dbId) {
-                  togglePlatformStatus.mutate({
-                    id: platform.dbId,
-                    status: newStatus,
-                  });
-                } else {
-                  toast.error(t("platforms.toastConnectFirst"));
-                  setLocalStatus(platform.status);
-                }
+                  if (platform.dbId) {
+                    togglePlatformStatus.mutate({
+                      id: platform.dbId,
+                      status: newStatus,
+                    });
+                  } else {
+                    toast.error(t("platforms.toastConnectFirst"));
+                    setLocalStatus(platform.status);
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2" onClick={stopPropagation}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1 text-xs"
+              onClick={() => onOpenDetail(platform)}
+            >
+              <Settings className="h-3 w-3" />
+              {t("platforms.configure")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-1 text-xs"
+              onClick={() => navigate("/analytics")}
+            >
+              <BarChart3 className="h-3 w-3" />
+              {t("platforms.analyticsButton")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={() => {
+                const urls: Record<string, string> = {
+                  youtube: "https://youtube.com",
+                  twitter: "https://x.com",
+                  instagram: "https://instagram.com",
+                  facebook: "https://facebook.com",
+                  linkedin: "https://linkedin.com",
+                  tiktok: "https://tiktok.com",
+                  website: "https://example.com",
+                  podcast: "https://podcasters.spotify.com",
+                };
+                window.open(platform.url || urls[platform.id] || "#", "_blank");
               }}
-            />
+            >
+              <ExternalLink className="h-3 w-3" />
+            </Button>
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-2" onClick={stopPropagation}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 gap-1 text-xs"
-            onClick={() => onOpenDetail(platform)}
-          >
-            <Settings className="h-3 w-3" />
-            {t("platforms.configure")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 gap-1 text-xs"
-            onClick={() => navigate("/analytics")}
-          >
-            <BarChart3 className="h-3 w-3" />
-            {t("platforms.analyticsButton")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1"
-            onClick={() => {
-              const urls: Record<string, string> = {
-                youtube: "https://youtube.com",
-                twitter: "https://x.com",
-                instagram: "https://instagram.com",
-                facebook: "https://facebook.com",
-                linkedin: "https://linkedin.com",
-                tiktok: "https://tiktok.com",
-                website: "https://example.com",
-                podcast: "https://podcasters.spotify.com",
-              };
-              window.open(platform.url || urls[platform.id] || "#", "_blank");
-            }}
-          >
-            <ExternalLink className="h-3 w-3" />
-          </Button>
         </div>
       </CardContent>
     </Card>
