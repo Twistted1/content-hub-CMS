@@ -163,7 +163,7 @@ export default function ContentPipeline() {
         </div>
 
         <Tabs defaultValue="create" className="space-y-6">
-          <TabsList className="bg-white/[0.03] border border-white/[0.08] p-1.5 rounded-2xl h-auto">
+          <TabsList className="bg-white/[0.07] border border-white/[0.16] p-1.5 rounded-2xl h-auto">
             <TabsTrigger value="create" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">{t("pipeline.tabCreate")}</TabsTrigger>
             <TabsTrigger value="history" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">{t("pipeline.tabHistory")}</TabsTrigger>
             <TabsTrigger value="webhooks" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">{t("pipeline.tabWebhooks")}</TabsTrigger>

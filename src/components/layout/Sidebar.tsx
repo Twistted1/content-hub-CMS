@@ -70,12 +70,12 @@ const NavItem = ({ icon: Icon, labelKey, href, onNavigate }: NavItemProps & { on
       onClick={onNavigate}
       className={cn(
         "group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300",
-        "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/[0.05] border border-transparent hover:border-white/[0.05]"
+        "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/[0.10] border border-transparent hover:border-white/[0.10]"
       )}
-      activeClassName="bg-white/[0.08] text-sidebar-foreground border-white/[0.1] shadow-lg shadow-black/20"
+      activeClassName="bg-white/[0.16] text-sidebar-foreground border-white/[0.20] shadow-lg shadow-black/20"
     >
       <div className="flex items-center gap-3">
-        <div className="p-1 rounded-lg bg-white/[0.03] group-hover:bg-primary/10 transition-colors">
+        <div className="p-1 rounded-lg bg-white/[0.07] group-hover:bg-primary/10 transition-colors">
           <Icon className="h-4.5 w-4.5 group-hover:text-primary transition-colors" />
         </div>
         <span>{t(labelKey)}</span>
@@ -143,7 +143,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
             unconditionally to everyone, including paid Pro users, which reads as if
             they don't actually have what they paid for. */}
         {tier !== "pro" && (
-        <div className="mt-8 mx-2 p-5 rounded-3xl bg-gradient-to-br from-white/[0.05] to-transparent border border-white/[0.08] relative overflow-hidden group">
+        <div className="mt-8 mx-2 p-5 rounded-3xl bg-gradient-to-br from-white/[0.10] to-transparent border border-white/[0.16] relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
             <Sparkles className="h-12 w-12 text-primary" />
           </div>
@@ -160,7 +160,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
       </nav>
 
       {/* Logout */}
-      <div className="p-4 border-t border-sidebar-border/[0.06] bg-white/[0.02]">
+      <div className="p-4 border-t border-sidebar-border/[0.16] bg-white/[0.05]">
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive w-full transition-all duration-300 group"
@@ -184,14 +184,14 @@ export function Sidebar() {
         <button
           onClick={() => setOpen(true)}
           aria-label={t("nav.openMenu")}
-          className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar/90 backdrop-blur-xl border border-sidebar-border/[0.08] text-sidebar-foreground premium-shadow"
+          className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar/90 backdrop-blur-xl border border-sidebar-border/[0.20] text-sidebar-foreground premium-shadow"
         >
           <Menu className="h-5 w-5" />
         </button>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent
             side="left"
-            className="w-72 max-w-[85vw] p-0 flex flex-col bg-sidebar border-sidebar-border/[0.06] text-sidebar-foreground"
+            className="w-72 max-w-[85vw] p-0 flex flex-col bg-sidebar border-sidebar-border/[0.16] text-sidebar-foreground"
           >
             <SidebarContent onNavigate={() => setOpen(false)} />
           </SheetContent>
@@ -201,7 +201,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-72 bg-sidebar/80 backdrop-blur-2xl border-r border-sidebar-border/[0.06] flex flex-col premium-shadow">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-72 bg-sidebar/80 backdrop-blur-2xl border-r border-sidebar-border/[0.16] flex flex-col premium-shadow">
       <SidebarContent />
     </aside>
   );

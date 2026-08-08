@@ -7,32 +7,37 @@
 @layer base {
   :root,
   .dark {
-    --background: 230 25% 4%;
+    /* Contrast pass: the previous values packed background/card/border all
+       within ~11 points of lightness (4/6/15) - card was barely lighter
+       than the page and borders barely lighter than card, so every panel
+       edge and divider line disappeared. Widened the ladder (background 7
+       -> card 11 -> border 26) so structure reads at a glance again. */
+    --background: 230 25% 7%;
     --foreground: 0 0% 98%;
 
-    --card: 230 25% 6%;
+    --card: 230 24% 11%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 230 25% 4%;
+    --popover: 230 24% 10%;
     --popover-foreground: 0 0% 98%;
 
     --primary: 263.4 85% 60%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 230 20% 12%;
+    --secondary: 230 20% 17%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 230 20% 12%;
-    --muted-foreground: 230 10% 60%;
+    --muted: 230 20% 16%;
+    --muted-foreground: 230 12% 68%;
 
-    --accent: 263.4 50% 20%;
+    --accent: 263.4 50% 22%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 230 20% 15%;
-    --input: 230 20% 15%;
+    --border: 230 18% 26%;
+    --input: 230 18% 26%;
     --ring: 263.4 85% 60%;
 
     --radius: 1rem;
@@ -50,7 +55,7 @@
     --platform-rumble: 89 53% 52%;
     --platform-podcast: 270 77% 54%;
 
-    --sidebar-background: 230 30% 3%;
+    --sidebar-background: 230 30% 6%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 263.4 85% 60%;
     --sidebar-primary-foreground: 210 40% 98%;
@@ -166,23 +171,25 @@
   /* Glass Effects — tinted off --foreground, not a hardcoded white, so the
      overlay is a light tint on dark backgrounds (dark theme) and a dark
      tint on light backgrounds (light theme) instead of going invisible
-     when the page background flips. */
+     when the page background flips. Opacities bumped up a step across the
+     board — at the original 0.03/0.06/0.08/0.1 values the panel edge was
+     indistinguishable from the page behind it. */
   .glass {
-    background-color: hsl(var(--foreground) / 0.03);
-    @apply backdrop-blur-xl border border-foreground/[0.08];
+    background-color: hsl(var(--foreground) / 0.06);
+    @apply backdrop-blur-xl border border-foreground/[0.16];
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   }
 
   .glass-card {
-    background-image: linear-gradient(to bottom, hsl(var(--foreground) / 0.06), transparent);
-    @apply backdrop-blur-xl border border-foreground/[0.1];
+    background-image: linear-gradient(to bottom, hsl(var(--foreground) / 0.1), transparent);
+    @apply backdrop-blur-xl border border-foreground/[0.18];
   }
 
   .glass-hover {
-    @apply transition-all duration-500 hover:border-foreground/[0.2] hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-0.5;
+    @apply transition-all duration-500 hover:border-foreground/[0.3] hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-0.5;
   }
   .glass-hover:hover {
-    background-color: hsl(var(--foreground) / 0.08);
+    background-color: hsl(var(--foreground) / 0.14);
   }
 
   .premium-shadow {
