@@ -25,6 +25,7 @@ import { NavLink } from "@/components/NavLink";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { toast } from "sonner";
@@ -99,6 +100,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { tier } = useSubscription();
 
   const handleLogout = async () => {
     const { error } = await signOut();
@@ -135,7 +137,10 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
         <NavSection title={t("nav.tools")} items={toolsNavItems} onNavigate={onNavigate} />
         <NavSection title={t("nav.admin")} items={adminNavItems} onNavigate={onNavigate} />
 
-        {/* Upgrade Card */}
+        {/* Upgrade Card — only for accounts that aren't already Pro; it was showing
+            unconditionally to everyone, including paid Pro users, which reads as if
+            they don't actually have what they paid for. */}
+        {tier !== "pro" && (
         <div className="mt-8 mx-2 p-5 rounded-3xl bg-gradient-to-br from-white/[0.05] to-transparent border border-white/[0.08] relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
             <Sparkles className="h-12 w-12 text-primary" />
@@ -149,6 +154,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
             {t("nav.upgradeNow")}
           </button>
         </div>
+        )}
       </nav>
 
       {/* Logout */}
