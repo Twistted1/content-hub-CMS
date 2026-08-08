@@ -32,6 +32,7 @@ import {
 } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useUserPreferencesStore } from "@/stores/useUserPreferencesStore";
 
 // ── Platform config ────────────────────────────────────────────────────────────
 const PLATFORM_CFG: Record<string, { Icon: any; color: string; bar: string; hex: string; label: string }> = {
@@ -156,6 +157,7 @@ const Index = () => {
   const stats      = useDashboardStats();
   const { posts }  = usePosts();
   const { user }   = useAuth();
+  const { profile } = useUserPreferencesStore();
   const { automations, automationRuns } = useAutomations();
   const { notes }  = useNotes();
   const { platforms: userPlatforms } = usePlatforms();
@@ -170,7 +172,7 @@ const Index = () => {
 
   const hour     = now.getHours();
   const greeting = hour < 12 ? t("dashboard.greeting.morning") : hour < 17 ? t("dashboard.greeting.afternoon") : t("dashboard.greeting.evening");
-  const userName = user?.email?.split("@")[0] ?? "Admin";
+  const userName = profile.name || user?.email?.split("@")[0] || "Admin";
   const dayLabel = format(now, "EEEE, MMMM d, yyyy").toUpperCase();
 
   // Today's queue
