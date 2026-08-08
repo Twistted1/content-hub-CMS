@@ -8,16 +8,21 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-08-06 (Phase 5). Phase 3 (2026-07-31) was a 5-agent
+**Last verified:** 2026-08-08 (Phase 6). Phase 3 (2026-07-31) was a 5-agent
 independent audit against live production Supabase
 (`jvbucspwcjahqpoxskvr`), live GitHub CI/branch state, and source @
 `9115c17`. Full report: `docs/PHASE_3_READINESS_REPORT.md`. Phase 4
 (2026-08-01) found and fixed a real gap that Phase 3 missed: the Stripe
 subscription webhook had never successfully written a subscription,
-ever. **Phase 5 (2026-08-06) was a user-driven UI/UX pass — real bugs
+ever. Phase 5 (2026-08-06) was a user-driven UI/UX pass — real bugs
 in the Billing page, the Calendar, and the light theme, found by the
-user clicking around production, not by an audit.** See "Phase 5"
-section below for what changed and what's still open (light theme is
+user clicking around production, not by an audit. **Phase 6
+(2026-08-08) is the actual end-to-end confirmation Phase 4 could only
+claim, not verify: a real Stripe test payment now correctly lands as
+`tier: "pro"` in the `subscriptions` table** — see "Phase 6" section
+for the two real bugs that were still blocking this and how each was
+confirmed fixed against live data, not log lines. See "Phase 5"
+section below for what changed there and what's still open (light theme is
 now disabled, not fixed — see that section for why).
 
 **On `main` (merged):** #2 E2E suite + dashboard crash fix, #3 RLS/FK/
@@ -40,6 +45,88 @@ for the remaining non-blocking cleanup item (edge function drift).
 **Open, waiting on you:** nothing code-related is blocking core CMS use.
 Remaining items are GitHub/Supabase settings only you can change, or
 decisions only you can make — see the two "Open" sections below.
+
+---
+
+## Phase 6 — Stripe billing chain, actually confirmed end-to-end (2026-08-08)
+
+Phase 4 fixed a real bug (broken user lookup in `stripe-webhook`) and
+called the revenue path fixed, but explicitly flagged it as **unverified**
+against a real completed purchase. This phase is that verification —
+done with the user running real test-mode Stripe payments while checking
+the database directly after each one, not trusting a "looks fixed" log
+line. Two more real bugs surfaced in the process, both now fixed and
+confirmed:
+
+- [x] **`current_period_end` moved off the top-level Stripe `Subscription`
+      object.** Root cause of every `stripe-webhook`/`check-subscription`
+      500 in this phase. Stripe's flexible-billing-intervals rollout moved
+      `current_period_end`/`current_period_start` from the Subscription
+      object onto each subscription item. Both functions read the
+      now-`undefined` top-level field, `undefined * 1000` is `NaN`, and
+      `new Date(NaN).toISOString()` throws `RangeError: Invalid time
+      value` — crashing the handler *after* finding the real Stripe data
+      but *before* writing anything or returning a real response. Found
+      by reading the actual response body via browser DevTools (the
+      Supabase log viewer only shows HTTP status lines, not the thrown
+      error — a real tooling gap worth remembering for future debugging
+      here). Fixed in 3 places (1 in `check-subscription`, 2 in
+      `stripe-webhook`): read `subscription.items.data[0].current_period_end`
+      first, fall back to the old top-level field for older data.
+- [x] **`STRIPE_WEBHOOK_SECRET` was set to the wrong endpoint's signing
+      secret.** This Stripe sandbox has two registered webhook
+      destinations ("playful-oasis", unrelated to this app, and
+      "brilliant-jubilee", the real one) — the secret in Supabase had
+      been copied from the wrong one, so every real webhook delivery
+      failed signature verification (`400`, "No signatures found").
+      Also worth remembering: Supabase Edge Functions do not reliably
+      hot-reload a changed secret into already-warm instances — a
+      **redeploy after any secret change** is what actually made the
+      corrected secret take effect, even though the value itself had
+      been correct for a while before that.
+- [x] **False positive caught before being trusted**: a `stripe-webhook`
+      delivery returned `200` and looked fixed from the log line alone,
+      but the `subscriptions` table showed zero rows updated anywhere —
+      the handler had silently hit its "no matching Supabase user, skip"
+      branch, which returns the same `{"received": true}` as a real
+      write. Added an explicit `outcome` field to the webhook's response
+      body (`wrote:user=X:tier=Y` / `skipped_no_user:...` / etc.), logged
+      and returned on every request, so this exact silent-skip failure
+      mode is visible directly in Stripe's Workbench without needing log
+      access at all.
+- [x] **Real end-to-end confirmation, not a log line**: a genuine Stripe
+      test payment now correctly produces `tier: "pro"`, the right
+      `end_date`, and a live `updated_at` timestamp in the `subscriptions`
+      table. Checked directly via SQL against the actual row, not
+      inferred from a webhook response.
+- [x] **`create-checkout`'s post-payment redirect URL** had a hardcoded
+      Lovable preview host baked in as both an allowlisted origin and the
+      ultimate fallback — real successful payments were redirecting to a
+      dead, unrelated page instead of back into the app. Fixed to use the
+      real production domain.
+- [x] **Profile identity was hardcoded** to `"Admin User" /
+      "admin@company.com"` everywhere outside the Settings page itself
+      until a user manually saved their profile once — `ProfileSettings.tsx`
+      loaded the real data correctly but only wrote it into the shared
+      app-wide store on save, never on initial load. Added a sync-on-login
+      bridge (same pattern as the existing dark-theme sync).
+- [x] **Sidebar "Upgrade Now" button had no `onClick` handler at all** —
+      wired to `/pricing`. Same card also now hides itself for accounts
+      already on Pro instead of showing an upsell to someone who's already
+      paying.
+- [x] **Platforms page**: TikTok/Instagram cards rendered with zero color
+      (dynamically-built Tailwind classes `bg-tiktok`/`bg-instagram` were
+      never defined in `tailwind.config.ts` — only `tiktok-cyan/pink` and
+      `instagram-orange/pink/purple` exist). Switched to the existing
+      `getPlatformColor()` helper. Also fixed the connected-platforms grid
+      stretching every card to match its tallest neighbor (`items-start`),
+      which was producing the oversized/half-empty cards reported.
+
+**Not done / explicitly out of scope this phase**: sending an email
+confirmation on successful subscription. No email provider (Resend,
+SendGrid, etc.) is wired into this app at all right now — Supabase Auth's
+built-in emails work, nothing custom does. Needs a provider account + API
+key before it can be built.
 
 ---
 
