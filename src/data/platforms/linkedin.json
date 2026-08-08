@@ -1,9 +1,41 @@
 {
   "platform": "LinkedIn",
   "schedule": {
-    "1": { "Tuesday": ["09:00"] },
-    "2": { "Tuesday": ["09:00"] },
-    "3": { "Tuesday": ["09:00"] },
-    "4": { "Tuesday": ["09:00"] }
+    "1": {
+      "Monday": ["09:00"],
+      "Tuesday": ["09:00"],
+      "Wednesday": ["09:00"],
+      "Thursday": ["09:00"],
+      "Friday": ["09:00"],
+      "Saturday": ["09:00"],
+      "Sunday": ["09:00"]
+    },
+    "2": {
+      "Monday": ["09:00"],
+      "Tuesday": ["09:00"],
+      "Wednesday": ["09:00"],
+      "Thursday": ["09:00"],
+      "Friday": ["09:00"],
+      "Saturday": ["09:00"],
+      "Sunday": ["09:00"]
+    },
+    "3": {
+      "Monday": ["09:00"],
+      "Tuesday": ["09:00"],
+      "Wednesday": ["09:00"],
+      "Thursday": ["09:00"],
+      "Friday": ["09:00"],
+      "Saturday": ["09:00"],
+      "Sunday": ["09:00"]
+    },
+    "4": {
+      "Monday": ["09:00"],
+      "Tuesday": ["09:00"],
+      "Wednesday": ["09:00"],
+      "Thursday": ["09:00"],
+      "Friday": ["09:00"],
+      "Saturday": ["09:00"],
+      "Sunday": ["09:00"]
+    }
   }
 }

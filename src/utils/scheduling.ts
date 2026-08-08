@@ -56,9 +56,9 @@ export const PLATFORM_INFO: Record<PlatformKey, { label: string; frequency: stri
   },
   linkedin: {
     label: "LinkedIn",
-    frequency: "1x weekly",
+    frequency: "1x daily",
     publishing: "Direct OAuth when connected",
-    summary: "One weekly professional insight.",
+    summary: "One daily professional insight.",
   },
   youtube: {
     label: "YouTube",
