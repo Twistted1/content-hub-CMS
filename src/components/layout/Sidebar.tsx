@@ -142,7 +142,10 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
           </div>
           <h4 className="text-sm font-bold text-sidebar-foreground mb-1 relative z-10">{t("nav.proVersion")}</h4>
           <p className="text-[11px] text-muted-foreground mb-4 relative z-10">{t("nav.proVersionDesc")}</p>
-          <button className="w-full py-2.5 rounded-xl bg-white text-black text-xs font-black hover:bg-primary hover:text-white transition-all shadow-lg shadow-white/5 active:scale-95 relative z-10">
+          <button
+            onClick={() => navigate("/pricing")}
+            className="w-full py-2.5 rounded-xl bg-white text-black text-xs font-black hover:bg-primary hover:text-white transition-all shadow-lg shadow-white/5 active:scale-95 relative z-10"
+          >
             {t("nav.upgradeNow")}
           </button>
         </div>
