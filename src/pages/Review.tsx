@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { platforms as platformIdentities, platformColors } from "@/components/platforms/platformsData";
@@ -14,8 +15,10 @@ import { getPlatformLimit } from "@/utils/platformLimits";
 import { format, parseISO, formatDistanceToNow } from "date-fns";
 import {
   Inbox, FileText, CalendarClock, CheckCircle2, XCircle, RotateCcw,
-  ImageIcon, Clock, Sparkles, Loader2, Globe, X,
+  ImageIcon, Clock, Sparkles, Loader2, Globe, ListChecks,
 } from "lucide-react";
+
+type TabKey = "needs-review" | "drafts" | "scheduled";
 
 /* ── helpers ─────────────────────────────────────────────── */
 
@@ -45,24 +48,29 @@ function getPlatformIdentity(id: string) {
 const INPUT_CLS = "w-full bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary/60 transition-colors";
 const LABEL_CLS = "block text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1.5";
 
-/* ── platform badge ──────────────────────────────────────── */
+/* ── small tags ──────────────────────────────────────────── */
 
-function PlatformBadge({ platform }: { platform: string }) {
-  const identity = getPlatformIdentity(platform);
+function PlatformTag({ platform }: { platform: string }) {
   const color = platformColors[platform.toLowerCase()] || "hsl(var(--primary))";
-  const Icon = identity?.icon || Globe;
   return (
     <span
-      className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg"
-      style={{ backgroundColor: `${color}22`, color }}
+      className="text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-md text-white shrink-0"
+      style={{ backgroundColor: color }}
     >
-      <Icon className="w-3 h-3" />
-      {identity?.name || platform}
+      {platform}
     </span>
   );
 }
 
-/* ── status badge ────────────────────────────────────────── */
+function AiTag() {
+  const { t } = useTranslation();
+  return (
+    <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-md bg-muted text-muted-foreground shrink-0">
+      <Sparkles className="w-2.5 h-2.5" />
+      {t("review.aiGenerated")}
+    </span>
+  );
+}
 
 function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation();
@@ -74,75 +82,61 @@ function StatusBadge({ status }: { status: string }) {
     status === "rejected" ? "bg-destructive/10 text-destructive border-destructive/20" :
     "bg-primary/10 text-primary border-primary/20";
   return (
-    <Badge variant="outline" className={`text-[10px] ${variant}`}>
+    <Badge variant="outline" className={`text-[10px] shrink-0 ${variant}`}>
       {t(`calendar.status${cap}`, { defaultValue: status.replace("_", " ") })}
     </Badge>
   );
 }
 
-/* ── post row ────────────────────────────────────────────── */
+/* ── list row ────────────────────────────────────────────── */
 
 interface PostRowProps {
   post: Post;
+  active: boolean;
   selectable?: boolean;
-  selected?: boolean;
-  onToggleSelect?: (id: string) => void;
-  onOpen: (post: Post) => void;
+  checked?: boolean;
+  onToggleCheck?: (id: string) => void;
+  onClick: () => void;
 }
 
-function PostRow({ post, selectable, selected, onToggleSelect, onOpen }: PostRowProps) {
-  const { t } = useTranslation();
-  const scheduled = post.scheduledAt ? parseISO(post.scheduledAt) : null;
+function PostRow({ post, active, selectable, checked, onToggleCheck, onClick }: PostRowProps) {
+  const scheduledDate = post.scheduledAt ? parseISO(post.scheduledAt) : null;
   const platformList = Array.from(new Set((post.platforms || []).map((p) => p.platform)));
 
   return (
     <div
-      className="flex items-start gap-3 p-4 rounded-2xl bg-card border border-border hover:border-primary/30 transition-all cursor-pointer group"
-      onClick={() => onOpen(post)}
+      onClick={onClick}
+      className={cn(
+        "flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all",
+        active ? "bg-primary/10 border-primary/40" : "bg-card border-border hover:border-primary/30"
+      )}
     >
       {selectable && (
-        <div className="pt-1" onClick={(e) => e.stopPropagation()}>
-          <Checkbox checked={!!selected} onCheckedChange={() => onToggleSelect?.(post.id)} />
+        <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+          <Checkbox checked={!!checked} onCheckedChange={() => onToggleCheck?.(post.id)} />
         </div>
       )}
-
-      <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-muted/40 border border-border/50 flex items-center justify-center">
-        {post.coverImageUrl ? (
-          <img src={post.coverImageUrl} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <ImageIcon className="w-5 h-5 text-muted-foreground/40" />
-        )}
-      </div>
-
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 mb-1">
-          <h4 className="font-bold text-sm text-foreground truncate">{post.title || "—"}</h4>
-          {post.isAiGenerated && (
-            <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20 shrink-0">
-              <Sparkles className="w-2.5 h-2.5" />
-              {t("review.aiGenerated")}
-            </span>
-          )}
+        <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+          {platformList.map((p) => <PlatformTag key={p} platform={p} />)}
+          {post.isAiGenerated && <AiTag />}
         </div>
-        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{post.content || post.excerpt || "—"}</p>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {platformList.map((p) => <PlatformBadge key={p} platform={p} />)}
-          <StatusBadge status={post.status} />
-          {scheduled && (
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1 ml-1">
-              <Clock className="w-3 h-3" />
-              {format(scheduled, "MMM d, HH:mm")}
-            </span>
-          )}
-        </div>
+        <h4 className="font-bold text-sm text-foreground truncate">{post.title || "—"}</h4>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">{post.content || post.excerpt || "—"}</p>
+        {scheduledDate && (
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1.5">
+            <Clock className="w-3 h-3" />
+            {format(scheduledDate, "M/d/yyyy, h:mm a")}
+          </span>
+        )}
       </div>
     </div>
   );
 }
 
-/* ── editor modal ────────────────────────────────────────── */
+/* ── detail / editor pane ────────────────────────────────── */
 
-function ReviewEditorModal({ post, onClose }: { post: Post; onClose: () => void }) {
+function ReviewEditorPane({ post }: { post: Post }) {
   const { t } = useTranslation();
   const { updatePost } = usePosts();
   const { uploadMedia } = useMedia();
@@ -156,16 +150,20 @@ function ReviewEditorModal({ post, onClose }: { post: Post; onClose: () => void 
   const [uploading, setUploading] = useState(false);
 
   const platformList = Array.from(new Set((post.platforms || []).map((p) => p.platform)));
+  const primaryPlatform = platformList[0];
+  const primaryIdentity = primaryPlatform ? getPlatformIdentity(primaryPlatform) : undefined;
+  const primaryLimit = primaryPlatform ? getPlatformLimit(primaryPlatform) : null;
+  const PrimaryIcon = primaryIdentity?.icon || Globe;
+  const primaryColor = primaryPlatform ? (platformColors[primaryPlatform.toLowerCase()] || "hsl(var(--primary))") : "hsl(var(--primary))";
+
+  const contentLen = content.length;
+  const over = primaryLimit ? contentLen > primaryLimit.caption : false;
+  const pct = primaryLimit ? Math.min(100, (contentLen / primaryLimit.caption) * 100) : 0;
 
   const runUpdate = (updates: Record<string, unknown>, successMessage: string) => {
     updatePost.mutate(
       { id: post.id, ...updates },
-      {
-        onSuccess: () => {
-          toast.success(successMessage);
-          onClose();
-        },
-      }
+      { onSuccess: () => toast.success(successMessage) }
     );
   };
 
@@ -219,206 +217,164 @@ function ReviewEditorModal({ post, onClose }: { post: Post; onClose: () => void 
   const saving = updatePost.isPending;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-2xl bg-card border border-border rounded-2xl shadow-2xl flex flex-col max-h-[92vh]">
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Inbox className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-base font-black text-foreground tracking-tight">
-                {post.status === "awaiting_review" ? t("review.reviewPost") : t("review.editPost")}
-              </h2>
-              <p className="text-[10px] text-muted-foreground font-medium">{t("review.editSubtitle")}</p>
-            </div>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${primaryColor}22` }}>
+            <PrimaryIcon className="w-4 h-4" style={{ color: primaryColor }} />
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <h2 className="text-base font-black text-foreground tracking-tight truncate">
+            {primaryLimit?.label || primaryIdentity?.name || t("review.editPost")}
+          </h2>
+          {post.isAiGenerated && <AiTag />}
+        </div>
+        <StatusBadge status={post.status} />
+      </div>
+
+      {/* Body */}
+      <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+        {/* Title */}
+        <div>
+          <label className={LABEL_CLS}>{t("review.titleLabel")}</label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("review.titlePlaceholder")} className={INPUT_CLS} />
         </div>
 
-        {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
-
-          {/* Meta info */}
-          {(post.isAiGenerated || post.workflowStage || post.reviewedAt) && (
-            <div className="flex items-center gap-2 flex-wrap">
-              {post.isAiGenerated && (
-                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20">
-                  <Sparkles className="w-3 h-3" />
-                  {t("review.aiGenerated")}
-                </span>
+        {/* Content */}
+        <div>
+          <label className={LABEL_CLS}>{t("review.contentLabel")}</label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={9}
+            placeholder={t("review.contentPlaceholder")}
+            className={`${INPUT_CLS} resize-none leading-relaxed`}
+          />
+          {primaryLimit && (
+            <>
+              <div className="mt-1.5 h-1 w-full rounded-full bg-muted/40 overflow-hidden">
+                <div
+                  className={`h-full transition-all ${over ? "bg-destructive" : pct > 85 ? "bg-amber-400" : "bg-primary"}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <p className={`mt-1 text-[10px] font-mono font-bold tabular-nums ${over ? "text-destructive" : pct > 85 ? "text-amber-400" : "text-muted-foreground"}`}>
+                {contentLen.toLocaleString()} / {primaryLimit.caption.toLocaleString()} {t("review.charactersSuffix")}
+              </p>
+              {over && (
+                <p className="mt-0.5 text-[10px] text-destructive font-bold">
+                  {t("review.exceedsLimit", { platform: primaryLimit.label, count: (contentLen - primaryLimit.caption).toLocaleString() })}
+                </p>
               )}
-              {post.workflowStage && (
-                <span className="text-[10px] text-muted-foreground font-bold">
-                  {t("review.workflowStage", { stage: post.workflowStage })}
-                </span>
-              )}
-              {post.reviewedAt && (
-                <span className="text-[10px] text-muted-foreground font-bold">
-                  {t("review.reviewedOn", { time: formatDistanceToNow(parseISO(post.reviewedAt), { addSuffix: true }) })}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Title */}
-          <div>
-            <label className={LABEL_CLS}>{t("review.titleLabel")}</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("review.titlePlaceholder")} className={INPUT_CLS} />
-          </div>
-
-          {/* Content */}
-          <div>
-            <label className={LABEL_CLS}>{t("review.contentLabel")}</label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={5}
-              placeholder={t("review.contentPlaceholder")}
-              className={`${INPUT_CLS} resize-none leading-relaxed`}
-            />
-          </div>
-
-          {/* Live per-platform character limits */}
-          {platformList.length > 0 && (
-            <div className="space-y-2">
-              <label className={LABEL_CLS}>{t("calendar.platform")}</label>
-              {platformList.map((platform) => {
-                const limit = getPlatformLimit(platform);
-                if (!limit) return null;
-                const len = content.length;
-                const over = len > limit.caption;
-                const pct = Math.min(100, (len / limit.caption) * 100);
-                return (
-                  <div key={platform} className="p-3 rounded-xl bg-muted/20 border border-border/50">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <PlatformBadge platform={platform} />
-                      <span className={`text-[10px] font-mono font-bold tabular-nums ${over ? "text-destructive" : pct > 85 ? "text-amber-400" : "text-muted-foreground"}`}>
-                        {t("review.charsOf", { current: len.toLocaleString(), max: limit.caption.toLocaleString(), platform: limit.label })}
-                      </span>
-                    </div>
-                    <div className="h-1 w-full rounded-full bg-muted/40 overflow-hidden">
-                      <div
-                        className={`h-full transition-all ${over ? "bg-destructive" : pct > 85 ? "bg-amber-400" : "bg-primary"}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    {over && (
-                      <p className="mt-1 text-[10px] text-destructive font-bold">
-                        {t("review.exceedsLimit", { platform: limit.label, count: (len - limit.caption).toLocaleString() })}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            </>
           )}
           {platformList.length === 0 && (
-            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{t("review.noPlatforms")}</p>
+            <p className="mt-1.5 text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{t("review.noPlatforms")}</p>
           )}
+        </div>
 
-          {/* Date + Time */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={LABEL_CLS} htmlFor="review-date">{t("review.scheduledDate")}</label>
-              <input id="review-date" type="date" title={t("review.scheduledDate")} aria-label={t("review.scheduledDate")} value={date} onChange={(e) => setDate(e.target.value)} className={`${INPUT_CLS} input-dark-scheme`} />
-            </div>
-            <div>
-              <label className={LABEL_CLS} htmlFor="review-time">{t("review.scheduledTime")}</label>
-              <input id="review-time" type="time" title={t("review.scheduledTime")} aria-label={t("review.scheduledTime")} value={time} onChange={(e) => setTime(e.target.value)} className={`${INPUT_CLS} input-dark-scheme`} />
-            </div>
-          </div>
-
-          {/* Image preview */}
+        {/* Date + Time */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={LABEL_CLS}>{t("review.coverImage")}</label>
-            {!coverImageUrl ? (
-              <label className="flex flex-col items-center justify-center w-full h-28 bg-muted/20 border-2 border-dashed border-border hover:border-primary/40 rounded-xl cursor-pointer hover:bg-muted/30 transition-all group">
-                {uploading ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                ) : (
-                  <>
-                    <ImageIcon className="w-5 h-5 mb-1 text-muted-foreground/50 group-hover:scale-110 transition-transform" />
-                    <span className="text-[11px] font-bold text-muted-foreground">{t("review.uploadImage")}</span>
-                    <span className="text-[10px] text-muted-foreground/50">{t("review.noImage")}</span>
-                  </>
-                )}
-                <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleImageUpload(f);
-                }} />
-              </label>
-            ) : (
-              <div className="relative w-full h-40 rounded-xl overflow-hidden border border-border group">
-                <img src={coverImageUrl} alt="" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <label className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-black rounded-lg cursor-pointer">
-                    {uploading ? t("review.uploading") : t("review.replaceImage")}
-                    <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) handleImageUpload(f);
-                    }} />
-                  </label>
-                  <button onClick={() => setCoverImageUrl("")} className="px-3 py-1.5 bg-destructive text-destructive-foreground text-xs font-black rounded-lg">
-                    {t("calendar.remove")}
-                  </button>
-                </div>
-              </div>
-            )}
+            <label className={LABEL_CLS} htmlFor="review-date">{t("review.scheduledDate")}</label>
+            <input id="review-date" type="date" title={t("review.scheduledDate")} aria-label={t("review.scheduledDate")} value={date} onChange={(e) => setDate(e.target.value)} className={`${INPUT_CLS} input-dark-scheme`} />
+          </div>
+          <div>
+            <label className={LABEL_CLS} htmlFor="review-time">{t("review.scheduledTime")}</label>
+            <input id="review-time" type="time" title={t("review.scheduledTime")} aria-label={t("review.scheduledTime")} value={time} onChange={(e) => setTime(e.target.value)} className={`${INPUT_CLS} input-dark-scheme`} />
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border shrink-0 gap-2 flex-wrap">
-          <button
-            onClick={handleReject}
-            disabled={saving}
-            className="px-4 py-2 text-xs font-black text-destructive hover:bg-destructive/10 rounded-xl transition-colors disabled:opacity-40 flex items-center gap-1.5"
-          >
-            <XCircle className="w-3.5 h-3.5" />
-            {t("review.reject")}
-          </button>
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={handleSendToDraft}
-              disabled={saving}
-              className="px-4 py-2 text-xs font-black text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors disabled:opacity-40 flex items-center gap-1.5"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              {t("review.sendBackToDraft")}
-            </button>
-            <button
-              onClick={handleSaveChanges}
-              disabled={saving}
-              className="px-4 py-2 text-xs font-black text-foreground bg-muted hover:bg-muted/70 rounded-xl transition-colors disabled:opacity-40"
-            >
-              {t("review.saveChanges")}
-            </button>
-            <button
-              onClick={handleApproveAndSchedule}
-              disabled={saving}
-              className="px-5 py-2 bg-primary hover:opacity-90 disabled:opacity-40 text-primary-foreground text-xs font-black rounded-xl transition-all flex items-center gap-1.5"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              {t("review.approveAndSchedule")}
-            </button>
-          </div>
+        {/* Image preview */}
+        <div>
+          <label className={LABEL_CLS}>{t("review.coverImage")}</label>
+          {!coverImageUrl ? (
+            <label className="flex flex-col items-center justify-center w-full h-28 bg-muted/20 border-2 border-dashed border-border hover:border-primary/40 rounded-xl cursor-pointer hover:bg-muted/30 transition-all group">
+              {uploading ? (
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <ImageIcon className="w-5 h-5 mb-1 text-muted-foreground/50 group-hover:scale-110 transition-transform" />
+                  <span className="text-[11px] font-bold text-muted-foreground">{t("review.uploadImage")}</span>
+                  <span className="text-[10px] text-muted-foreground/50">{t("review.noImage")}</span>
+                </>
+              )}
+              <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleImageUpload(f);
+              }} />
+            </label>
+          ) : (
+            <div className="relative w-full h-40 rounded-xl overflow-hidden border border-border group">
+              <img src={coverImageUrl} alt="" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <label className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-black rounded-lg cursor-pointer">
+                  {uploading ? t("review.uploading") : t("review.replaceImage")}
+                  <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleImageUpload(f);
+                  }} />
+                </label>
+                <button onClick={() => setCoverImageUrl("")} className="px-3 py-1.5 bg-destructive text-destructive-foreground text-xs font-black rounded-lg">
+                  {t("calendar.remove")}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+
+        {post.reviewedAt && (
+          <p className="text-[10px] text-muted-foreground font-bold">
+            {t("review.reviewedOn", { time: formatDistanceToNow(parseISO(post.reviewedAt), { addSuffix: true }) })}
+          </p>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between px-6 py-4 border-t border-border shrink-0 gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleApproveAndSchedule}
+            disabled={saving}
+            className="px-5 py-2 bg-primary hover:opacity-90 disabled:opacity-40 text-primary-foreground text-xs font-black rounded-xl transition-all flex items-center gap-1.5"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            {t("review.approveAndSchedule")}
+          </button>
+          <button
+            onClick={handleSaveChanges}
+            disabled={saving}
+            className="px-4 py-2 text-xs font-black text-foreground bg-muted hover:bg-muted/70 rounded-xl transition-colors disabled:opacity-40"
+          >
+            {t("review.saveChanges")}
+          </button>
+          <button
+            onClick={handleSendToDraft}
+            disabled={saving}
+            className="px-4 py-2 text-xs font-black text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors disabled:opacity-40 flex items-center gap-1.5"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            {t("review.sendBackToDraft")}
+          </button>
+        </div>
+        <button
+          onClick={handleReject}
+          disabled={saving}
+          className="px-4 py-2 text-xs font-black text-destructive hover:bg-destructive/10 rounded-xl transition-colors disabled:opacity-40 flex items-center gap-1.5"
+        >
+          <XCircle className="w-3.5 h-3.5" />
+          {t("review.reject")}
+        </button>
       </div>
     </div>
   );
 }
 
-/* ── empty state ─────────────────────────────────────────── */
+/* ── empty states ────────────────────────────────────────── */
 
 function EmptyState({ icon: Icon, label, spin }: { icon: any; label: string; spin?: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
+    <div className="flex flex-col items-center justify-center py-16 text-center h-full">
       <Icon className={`w-10 h-10 text-muted-foreground/20 mb-3 ${spin ? "animate-spin" : ""}`} />
       <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-60">{label}</p>
     </div>
@@ -432,17 +388,35 @@ export default function Review() {
   const { posts, isLoading } = usePosts();
   const queryClient = useQueryClient();
 
-  const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<TabKey>("needs-review");
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [bulkApproving, setBulkApproving] = useState(false);
-  const [activeTab, setActiveTab] = useState("needs-review");
 
   const needsReview = useMemo(() => posts.filter((p) => p.status === "awaiting_review"), [posts]);
   const drafts = useMemo(() => posts.filter((p) => p.status === "draft"), [posts]);
   const scheduled = useMemo(() => posts.filter((p) => p.status === "scheduled"), [posts]);
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
+  const list = useMemo(() => {
+    if (activeTab === "needs-review") return needsReview;
+    if (activeTab === "drafts") return drafts;
+    return scheduled;
+  }, [activeTab, needsReview, drafts, scheduled]);
+
+  // Derived, not stored: keeps the detail pane pointed at a real row without
+  // an effect. Falls back to the first item whenever the active tab changes
+  // or the previously open post falls out of this list (approved/rejected/
+  // sent to draft), and re-syncs itself the moment `list` updates.
+  const selectedPost = useMemo(() => {
+    if (selectedPostId) {
+      const found = list.find((p) => p.id === selectedPostId);
+      if (found) return found;
+    }
+    return list[0] ?? null;
+  }, [list, selectedPostId]);
+
+  const toggleCheck = (id: string) => {
+    setCheckedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -451,11 +425,11 @@ export default function Review() {
   };
 
   const toggleSelectAll = () => {
-    setSelectedIds((prev) => (prev.size === needsReview.length ? new Set() : new Set(needsReview.map((p) => p.id))));
+    setCheckedIds((prev) => (prev.size === needsReview.length ? new Set() : new Set(needsReview.map((p) => p.id))));
   };
 
   const handleBulkApprove = async () => {
-    const ids = Array.from(selectedIds);
+    const ids = checkedIds.size > 0 ? Array.from(checkedIds) : needsReview.map((p) => p.id);
     if (ids.length === 0) return;
     setBulkApproving(true);
     const nowIso = new Date().toISOString();
@@ -475,7 +449,7 @@ export default function Review() {
 
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       toast.success(t("review.bulkApproveSuccess", { count: ids.length }));
-      setSelectedIds(new Set());
+      setCheckedIds(new Set());
     } catch (err) {
       toast.error(t("review.bulkApproveError", { error: err instanceof Error ? err.message : String(err) }));
     } finally {
@@ -483,22 +457,45 @@ export default function Review() {
     }
   };
 
+  const emptyLabel =
+    activeTab === "needs-review" ? t("review.emptyNeedsReview") :
+    activeTab === "drafts" ? t("review.emptyDrafts") :
+    t("review.emptyScheduled");
+  const emptyIcon = activeTab === "needs-review" ? Inbox : activeTab === "drafts" ? FileText : CalendarClock;
+
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex flex-col h-[calc(100vh-8rem)] min-h-0">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
-            <Inbox className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="page-title mb-0">{t("review.title")}</h1>
-            <p className="text-sm text-muted-foreground">{t("review.subtitle")}</p>
-          </div>
+        <div className="flex items-center justify-between shrink-0 pb-4">
+          <h1 className="page-title mb-0">{t("review.title")}</h1>
+          {activeTab === "needs-review" && needsReview.length > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleSelectAll}
+                className="px-4 py-2 text-xs font-black text-foreground bg-muted hover:bg-muted/70 rounded-xl transition-colors flex items-center gap-1.5"
+              >
+                <ListChecks className="w-3.5 h-3.5" />
+                {t("review.selectAll")}
+              </button>
+              <button
+                onClick={handleBulkApprove}
+                disabled={bulkApproving}
+                className="px-4 py-2 bg-primary hover:opacity-90 disabled:opacity-40 text-primary-foreground text-xs font-black rounded-xl transition-all flex items-center gap-1.5"
+              >
+                {bulkApproving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                {bulkApproving
+                  ? t("review.approvingSelected")
+                  : checkedIds.size > 0
+                    ? t("review.approveSelected", { count: checkedIds.size })
+                    : t("review.approveAll")}
+              </button>
+            </div>
+          )}
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabKey)} className="flex flex-col flex-1 min-h-0">
+          <TabsList className="w-fit shrink-0">
             <TabsTrigger value="needs-review" className="gap-1.5">
               <Inbox className="w-3.5 h-3.5" />
               {t("review.tabNeedsReview")}
@@ -516,69 +513,39 @@ export default function Review() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Needs Review */}
-          <TabsContent value="needs-review" className="space-y-3 mt-4">
-            {needsReview.length > 0 && (
-              <div className="flex items-center justify-between px-1 py-2">
-                <div className="flex items-center gap-2">
-                  <Checkbox checked={selectedIds.size === needsReview.length && needsReview.length > 0} onCheckedChange={toggleSelectAll} />
-                  <span className="text-xs font-bold text-muted-foreground">
-                    {selectedIds.size > 0 ? t("review.selectedCount", { count: selectedIds.size }) : t("review.selectAll")}
-                  </span>
-                </div>
-                <button
-                  onClick={handleBulkApprove}
-                  disabled={selectedIds.size === 0 || bulkApproving}
-                  className="px-4 py-2 bg-primary hover:opacity-90 disabled:opacity-40 text-primary-foreground text-xs font-black rounded-xl transition-all flex items-center gap-1.5"
-                >
-                  {bulkApproving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                  {bulkApproving ? t("review.approvingSelected") : t("review.approveSelected", { count: selectedIds.size })}
-                </button>
-              </div>
-            )}
-            {isLoading ? (
-              <EmptyState icon={Loader2} label={t("review.loadingPosts")} spin />
-            ) : needsReview.length === 0 ? (
-              <EmptyState icon={Inbox} label={t("review.emptyNeedsReview")} />
-            ) : (
-              needsReview.map((post) => (
-                <PostRow
-                  key={post.id}
-                  post={post}
-                  selectable
-                  selected={selectedIds.has(post.id)}
-                  onToggleSelect={toggleSelect}
-                  onOpen={setEditingPost}
-                />
-              ))
-            )}
-          </TabsContent>
+          {/* Two-pane body: list on the left, editor on the right — always
+              visible side by side, no modal popup to open/close. */}
+          <div className="flex-1 min-h-0 flex gap-4 mt-4">
+            <div className="w-[360px] shrink-0 overflow-y-auto space-y-2 pr-1">
+              {isLoading ? (
+                <EmptyState icon={Loader2} label={t("review.loadingPosts")} spin />
+              ) : list.length === 0 ? (
+                <EmptyState icon={emptyIcon} label={emptyLabel} />
+              ) : (
+                list.map((post) => (
+                  <PostRow
+                    key={post.id}
+                    post={post}
+                    active={post.id === selectedPostId}
+                    selectable={activeTab === "needs-review"}
+                    checked={checkedIds.has(post.id)}
+                    onToggleCheck={toggleCheck}
+                    onClick={() => setSelectedPostId(post.id)}
+                  />
+                ))
+              )}
+            </div>
 
-          {/* Drafts */}
-          <TabsContent value="drafts" className="space-y-3 mt-4">
-            {isLoading ? (
-              <EmptyState icon={Loader2} label={t("review.loadingPosts")} spin />
-            ) : drafts.length === 0 ? (
-              <EmptyState icon={FileText} label={t("review.emptyDrafts")} />
-            ) : (
-              drafts.map((post) => <PostRow key={post.id} post={post} onOpen={setEditingPost} />)
-            )}
-          </TabsContent>
-
-          {/* Scheduled */}
-          <TabsContent value="scheduled" className="space-y-3 mt-4">
-            {isLoading ? (
-              <EmptyState icon={Loader2} label={t("review.loadingPosts")} spin />
-            ) : scheduled.length === 0 ? (
-              <EmptyState icon={CalendarClock} label={t("review.emptyScheduled")} />
-            ) : (
-              scheduled.map((post) => <PostRow key={post.id} post={post} onOpen={setEditingPost} />)
-            )}
-          </TabsContent>
+            <div className="flex-1 min-w-0 rounded-2xl border border-border bg-card overflow-hidden">
+              {selectedPost ? (
+                <ReviewEditorPane key={selectedPost.id} post={selectedPost} />
+              ) : (
+                <EmptyState icon={emptyIcon} label={isLoading ? t("review.loadingPosts") : emptyLabel} spin={isLoading} />
+              )}
+            </div>
+          </div>
         </Tabs>
       </div>
-
-      {editingPost && <ReviewEditorModal post={editingPost} onClose={() => setEditingPost(null)} />}
     </DashboardLayout>
   );
 }
