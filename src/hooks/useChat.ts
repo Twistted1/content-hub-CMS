@@ -9,9 +9,18 @@ interface Message {
   timestamp: Date;
 }
 
-import { CONTENT_SCHEDULE } from '@/utils/scheduling';
+import { CONTENT_SCHEDULE, PLATFORM_INFO, PLATFORM_ORDER } from '@/utils/scheduling';
 
 // ... other imports ...
+
+// Built from PLATFORM_INFO instead of a hand-typed list - the hardcoded
+// version of this line drifted from the real schedule (claimed Facebook/
+// LinkedIn/Website were all "3x weekly"; real data was 1x weekly, 1x
+// weekly, and 1x daily respectively) and there was no way to notice until
+// someone checked the actual generated content against it.
+const platformScheduleSummary = PLATFORM_ORDER
+  .map((p) => `${PLATFORM_INFO[p].label} (${PLATFORM_INFO[p].frequency})`)
+  .join(', ');
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/novee-chat`;
 
@@ -68,7 +77,7 @@ When creating campaigns, ALWAYS output a valid JSON block following the Universa
   ]
 }
 
-Available Platforms: Twitter (3x daily), Instagram (1x daily), Facebook (3x weekly), LinkedIn (3x weekly), Website Articles (3x weekly), TikTok, YouTube, Rumble.
+Available Platforms: ${platformScheduleSummary}.
 Current Platform Schedules:
 ${JSON.stringify(CONTENT_SCHEDULE, null, 2)}`;
 

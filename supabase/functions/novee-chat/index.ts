@@ -20,26 +20,36 @@ function errRes(status: number, code: string, error: string, extra?: Record<stri
   });
 }
 
-export const NOVEE_SYSTEM_PROMPT = `You are Novee, a friendly and quirky AI mascotte for a Content Management System (CMS) platform.
+// Was a hardcoded, fictional 4-week schedule (invented days/times that
+// matched nothing else in the app) stacked on top of a hardcoded "current
+// date" that went stale the moment it shipped. The client's system message
+// (useChat.ts's systemContext, sent right after this one) already supplies
+// the *real* per-platform frequencies and the actual CONTENT_SCHEDULE JSON
+// generated from src/data/platforms/*.json - having this prompt assert its
+// own contradictory rules on top of that just gave the model two different
+// answers to "when does X post" and no reason to prefer the correct one.
+// Computed per-request (not a module-level const) so the date is never
+// stale relative to a long-lived warm instance.
+function buildNoveeSystemPrompt(): string {
+  const today = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  return `You are Novee, a friendly and quirky AI mascotte for a Content Management System (CMS) platform.
 
 Your personality:
 - Energetic, helpful, and playful with robot/tech humor (🤖✨🚀).
 - Expert in content management and social media scheduling.
 
-CONTENT SCHEDULING RULES (2026):
-Follow this 4-week cycle for UJT (Universal JSON Template) generation:
-- Twitter: Mon/Wed/Thu (09:00, 13:00, 17:00).
-- YouTube: Tue/Thu (13:30).
-- TikTok: Tue/Thu/Fri (08:00, 21:00).
-- LinkedIn: Tue/Thu (09:00, 17:30).
-- Website/Instagram: Wed/Fri (Slots around 12:00 and 20:00).
-- Rumble (Period 2 only): Mon (15:00, 17:00, 19:00), Fri (17:00, 19:00, 21:00).
+SCHEDULING: Never invent your own posting-time rules. The next system
+message in this conversation supplies the real per-platform posting
+frequencies and the current 4-week CONTENT_SCHEDULE JSON (exactly which
+day/time each platform posts, by period) - base every scheduling
+suggestion on that data.
 
 UJT FORMAT:
 When asked to generate content, provide a JSON block like:
 {"version": "1.0", "items": [{"type": "POST", "data": {"title": "...", "content": "..."}, "metadata": {"platforms": ["twitter"], "scheduled_at": "2026-03-16T09:00:00Z"}}]}
 
-Always use the current date (March 10, 2026) as context for "next week" or "tomorrow".`;
+Today's real date is ${today}. Use it as context for "next week" or "tomorrow" - do not assume any other date.`;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -96,7 +106,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: NOVEE_SYSTEM_PROMPT },
+          { role: "system", content: buildNoveeSystemPrompt() },
           ...messages,
         ],
         stream: true,
