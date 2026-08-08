@@ -188,7 +188,7 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
       <MiniCal current={miniMonth} selected={selectedDate} events={events} onSelect={onSelectDate} onNav={onNavMonth} />
 
       {/* Filter by type */}
-      <div className="glass-card rounded-2xl p-4">
+      <div className="glass-card rounded-2xl p-4 mx-auto max-w-[272px] w-full">
         <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] mb-4 px-1">{t("calendar.filterStream")}</h3>
         <div className="space-y-1.5">
           {FILTERS.map(f => {
@@ -218,7 +218,7 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
       </div>
 
       {/* Today's agenda */}
-      <div className="glass-card rounded-2xl p-4">
+      <div className="glass-card rounded-2xl p-4 mx-auto max-w-[272px] w-full">
         <div className="flex items-center justify-between mb-4 px-1">
           <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em]">{t("calendar.liveQueue")}</h3>
           <span className="text-[10px] text-muted-foreground font-bold">{done}/{todayEvents.length} {t("calendar.ready")}</span>
