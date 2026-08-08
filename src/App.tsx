@@ -8,6 +8,8 @@ import { useEffect } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useUserPreferencesStore } from "@/stores/useUserPreferencesStore";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import Landing from "./pages/Landing";
 import Pricing from "./pages/Pricing";
 import Terms from "./pages/Terms";
@@ -58,9 +60,53 @@ function ThemeSync() {
   return null;
 }
 
+/**
+ * Syncs the real logged-in identity into the profile store on login. Without this,
+ * the header/sidebar/everywhere-else profile display stays on the hardcoded
+ * "Admin User" / "admin@company.com" placeholder until the user manually visits
+ * Settings > Profile and clicks Save at least once -- email is always authoritative
+ * from auth, never something to fake here.
+ */
+function ProfileSync() {
+  const { user } = useAuth();
+  const { updateProfile } = useUserPreferencesStore();
+
+  useEffect(() => {
+    if (!user?.email) return;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name, avatar_url, company_name, bio")
+        .eq("user_id", user.id)
+        .single();
+
+      const name = data?.display_name || user.email!.split("@")[0];
+      const initials = name
+        .split(/\s+/)
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
+
+      updateProfile({
+        id: user.id,
+        name,
+        email: user.email!,
+        initials,
+        avatar: data?.avatar_url ?? undefined,
+        company: data?.company_name ?? "",
+        bio: data?.bio ?? "",
+      });
+    })();
+  }, [user, updateProfile]);
+
+  return null;
+}
+
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
     <ThemeSync />
+    <ProfileSync />
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
