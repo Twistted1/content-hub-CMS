@@ -183,6 +183,63 @@ export type Database = {
         }
         Relationships: []
       }
+      csp_reports: {
+        Row: {
+          blocked_uri: string | null
+          column_number: number | null
+          created_at: string
+          disposition: string | null
+          document_uri: string | null
+          effective_directive: string | null
+          id: string
+          line_number: number | null
+          original_policy: string | null
+          raw_report: Json
+          referrer: string | null
+          script_sample: string | null
+          source_file: string | null
+          status_code: number | null
+          user_agent: string | null
+          violated_directive: string | null
+        }
+        Insert: {
+          blocked_uri?: string | null
+          column_number?: number | null
+          created_at?: string
+          disposition?: string | null
+          document_uri?: string | null
+          effective_directive?: string | null
+          id?: string
+          line_number?: number | null
+          original_policy?: string | null
+          raw_report: Json
+          referrer?: string | null
+          script_sample?: string | null
+          source_file?: string | null
+          status_code?: number | null
+          user_agent?: string | null
+          violated_directive?: string | null
+        }
+        Update: {
+          blocked_uri?: string | null
+          column_number?: number | null
+          created_at?: string
+          disposition?: string | null
+          document_uri?: string | null
+          effective_directive?: string | null
+          id?: string
+          line_number?: number | null
+          original_policy?: string | null
+          raw_report?: Json
+          referrer?: string | null
+          script_sample?: string | null
+          source_file?: string | null
+          status_code?: number | null
+          user_agent?: string | null
+          violated_directive?: string | null
+        }
+        Relationships: []
+      }
       media: {
         Row: {
           created_at: string
@@ -602,50 +659,38 @@ export type Database = {
       }
       projects: {
         Row: {
-          assignees: string[] | null
           color: string | null
           created_at: string
           description: string | null
           end_date: string | null
           id: string
           name: string
-          priority: string | null
-          progress: number | null
           start_date: string | null
           status: Database["public"]["Enums"]["project_status"]
-          tags: string[] | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          assignees?: string[] | null
           color?: string | null
           created_at?: string
           description?: string | null
           end_date?: string | null
           id?: string
           name: string
-          priority?: string | null
-          progress?: number | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
-          tags?: string[] | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          assignees?: string[] | null
           color?: string | null
           created_at?: string
           description?: string | null
           end_date?: string | null
           id?: string
           name?: string
-          priority?: string | null
-          progress?: number | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
-          tags?: string[] | null
           updated_at?: string
           user_id?: string
         }
@@ -1069,6 +1114,7 @@ export type Database = {
         | "failed"
         | "awaiting_review"
         | "generating"
+        | "rejected"
       post_type:
         | "text"
         | "image"
@@ -1236,6 +1282,7 @@ export const Constants = {
         "failed",
         "awaiting_review",
         "generating",
+        "rejected",
       ],
       post_type: [
         "text",

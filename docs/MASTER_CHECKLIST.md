@@ -8,7 +8,10 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-08-08 (Phase 6). Phase 3 (2026-07-31) was a 5-agent
+**Last verified:** 2026-08-08 (Phase 7). Phase 7 (2026-08-08) added a new
+feature, not a bug fix: a Review Inbox (`/review`, sidebar → Tools) giving
+the AI content pipeline a real human-in-the-loop approval step — see
+"Phase 7" section below. Phase 3 (2026-07-31) was a 5-agent
 independent audit against live production Supabase
 (`jvbucspwcjahqpoxskvr`), live GitHub CI/branch state, and source @
 `9115c17`. Full report: `docs/PHASE_3_READINESS_REPORT.md`. Phase 4
@@ -47,6 +50,63 @@ Remaining items are GitHub/Supabase settings only you can change, or
 decisions only you can make — see the two "Open" sections below.
 
 ---
+
+## Phase 7 — Review Inbox: human-in-the-loop approval (2026-08-08)
+
+New feature, explicitly requested — not a bug fix. The `posts` table
+already carried AI-pipeline fields (`review_requested_at`, `reviewed_at`,
+`workflow_stage`, `is_ai_generated`, status `awaiting_review`) that no UI
+ever surfaced, so AI-generated content had no real approval gate before
+going out. This phase builds that gate.
+
+- **New route `/review`** (protected), new sidebar entry under **Tools**
+  (`nav.reviewInbox`, `Inbox` icon), first item in the list.
+- **Three tabs**, each backed by the existing `usePosts()` query filtered
+  by status: **Needs Review** (`awaiting_review`), **Drafts** (`draft`),
+  **Scheduled** (`scheduled`). Tab labels show live counts.
+- **Per-post editor** (opens on row click): title input, content textarea
+  with **live per-platform character limits** — a progress bar + over-limit
+  warning per platform actually attached to that post, reusing the same
+  limits table the Calendar's event editor uses (see next point), cover
+  image preview with upload/replace via the existing `useMedia` storage
+  hook, and a date/time picker for scheduling.
+- **`src/utils/platformLimits.ts`** — extracted the per-platform character/
+  hashtag limits that used to live only inside `Calendar.tsx` (non-exported,
+  so Review couldn't reuse it) into a shared module. `Calendar.tsx` now
+  imports from here too — one table, not two that can drift.
+- **Four actions in the editor** + **bulk approve** in the Needs Review
+  list:
+  - *Approve & schedule* — `status: "scheduled"`, sets `scheduled_at` from
+    the date/time picker, stamps `reviewed_at`.
+  - *Save changes* — persists title/content/cover image without touching
+    status.
+  - *Send back to draft* — `status: "draft"`, clears `scheduled_at` (a
+    draft shouldn't carry a stale future timestamp).
+  - *Reject* — `status: "rejected"`, stamps `reviewed_at`. This needed a
+    **new DB enum value**: `post_status` had no rejected state distinct
+    from `draft` (migration `add_rejected_post_status`, applied directly to
+    prod: `ALTER TYPE post_status ADD VALUE 'rejected'`). TS types
+    regenerated from the live schema afterward. Checked every existing
+    `post_status`/`PostStatus` consumer in the codebase for exhaustive
+    switches that a new enum member could break — none exist, all are
+    plain `===` comparisons or the `t(\`calendar.status${...}\`, {
+    defaultValue })` fallback pattern, so this was a safe additive change.
+  - *Bulk approve* — checkbox per row + "Approve Selected (n)" in the
+    Needs Review tab only (per the request). Goes straight through
+    `supabase.from("posts").update(...)` per selected row instead of the
+    `usePosts().updatePost` mutation, specifically to avoid an N-toast
+    spam from that hook's per-call success toast — one bulk action gets
+    one summary toast.
+- `publish-due-posts` (the cron that actually fires posts live) only ever
+  selects `status = "scheduled"` rows — confirmed by reading the function
+  before relying on it, not assumed — so nothing here can accidentally
+  cause an un-reviewed post to publish.
+- i18n: full `review.*` namespace + `nav.reviewInbox` +
+  `calendar.statusRejected/Failed/Generating` added to both `en.json` and
+  `pt.json`.
+- Verified: `npx tsc --noEmit` clean, `npx eslint` on all changed files
+  (0 errors, pre-existing-style `any` warnings only, same pattern already
+  used elsewhere in `Calendar.tsx`/`PostCard.tsx`), `npx vite build` clean.
 
 ## Phase 6 — Stripe billing chain, actually confirmed end-to-end (2026-08-08)
 
