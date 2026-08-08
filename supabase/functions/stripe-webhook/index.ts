@@ -129,6 +129,18 @@ serve(async (req) => {
     return "free";
   };
 
+  // Stripe moved current_period_end/current_period_start off the top-level Subscription
+  // object onto each subscription item as part of flexible billing intervals -- reading
+  // the now-undefined top-level field and calling .toISOString() on the resulting
+  // Invalid Date threw "Invalid time value" and crashed the handler before the DB write
+  // ever ran. Check the item first, fall back to top-level for older data.
+  const getPeriodEndISO = (subscription: Stripe.Subscription): string | null => {
+    const itemEnd = subscription.items.data[0]?.current_period_end;
+    const topLevelEnd = (subscription as unknown as { current_period_end?: number }).current_period_end;
+    const periodEnd = typeof itemEnd === "number" ? itemEnd : (typeof topLevelEnd === "number" ? topLevelEnd : null);
+    return periodEnd !== null ? new Date(periodEnd * 1000).toISOString() : null;
+  };
+
   try {
     switch (event.type) {
       // ── Subscription activated or renewed ───────────────────────────────────
@@ -146,9 +158,9 @@ serve(async (req) => {
 
         const isActive = subscription.status === "active" || subscription.status === "trialing";
         const tier = isActive ? resolveTier(subscription) : "free";
-        const endDate = new Date(subscription.current_period_end * 1000).toISOString();
+        const endDate = isActive ? getPeriodEndISO(subscription) : null;
 
-        await upsertSubscription(userId, tier, isActive ? endDate : null);
+        await upsertSubscription(userId, tier, endDate);
         break;
       }
 
@@ -186,7 +198,7 @@ serve(async (req) => {
         if (subs.data.length > 0) {
           const subscription = subs.data[0];
           const tier = resolveTier(subscription);
-          const endDate = new Date(subscription.current_period_end * 1000).toISOString();
+          const endDate = getPeriodEndISO(subscription);
           await upsertSubscription(userId, tier, endDate);
         }
         break;
