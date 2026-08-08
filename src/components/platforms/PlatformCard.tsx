@@ -140,29 +140,6 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
             ))}
           </div>
 
-          {/* Weekly activity: always renders all 7 day-slots (filled or a low muted
-              baseline) instead of a Recharts bar chart, which rendered as a single
-              floating colored block with no visual context whenever most of the week
-              had zero posts -- looked broken even though it was technically correct. */}
-          <div className="flex items-end gap-1 h-10">
-            {platform.weeklyData.map((d, i) => {
-              const maxPosts = Math.max(1, ...platform.weeklyData.map((x) => x.posts));
-              const heightPct = d.posts > 0 ? Math.max(30, (d.posts / maxPosts) * 100) : 12;
-              return (
-                <div
-                  key={i}
-                  title={`${d.day}: ${d.posts} post${d.posts === 1 ? "" : "s"}`}
-                  className={`flex-1 rounded-sm transition-all ${d.posts > 0 ? "" : "bg-muted/40"}`}
-                  style={{
-                    height: `${heightPct}%`,
-                    backgroundColor: d.posts > 0 ? getPlatformColor(platform.id) : undefined,
-                    opacity: d.posts > 0 ? 0.85 : 1,
-                  }}
-                />
-              );
-            })}
-          </div>
-
           {/* Latest Post */}
           {platform.latestPost && (
             <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
