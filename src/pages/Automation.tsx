@@ -439,7 +439,7 @@ const AutomationPage = () => {
     <DashboardLayout>
       <div className="space-y-10">
         {/* Simple Header */}
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="page-title mb-2">{t("automation.console")}</h1>
             <p className="text-muted-foreground text-lg">
@@ -447,7 +447,7 @@ const AutomationPage = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 md:gap-4">
             <button
               onClick={async () => {
                 try {
@@ -475,7 +475,7 @@ const AutomationPage = () => {
                   queryClient.invalidateQueries({ queryKey: ["automations"] });
                 } catch (e: any) { toast.error(e.message); }
               }}
-              className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 transition-all font-bold text-sm"
+              className="flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 transition-all font-bold text-xs md:text-sm whitespace-nowrap"
             >
               <Zap className="w-4 h-4" />
               {t("automation.activateWeekly")}
@@ -483,7 +483,7 @@ const AutomationPage = () => {
             <button
               onClick={handleRunPipeline}
               disabled={isProcessingPipeline}
-              className="flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-xl hover:bg-secondary/80 transition-all font-bold text-sm"
+              className="flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-secondary text-secondary-foreground rounded-xl hover:bg-secondary/80 transition-all font-bold text-xs md:text-sm whitespace-nowrap"
             >
               <RefreshCcw className={`w-4 h-4 ${isProcessingPipeline ? 'animate-spin' : ''}`} />
               {t("automation.runMasterPipeline")}
@@ -491,7 +491,7 @@ const AutomationPage = () => {
 
             <button
               onClick={() => { setEditingAutomation(null); setPresetData(null); setDialogOpen(true); }}
-              className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all font-bold text-sm"
+              className="flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all font-bold text-xs md:text-sm whitespace-nowrap"
             >
               <Plus className="w-4 h-4" />
               {t("automation.newAutomationBtn")}
