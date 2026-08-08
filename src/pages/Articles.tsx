@@ -212,16 +212,16 @@ export default function Articles() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 group-focus-within:text-primary transition-colors" />
               <Input
                 placeholder={t("articles.searchPlaceholder")}
-                className="pl-12 bg-white/[0.03] border-white/[0.08] rounded-2xl py-6 text-sm placeholder:text-muted-foreground/40 focus:border-primary/40 focus:bg-white/[0.05] transition-all relative z-10"
+                className="pl-12 bg-white/[0.07] border-white/[0.16] rounded-2xl py-6 text-sm placeholder:text-muted-foreground/40 focus:border-primary/40 focus:bg-white/[0.10] transition-all relative z-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
-              <SelectTrigger className="w-full sm:w-[220px] bg-white/[0.03] border-white/[0.08] rounded-2xl py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-white transition-all">
+              <SelectTrigger className="w-full sm:w-[220px] bg-white/[0.07] border-white/[0.16] rounded-2xl py-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-white transition-all">
                 <SelectValue placeholder={t("articles.statusFilter")} />
               </SelectTrigger>
-              <SelectContent className="bg-background/95 backdrop-blur-xl border-white/[0.08] rounded-2xl">
+              <SelectContent className="bg-background/95 backdrop-blur-xl border-white/[0.16] rounded-2xl">
                 <SelectItem value="all" className="text-[10px] font-black uppercase tracking-widest py-3">{t("articles.allTransmissions")}</SelectItem>
                 <SelectItem value="draft" className="text-[10px] font-black uppercase tracking-widest py-3 text-amber-400">{t("articles.drafts")}</SelectItem>
                 <SelectItem value="scheduled" className="text-[10px] font-black uppercase tracking-widest py-3 text-blue-400">{t("articles.scheduled")}</SelectItem>
@@ -232,8 +232,8 @@ export default function Articles() {
 
           {/* Articles List */}
           {articles.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-white/[0.08] rounded-[2.5rem] p-24 bg-white/[0.02] animate-in fade-in zoom-in-95 duration-500">
-              <div className="w-24 h-24 rounded-[2rem] bg-white/[0.03] flex items-center justify-center mb-8 border border-white/[0.08]">
+            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-white/[0.16] rounded-[2.5rem] p-24 bg-white/[0.05] animate-in fade-in zoom-in-95 duration-500">
+              <div className="w-24 h-24 rounded-[2rem] bg-white/[0.07] flex items-center justify-center mb-8 border border-white/[0.16]">
                 <FileText className="h-10 w-10 text-muted-foreground/30" />
               </div>
               <h3 className="text-2xl font-black text-white tracking-tight uppercase mb-4">{t("articles.noContentFound")}</h3>
@@ -253,16 +253,16 @@ export default function Articles() {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[50px] rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-all" />
                   
                   <div className="flex justify-between items-center mb-6 relative z-10">
-                    <Badge variant="outline" className={cn("text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-lg border-white/[0.08]", getStatusColor(article.status))}>
+                    <Badge variant="outline" className={cn("text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-lg border-white/[0.16]", getStatusColor(article.status))}>
                       {t(STATUS_KEYS[article.status] || article.status)}
                     </Badge>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-white/[0.05] text-muted-foreground hover:text-white transition-all">
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-white/[0.10] text-muted-foreground hover:text-white transition-all">
                           <MoreHorizontal className="h-5 w-5" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-background/95 backdrop-blur-xl border-white/[0.08] rounded-2xl p-2 min-w-[180px]">
+                      <DropdownMenuContent align="end" className="bg-background/95 backdrop-blur-xl border-white/[0.16] rounded-2xl p-2 min-w-[180px]">
                         <DropdownMenuItem className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest gap-3" onClick={(e) => { e.stopPropagation(); handleEditArticle(article); }}>
                           <Edit className="h-4 w-4" /> {t("articles.editSequence")}
                         </DropdownMenuItem>
@@ -287,8 +287,8 @@ export default function Articles() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between mt-auto pt-6 border-t border-white/[0.05] relative z-10">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                  <div className="flex items-center justify-between mt-auto pt-6 border-t border-white/[0.10] relative z-10">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.07] border border-white/[0.12]">
                       <Clock className="h-3 w-3 text-muted-foreground/40" />
                       <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">
                         {format(new Date(article.updatedAt), "MMM d, yyyy")}

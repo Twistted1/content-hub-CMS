@@ -132,7 +132,7 @@ function StatCard({ title, value, badge, sub, trendUp, color }: {
   return (
     <div className="glass-card p-6 flex flex-col gap-4 hover:border-primary/40 transition-all duration-300 group">
       <div className="flex items-center justify-between">
-        <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.15em] bg-white/[0.03] border-white/[0.08] text-muted-foreground/60 py-1 px-3 rounded-xl">{badge}</Badge>
+        <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.15em] bg-white/[0.07] border-white/[0.16] text-muted-foreground/60 py-1 px-3 rounded-xl">{badge}</Badge>
         <div className={cn("w-2 h-2 rounded-full animate-pulse shadow-[0_0_8px]", trendUp ? "bg-emerald-400 shadow-emerald-400/50" : "bg-rose-400 shadow-rose-400/50")} />
       </div>
       <div>
@@ -279,7 +279,7 @@ const Index = () => {
       <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
         {/* ── Greeting Banner ─────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/[0.08] bg-zinc-950/80 backdrop-blur-3xl p-10 group">
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/[0.16] bg-zinc-950/80 backdrop-blur-3xl p-10 group">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-blue-600/10 opacity-50" />
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 blur-[100px] rounded-full animate-pulse" />
           
@@ -314,7 +314,7 @@ const Index = () => {
               <Button onClick={() => navigate("/calendar")} className="bg-primary hover:bg-primary/90 text-white font-black uppercase text-[11px] tracking-[0.2em] gap-3 px-8 py-7 rounded-2xl shadow-2xl shadow-primary/40 group active:scale-95 transition-all">
                 <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> {t("dashboard.home.newCampaign")}
               </Button>
-              <Button onClick={() => navigate("/pipeline")} variant="outline" className="bg-white/[0.03] border-white/[0.1] hover:bg-white/[0.06] text-white font-black uppercase text-[11px] tracking-[0.2em] gap-3 px-8 py-7 rounded-2xl backdrop-blur-xl active:scale-95 transition-all">
+              <Button onClick={() => navigate("/pipeline")} variant="outline" className="bg-white/[0.07] border-white/[0.20] hover:bg-white/[0.12] text-white font-black uppercase text-[11px] tracking-[0.2em] gap-3 px-8 py-7 rounded-2xl backdrop-blur-xl active:scale-95 transition-all">
                 <Eye className="w-5 h-5" /> {t("dashboard.home.reviseQueue")}
               </Button>
             </div>
@@ -377,7 +377,7 @@ const Index = () => {
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.platformHealth")}</h2>
-              <button onClick={() => navigate("/platforms")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
+              <button onClick={() => navigate("/platforms")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.07] border border-white/[0.16] hover:bg-white/[0.12] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
@@ -420,7 +420,7 @@ const Index = () => {
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.distribution")}</h2>
-              <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
+              <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.07] border border-white/[0.16] hover:bg-white/[0.12] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
@@ -462,7 +462,7 @@ const Index = () => {
                 </div>
                 <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.todaysQueueTitle")}</h2>
               </div>
-              <button onClick={() => navigate("/pipeline")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
+              <button onClick={() => navigate("/pipeline")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.07] border border-white/[0.16] hover:bg-white/[0.12] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
@@ -485,7 +485,7 @@ const Index = () => {
                   return (
                     <div key={post.id} className="flex items-center gap-4 group cursor-pointer">
                       <span className="text-[10px] font-black text-muted-foreground w-10 shrink-0 tabular-nums opacity-60 group-hover:opacity-100 transition-opacity">{timeStr}</span>
-                      <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center bg-white/[0.03] border border-white/[0.08] group-hover:border-primary/40 transition-all", cfg?.color ?? "text-muted-foreground")}>
+                      <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center bg-white/[0.07] border border-white/[0.16] group-hover:border-primary/40 transition-all", cfg?.color ?? "text-muted-foreground")}>
                         <Icon className="w-4 h-4" />
                       </div>
                       <span className="text-xs text-foreground flex-1 truncate font-bold group-hover:text-primary transition-colors">{post.title}</span>
@@ -639,13 +639,13 @@ const Index = () => {
                 <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.strategicTargets")}</h2>
                 <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">{t("dashboard.home.benchmarks")}</p>
               </div>
-              <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
+              <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.07] border border-white/[0.16] hover:bg-white/[0.12] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {goals.map(g => (
-                <div key={g.label} className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 group hover:border-primary/30 transition-all">
+                <div key={g.label} className="bg-white/[0.05] border border-white/[0.12] rounded-2xl p-6 group hover:border-primary/30 transition-all">
                   {g.change && (
                     <div className="flex justify-end mb-2">
                       <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg">{g.change}</span>
@@ -654,7 +654,7 @@ const Index = () => {
                   <p className="text-3xl font-black text-foreground tracking-tighter mb-1">{g.value}</p>
                   <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60 mb-1">{g.label}</p>
                   <p className="text-[9px] text-muted-foreground/40 font-bold">{t("dashboard.home.target", { value: g.target })}</p>
-                  <div className="h-2 bg-white/[0.05] rounded-full overflow-hidden mt-4">
+                  <div className="h-2 bg-white/[0.10] rounded-full overflow-hidden mt-4">
                     <div className={cn("h-full rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]", g.color)} style={{ width: `${g.pct}%` }} />
                   </div>
                 </div>
@@ -670,7 +670,7 @@ const Index = () => {
                 </div>
                 <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.neuralPathways")}</h2>
               </div>
-              <button onClick={() => navigate("/automation")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-primary transition-all">
+              <button onClick={() => navigate("/automation")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.07] border border-white/[0.16] hover:bg-white/[0.12] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
@@ -683,7 +683,7 @@ const Index = () => {
             ) : (
               <div className="space-y-4">
                 {automations.slice(0, 6).map((a: any) => (
-                  <div key={a.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] transition-all group">
+                  <div key={a.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.05] border border-white/[0.12] hover:bg-white/[0.08] transition-all group">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">{a.name}</p>
                       <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-50">{a.platforms?.join(", ") ?? t("dashboard.home.multiPlatform")}</p>

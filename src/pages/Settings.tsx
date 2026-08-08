@@ -31,7 +31,7 @@ export default function Settings() {
             variant="outline"
             size="icon"
             onClick={() => navigate(-1)}
-            className="shrink-0 h-12 w-12 rounded-2xl bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.08] text-white transition-all"
+            className="shrink-0 h-12 w-12 rounded-2xl bg-white/[0.07] border-white/[0.16] hover:bg-white/[0.16] text-white transition-all"
           >
             <ChevronLeft className="h-6 w-6" />
           </Button>
@@ -45,7 +45,7 @@ export default function Settings() {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-8">
-          <TabsList className="bg-white/[0.03] border border-white/[0.08] p-1.5 rounded-2xl h-auto flex flex-wrap max-w-fit">
+          <TabsList className="bg-white/[0.07] border border-white/[0.16] p-1.5 rounded-2xl h-auto flex flex-wrap max-w-fit">
             <TabsTrigger value="profile" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
               <User className="h-3.5 w-3.5" />
               <span>{t("settings.tabs.profile")}</span>

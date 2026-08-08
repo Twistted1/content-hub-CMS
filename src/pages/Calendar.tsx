@@ -200,15 +200,15 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
                 key={f.value}
                 onClick={() => onFilter(f.value)}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all group
-                  ${active ? "bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5" : "text-muted-foreground hover:bg-white/[0.03] hover:text-white"}`}
+                  ${active ? "bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5" : "text-muted-foreground hover:bg-white/[0.07] hover:text-white"}`}
               >
                 <span className="flex items-center gap-3">
-                  <span className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${cat ? cat.iconBg : "bg-white/[0.05]"} ${active ? "scale-110" : "group-hover:scale-105"}`}>
+                  <span className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${cat ? cat.iconBg : "bg-white/[0.10]"} ${active ? "scale-110" : "group-hover:scale-105"}`}>
                     {cat ? <cat.Icon className={`w-4 h-4 ${cat.iconColor}`} /> : <Diamond className="w-4 h-4 text-primary" />}
                   </span>
                   {f.label}
                 </span>
-                <span className={`text-[10px] px-2.5 py-1 rounded-lg font-black transition-all ${active ? "bg-primary/20 text-primary" : "bg-white/[0.05] text-muted-foreground"}`}>
+                <span className={`text-[10px] px-2.5 py-1 rounded-lg font-black transition-all ${active ? "bg-primary/20 text-primary" : "bg-white/[0.10] text-muted-foreground"}`}>
                   {count}
                 </span>
               </button>
@@ -224,7 +224,7 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
           <span className="text-[10px] text-muted-foreground font-bold">{done}/{todayEvents.length} {t("calendar.ready")}</span>
         </div>
         {todayEvents.length > 0 && (
-          <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden mb-5">
+          <div className="h-1.5 bg-white/[0.10] rounded-full overflow-hidden mb-5">
             <div
               className="h-full bg-gradient-to-r from-primary to-blue-500 rounded-full transition-all duration-1000 ease-out"
               style={{ width: `${todayEvents.length > 0 ? (done / todayEvents.length) * 100 : 0}%` }}
@@ -234,7 +234,7 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
         <div className="space-y-3">
           {todayEvents.length === 0 && (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <Sprout className="w-10 h-10 text-white/[0.05] mb-3" />
+              <Sprout className="w-10 h-10 text-white/[0.10] mb-3" />
               <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-40 italic">{t("calendar.nothingQueued")}</p>
             </div>
           )}
@@ -245,7 +245,7 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
               <div
                 key={evt.id}
                 onClick={() => onClickEvent(evt)}
-                className={`relative rounded-2xl overflow-hidden cursor-pointer group transition-all hover:translate-x-1 glass-hover border border-white/[0.05] ${cat.bg.replace('/10', '/5')}`}
+                className={`relative rounded-2xl overflow-hidden cursor-pointer group transition-all hover:translate-x-1 glass-hover border border-white/[0.10] ${cat.bg.replace('/10', '/5')}`}
               >
                 <div className="px-4 py-3.5">
                   <div className="flex items-center gap-3 mb-2">
@@ -285,8 +285,8 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-white/[0.01] rounded-[2.5rem] border border-white/[0.05] overflow-hidden">
-      <div className="grid grid-cols-7 text-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] py-5 border-b border-white/[0.05] sticky top-0 bg-background/80 backdrop-blur-3xl z-10">
+    <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-white/[0.03] rounded-[2.5rem] border border-white/[0.10] overflow-hidden">
+      <div className="grid grid-cols-7 text-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] py-5 border-b border-white/[0.10] sticky top-0 bg-background/80 backdrop-blur-3xl z-10">
         {DAYS.map(d => <div key={d}>{d}</div>)}
       </div>
       <div className="flex-1 grid grid-cols-7">
@@ -312,9 +312,9 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                 setDraggingId(null);
                 if (id && onDropEvent) onDropEvent(id, new Date(day));
               }}
-              className={`min-h-[150px] p-3 border-r border-b border-white/[0.03] cursor-pointer transition-all group relative
+              className={`min-h-[150px] p-3 border-r border-b border-white/[0.07] cursor-pointer transition-all group relative
                 ${!inMonth ? "opacity-10 pointer-events-none" : ""}
-                ${isDropTarget ? "bg-primary/10 ring-2 ring-inset ring-primary/40 shadow-[inset_0_0_50px_rgba(var(--primary),0.1)]" : today ? "bg-primary/[0.02]" : "hover:bg-white/[0.015]"}`}
+                ${isDropTarget ? "bg-primary/10 ring-2 ring-inset ring-primary/40 shadow-[inset_0_0_50px_rgba(var(--primary),0.1)]" : today ? "bg-primary/[0.02]" : "hover:bg-white/[0.035]"}`}
             >
               <div className="flex justify-between items-start mb-3">
                 <span className={`inline-flex items-center justify-center w-8 h-8 rounded-xl text-xs font-black transition-all
@@ -386,11 +386,11 @@ function WeekView({ current, events, onClickEvent }: any) {
           </div>
         ))}
       </div>
-      <div className="flex-1 grid grid-cols-7 border-l border-white/[0.03] min-h-[600px]">
+      <div className="flex-1 grid grid-cols-7 border-l border-white/[0.07] min-h-[600px]">
         {weekDays.map((day, i) => {
           const dayEvts = getEventsForDay(events, day);
           return (
-            <div key={i} className="min-h-[140px] p-2 border-r border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+            <div key={i} className="min-h-[140px] p-2 border-r border-b border-white/[0.07] hover:bg-white/[0.05] transition-colors">
               <div className="space-y-1.5">
                 {dayEvts.map((evt: CalEvent) => {
                   const barColor = getBarColor(evt);
@@ -916,7 +916,7 @@ export default function ContentCalendar() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setSidebarOpen(p => !p)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-muted-foreground transition-all"
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.07] border border-white/[0.16] hover:bg-white/[0.12] text-muted-foreground transition-all"
                 aria-label={t("calendar.toggleSidebar")}
               >
                 {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
@@ -931,7 +931,7 @@ export default function ContentCalendar() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder={t("calendar.searchPlaceholder")}
-                  className="w-64 bg-white/[0.02] border border-white/[0.05] rounded-xl pl-10 pr-4 py-2 text-xs text-foreground placeholder-muted-foreground/40 focus:outline-none focus:border-primary/30 transition-all"
+                  className="w-64 bg-white/[0.05] border border-white/[0.10] rounded-xl pl-10 pr-4 py-2 text-xs text-foreground placeholder-muted-foreground/40 focus:outline-none focus:border-primary/30 transition-all"
                 />
               </div>
               <div className="hidden lg:flex items-center gap-2">
@@ -944,7 +944,7 @@ export default function ContentCalendar() {
           <div className="flex-1 flex overflow-hidden">
             {/* Sidebar */}
             {sidebarOpen && (
-              <div className="w-[340px] bg-background/20 backdrop-blur-2xl border-r border-white/[0.05] p-8 shrink-0 overflow-y-auto custom-scrollbar relative z-10">
+              <div className="w-[340px] bg-background/20 backdrop-blur-2xl border-r border-white/[0.10] p-8 shrink-0 overflow-y-auto custom-scrollbar relative z-10">
                 <CalSidebar
                   events={filtered}
                   miniMonth={miniMonth}
@@ -962,9 +962,9 @@ export default function ContentCalendar() {
             {/* Main grid area */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
               {/* Toolbar */}
-              <div className="flex-shrink-0 flex items-center justify-between px-8 py-4 border-b border-white/[0.05] bg-background/20 backdrop-blur-xl">
+              <div className="flex-shrink-0 flex items-center justify-between px-8 py-4 border-b border-white/[0.10] bg-background/20 backdrop-blur-xl">
                 <div className="flex items-center gap-5">
-                  <div className="flex bg-white/[0.03] rounded-2xl p-1.5 border border-white/[0.08] backdrop-blur-md">
+                  <div className="flex bg-white/[0.07] rounded-2xl p-1.5 border border-white/[0.16] backdrop-blur-md">
                     <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/5 text-muted-foreground hover:text-white transition-all group">
                       <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
                     </button>
@@ -982,12 +982,12 @@ export default function ContentCalendar() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="flex bg-white/[0.03] border border-white/[0.08] rounded-2xl p-1.5 backdrop-blur-md">
+                  <div className="flex bg-white/[0.07] border border-white/[0.16] rounded-2xl p-1.5 backdrop-blur-md">
                     {(["month", "week", "day", "agenda"] as const).map(m => (
                       <button
                         key={m}
                         onClick={() => setViewMode(m)}
-                        className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === m ? "bg-white/10 text-white shadow-xl shadow-white/5" : "text-muted-foreground hover:text-white hover:bg-white/[0.02]"}`}
+                        className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === m ? "bg-white/10 text-white shadow-xl shadow-white/5" : "text-muted-foreground hover:text-white hover:bg-white/[0.05]"}`}
                       >
                         {t(`calendar.view${m.charAt(0).toUpperCase()}${m.slice(1)}`)}
                       </button>

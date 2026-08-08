@@ -283,7 +283,7 @@ export default function Platforms() {
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
-                className="bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.08] text-white font-black uppercase text-[10px] tracking-widest px-6 py-6 rounded-2xl transition-all"
+                className="bg-white/[0.07] border-white/[0.16] hover:bg-white/[0.16] text-white font-black uppercase text-[10px] tracking-widest px-6 py-6 rounded-2xl transition-all"
                 onClick={handleSync}
                 disabled={syncing}
               >
