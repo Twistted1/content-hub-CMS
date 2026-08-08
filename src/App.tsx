@@ -35,6 +35,7 @@ import Articles from "./pages/Articles";
 import ContentModel from "./pages/ContentModel";
 import ContentPipeline from "./pages/ContentPipeline";
 import WorkflowTest from "./pages/WorkflowTest";
+import Review from "./pages/Review";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -142,6 +143,7 @@ const App = () => (
               <Route path="/models" element={<ProtectedRoute><ContentModel /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/workflow" element={<ProtectedRoute><WorkflowTest /></ProtectedRoute>} />
+              <Route path="/review" element={<ProtectedRoute><Review /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Diamond,
   Menu,
+  Inbox,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useTranslation } from "react-i18next";
@@ -41,6 +42,7 @@ const mainNavItems = [
 ];
 
 const toolsNavItems = [
+  { icon: Inbox, labelKey: "nav.reviewInbox", href: "/review" },
   { icon: Sparkles, labelKey: "nav.aiAssistant", href: "/ai" },
   { icon: Zap, labelKey: "nav.pipeline", href: "/pipeline" },
   { icon: Settings, labelKey: "nav.automation", href: "/automation" },
