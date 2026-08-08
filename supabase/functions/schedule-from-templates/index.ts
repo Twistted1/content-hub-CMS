@@ -34,10 +34,10 @@ const SCHEDULES: Record<string, WeeklySchedule> = {
     "4": { Wednesday: ["14:00"] },
   },
   linkedin: {
-    "1": { Tuesday: ["09:00"] },
-    "2": { Tuesday: ["09:00"] },
-    "3": { Tuesday: ["09:00"] },
-    "4": { Tuesday: ["09:00"] },
+    "1": { Monday: ["09:00"], Tuesday: ["09:00"], Wednesday: ["09:00"], Thursday: ["09:00"], Friday: ["09:00"], Saturday: ["09:00"], Sunday: ["09:00"] },
+    "2": { Monday: ["09:00"], Tuesday: ["09:00"], Wednesday: ["09:00"], Thursday: ["09:00"], Friday: ["09:00"], Saturday: ["09:00"], Sunday: ["09:00"] },
+    "3": { Monday: ["09:00"], Tuesday: ["09:00"], Wednesday: ["09:00"], Thursday: ["09:00"], Friday: ["09:00"], Saturday: ["09:00"], Sunday: ["09:00"] },
+    "4": { Monday: ["09:00"], Tuesday: ["09:00"], Wednesday: ["09:00"], Thursday: ["09:00"], Friday: ["09:00"], Saturday: ["09:00"], Sunday: ["09:00"] },
   },
   tiktok: {
     "1": { Tuesday: ["19:00"], Thursday: ["19:00"], Friday: ["20:00"] },
@@ -167,6 +167,30 @@ serve(async (req) => {
 
     for (const a of automations) {
       const userId = a.user_id;
+
+      // Overlap guard: this function is invoked every 15 minutes by pg_cron,
+      // but content-pipeline's OpenAI + DALL-E calls can each take well
+      // over that on a busy first pass (many untaken slots right after a
+      // wipe), so a slow invocation can still be running when the next
+      // cron tick fires. Both would see the same "not yet taken" slots in
+      // their independent `existing` snapshot and double-create - exactly
+      // the exact-duplicate-pairs pattern seen in the data. A stale
+      // "running" row (crashed before ever reaching the success/failed
+      // update below) must not permanently wedge this automation, so only
+      // rows from the last 20 minutes - a bit over one cron interval -
+      // count as an active lock.
+      const { data: inFlight } = await admin
+        .from("automation_runs")
+        .select("id")
+        .eq("automation_id", a.id)
+        .eq("status", "running")
+        .gte("started_at", new Date(Date.now() - 20 * 60 * 1000).toISOString())
+        .limit(1);
+      if (inFlight && inFlight.length > 0) {
+        perAutomation.push({ automationId: a.id, userId, created: 0, skipped: 0, note: "skipped: previous run still in flight" });
+        continue;
+      }
+
       const platforms = new Set<string>();
       (a.platforms || []).forEach((p: string) => {
         const norm = String(p).toLowerCase().replace(/^x$/, "twitter");
