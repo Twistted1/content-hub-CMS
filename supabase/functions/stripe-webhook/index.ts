@@ -141,6 +141,12 @@ serve(async (req) => {
     return periodEnd !== null ? new Date(periodEnd * 1000).toISOString() : null;
   };
 
+  // Tracked so the response body itself shows what actually happened -- "received: true"
+  // was identical whether the DB was written or silently skipped, which is exactly how a
+  // real skip got mistaken for a real fix. Visible in Stripe's Workbench on any delivery,
+  // no log access needed.
+  let outcome: string = "unhandled_event_type";
+
   try {
     switch (event.type) {
       // ── Subscription activated or renewed ───────────────────────────────────
@@ -153,6 +159,7 @@ serve(async (req) => {
         const userId = await getUserId(customer);
         if (!userId) {
           logStep("No matching Supabase user, skipping", { customerId: customer.id, email: customer.email });
+          outcome = `skipped_no_user:customer=${customer.id}:email=${customer.email ?? "none"}`;
           break;
         }
 
@@ -161,6 +168,7 @@ serve(async (req) => {
         const endDate = isActive ? getPeriodEndISO(subscription) : null;
 
         await upsertSubscription(userId, tier, endDate);
+        outcome = `wrote:user=${userId}:tier=${tier}`;
         break;
       }
 
@@ -171,9 +179,13 @@ serve(async (req) => {
           stripe.customers.retrieve(subscription.customer as string)
         ) as Stripe.Customer;
         const userId = await getUserId(customer);
-        if (!userId) break;
+        if (!userId) {
+          outcome = `skipped_no_user:customer=${customer.id}:email=${customer.email ?? "none"}`;
+          break;
+        }
 
         await upsertSubscription(userId, "free", null);
+        outcome = `wrote:user=${userId}:tier=free`;
         break;
       }
 
@@ -184,7 +196,11 @@ serve(async (req) => {
           stripe.customers.retrieve(invoice.customer as string)
         ) as Stripe.Customer;
         const userId = await getUserId(invoiceCustomer);
-        if (!userId) break;
+        if (!userId) {
+          logStep("No matching Supabase user, skipping", { customerId: invoiceCustomer.id, email: invoiceCustomer.email });
+          outcome = `skipped_no_user:customer=${invoiceCustomer.id}:email=${invoiceCustomer.email ?? "none"}`;
+          break;
+        }
 
         // Re-check subscription to get current tier on renewal
         const subs = await withRetry("subscriptions.list", () =>
@@ -200,6 +216,9 @@ serve(async (req) => {
           const tier = resolveTier(subscription);
           const endDate = getPeriodEndISO(subscription);
           await upsertSubscription(userId, tier, endDate);
+          outcome = `wrote:user=${userId}:tier=${tier}`;
+        } else {
+          outcome = `skipped_no_active_subscription:customer=${invoice.customer}`;
         }
         break;
       }
@@ -213,11 +232,13 @@ serve(async (req) => {
           amount: invoice.amount_due,
         });
         // Don't downgrade immediately — Stripe retries. Subscription.deleted fires if all retries fail.
+        outcome = "payment_failed_noted";
         break;
       }
 
       default:
         logStep("Unhandled event type", { type: event.type });
+        outcome = `unhandled_event_type:${event.type}`;
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -226,7 +247,8 @@ serve(async (req) => {
     return new Response(`Handler error: ${message}`, { status: 500 });
   }
 
-  return new Response(JSON.stringify({ received: true }), {
+  logStep("Done", { outcome });
+  return new Response(JSON.stringify({ received: true, outcome }), {
     headers: { "Content-Type": "application/json" },
     status: 200,
   });
