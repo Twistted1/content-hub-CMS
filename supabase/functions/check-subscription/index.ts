@@ -18,6 +18,18 @@ const PRICE_TO_TIER: Record<string, { tier: "starter" | "pro"; interval: "monthl
 // Legacy product IDs (old $29 pro / $99 enterprise) — fold into "pro" for back-compat
 const LEGACY_PRO_PRODUCTS = new Set(["prod_Tu23n9E83kU6SH", "prod_Tu24enzVGb9KJl"]);
 
+// Stripe moved current_period_end/current_period_start off the top-level Subscription
+// object onto each subscription item as part of flexible billing intervals -- reading
+// the now-undefined top-level field and calling .toISOString() on the resulting
+// Invalid Date threw "Invalid time value" and crashed the whole function before it
+// could return anything. Check the item first, fall back to top-level for older data.
+function getPeriodEnd(subscription: Stripe.Subscription): number | null {
+  const itemEnd = subscription.items.data[0]?.current_period_end;
+  if (typeof itemEnd === "number") return itemEnd;
+  const topLevelEnd = (subscription as unknown as { current_period_end?: number }).current_period_end;
+  return typeof topLevelEnd === "number" ? topLevelEnd : null;
+}
+
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
@@ -102,7 +114,8 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      const periodEnd = getPeriodEnd(subscription);
+      subscriptionEnd = periodEnd !== null ? new Date(periodEnd * 1000).toISOString() : null;
       logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
 
       const item = subscription.items.data[0];
