@@ -6,23 +6,24 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  Send, 
-  Bot, 
-  User, 
-  Trash2, 
-  MessageSquare, 
-  Zap, 
-  FileText, 
-  Play, 
-  Copy, 
-  Settings, 
-  Search, 
-  CheckCircle2, 
-  Info, 
-  Menu, 
-  Calendar as CalendarIcon, 
-  Twitter, 
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Send,
+  Bot,
+  User,
+  Trash2,
+  MessageSquare,
+  Zap,
+  FileText,
+  Play,
+  Copy,
+  Settings,
+  Search,
+  CheckCircle2,
+  Info,
+  Menu,
+  Calendar as CalendarIcon,
+  Twitter,
   Instagram,
   Wand2,
   Hash,
@@ -33,13 +34,20 @@ import {
   TrendingUp,
   Plus,
   Sparkles,
-  PenTool
+  PenTool,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useChat } from "@/hooks/useChat";
 import { usePosts } from "@/hooks/usePosts";
 import { useUJT } from "@/hooks/useUJT";
 import { useNotes } from "@/hooks/useNotes";
+import { useTemplates } from "@/hooks/useTemplates";
+import { useSpeechRecognition, useSpeechSynthesisPlayer } from "@/hooks/useSpeech";
 import { NotificationsDropdown } from "@/components/header/NotificationsDropdown";
 import { UserDropdown } from "@/components/header/UserDropdown";
 import { cn } from "@/lib/utils";
@@ -147,13 +155,51 @@ function AISidebar({ onQuickAction, onNewChat }: any) {
 const AIAssistant = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { messages, isLoading, sendMessage, resetChat, addGreeting } = useChat();
+  const { messages, isLoading, sendMessage, resetChat, addGreeting, enhanceText } = useChat();
   const { addPost } = usePosts();
   const { posts } = usePosts();
   const { processUJT } = useUJT();
   const { notes } = useNotes();
+  const { templates } = useTemplates();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [enhancing, setEnhancing] = useState(false);
+
+  // Mic input — appends the transcript onto whatever was already typed
+  // rather than replacing it, so voice and keyboard input can mix.
+  const micBaseTextRef = useRef("");
+  const { supported: micSupported, listening, start: startListening, stop: stopListening } = useSpeechRecognition(
+    (finalTranscript) => {
+      if (inputRef.current) {
+        const base = micBaseTextRef.current;
+        inputRef.current.value = (base ? base + " " : "") + finalTranscript;
+      }
+    }
+  );
+  const handleMicToggle = () => {
+    if (listening) {
+      stopListening();
+    } else {
+      micBaseTextRef.current = inputRef.current?.value.trim() || "";
+      startListening();
+    }
+  };
+
+  // Voice replies — auto-speaks each new assistant message when enabled,
+  // plus a per-message play/stop button regardless of the toggle state.
+  const [voiceRepliesOn, setVoiceRepliesOn] = useState(false);
+  const { supported: ttsSupported, speakingId, speak, stop: stopSpeaking } = useSpeechSynthesisPlayer();
+  const lastSpokenIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!voiceRepliesOn || !ttsSupported || isLoading) return;
+    const last = messages[messages.length - 1];
+    if (last && last.role === "assistant" && last.id !== lastSpokenIdRef.current) {
+      lastSpokenIdRef.current = last.id;
+      speak(last.content, last.id);
+    }
+  }, [messages, isLoading, voiceRepliesOn, ttsSupported, speak]);
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -170,6 +216,37 @@ const AIAssistant = () => {
     const val = inputRef.current.value;
     inputRef.current.value = "";
     await sendMessage(val);
+  };
+
+  const handleEnhance = async () => {
+    const draft = inputRef.current?.value.trim();
+    if (!draft) {
+      toast({ title: t("aiAssistant.enhanceEmptyTitle"), description: t("aiAssistant.enhanceEmptyDesc") });
+      return;
+    }
+    setEnhancing(true);
+    try {
+      const improved = await enhanceText(draft);
+      if (improved && inputRef.current) {
+        inputRef.current.value = improved;
+        inputRef.current.focus();
+      }
+    } catch (err) {
+      toast({
+        title: t("aiAssistant.enhanceFailedTitle"),
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
+  const handleInsertTemplate = (content: string) => {
+    if (inputRef.current) {
+      inputRef.current.value = content;
+      inputRef.current.focus();
+    }
   };
 
   const handleProcessCampaign = async (jsonStr: string) => {
@@ -226,6 +303,23 @@ const AIAssistant = () => {
             </div>
 
             <div className="flex items-center gap-4">
+              <button
+                type="button"
+                disabled={!ttsSupported}
+                onClick={() => {
+                  const next = !voiceRepliesOn;
+                  setVoiceRepliesOn(next);
+                  if (!next) stopSpeaking();
+                }}
+                title={!ttsSupported ? t("aiAssistant.voiceUnsupported") : voiceRepliesOn ? t("aiAssistant.voiceRepliesOn") : t("aiAssistant.voiceRepliesOff")}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all",
+                  voiceRepliesOn ? "bg-primary/10 text-primary border-primary/30" : "bg-muted text-muted-foreground border-border hover:text-foreground",
+                  !ttsSupported && "opacity-40 cursor-not-allowed"
+                )}
+              >
+                {voiceRepliesOn ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+              </button>
               <div className="relative group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-foreground transition-colors" />
                 <input
@@ -278,9 +372,18 @@ const AIAssistant = () => {
                         )}
 
                         <div className={cn(
-                          "absolute top-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-y-[-100%] pb-1",
+                          "absolute top-0 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity translate-y-[-100%] pb-1",
                           m.role === "user" ? "right-0" : "left-0"
                         )}>
+                          {m.role === "assistant" && ttsSupported && (
+                            <button
+                              onClick={() => (speakingId === m.id ? stopSpeaking() : speak(m.content, m.id))}
+                              title={speakingId === m.id ? t("aiAssistant.stopSpeaking") : t("aiAssistant.speakMessage")}
+                              className="text-muted-foreground/50 hover:text-primary transition-colors"
+                            >
+                              {speakingId === m.id ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                            </button>
+                          )}
                           <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50">
                             {format(new Date(m.timestamp), "h:mm a")}
                           </span>
@@ -322,11 +425,47 @@ const AIAssistant = () => {
                     />
                     <div className="px-8 pb-6 flex items-center justify-between border-t border-border/50 pt-4">
                       <div className="flex gap-3">
-                        <button title={t("aiAssistant.enhancePrompt")} className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all border border-border">
-                          <Sparkles className="w-4 h-4" />
+                        <button
+                          type="button"
+                          title={t("aiAssistant.enhancePrompt")}
+                          onClick={handleEnhance}
+                          disabled={enhancing}
+                          className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all border border-border disabled:opacity-50"
+                        >
+                          {enhancing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                         </button>
-                        <button title={t("aiAssistant.editTemplate")} className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all border border-border">
-                          <PenTool className="w-4 h-4" />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button type="button" title={t("aiAssistant.editTemplate")} className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all border border-border">
+                              <PenTool className="w-4 h-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-64">
+                            {templates.length === 0 ? (
+                              <div className="px-3 py-2 text-xs text-muted-foreground">{t("aiAssistant.noTemplates")}</div>
+                            ) : (
+                              templates.map((tpl) => (
+                                <DropdownMenuItem key={tpl.id} onClick={() => handleInsertTemplate(tpl.content || tpl.description || "")}>
+                                  {tpl.name}
+                                </DropdownMenuItem>
+                              ))
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <button
+                          type="button"
+                          title={!micSupported ? t("aiAssistant.micUnsupported") : listening ? t("aiAssistant.micStop") : t("aiAssistant.micStart")}
+                          disabled={!micSupported}
+                          onClick={handleMicToggle}
+                          className={cn(
+                            "p-2 rounded-xl transition-all border",
+                            listening
+                              ? "bg-destructive/10 text-destructive border-destructive/30 animate-pulse"
+                              : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 border-border",
+                            !micSupported && "opacity-40 cursor-not-allowed"
+                          )}
+                        >
+                          {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                         </button>
                       </div>
                       <Button

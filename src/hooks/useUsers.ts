@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "./useAuth";
 
 export interface User {
   id: string;
@@ -16,6 +17,7 @@ export interface User {
 
 export function useUsers(options: { includeInvitations?: boolean } = {}) {
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
   const includeInvitations = options.includeInvitations ?? false;
 
   const { data: users = [], isLoading, error } = useQuery({
@@ -49,7 +51,7 @@ export function useUsers(options: { includeInvitations?: boolean } = {}) {
         name: profile.display_name || profile.email || "Unknown",
         email: profile.email || "",
         role: rolesMap.get(profile.user_id) || "user",
-        status: "active" as const,
+        status: (profile.status === "inactive" ? "inactive" : "active") as "active" | "inactive",
         lastActive: undefined,
         joinedDate: new Date(profile.created_at).toLocaleDateString(),
         avatar: profile.avatar_url || "",
@@ -98,6 +100,11 @@ export function useUsers(options: { includeInvitations?: boolean } = {}) {
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<User> }) => {
       const dbUpdates: any = {};
       if (updates.name) dbUpdates.display_name = updates.name;
+      // Was silently dropped before - the "Activate"/"Deactivate" actions
+      // called this with { status } and nothing ever wrote it anywhere, so
+      // the toggle reverted on every reload. profiles.status is a real
+      // column now (RLS already lets admins update other users' rows).
+      if (updates.status) dbUpdates.status = updates.status;
 
       if (Object.keys(dbUpdates).length > 0) {
         const { error } = await supabase
@@ -126,13 +133,27 @@ export function useUsers(options: { includeInvitations?: boolean } = {}) {
 
   const deleteUser = useMutation({
     mutationFn: async (id: string) => {
-      const isPending = users.find(u => u.id === id)?.status === "pending";
-      if (isPending) {
+      const target = users.find(u => u.id === id);
+      if (target?.status === "pending") {
         const { error } = await (supabase as any).from("invitations").delete().eq("id", id);
         if (error) throw error;
-      } else {
-        toast.info("User deactivated");
+        return;
       }
+
+      // Was a total no-op for anyone who wasn't a pending invitation - it
+      // just showed a toast and never touched the database, so the row
+      // reappeared on every refresh. Deleting Supabase Auth accounts needs
+      // the service role key (not available client-side), so "Remove"
+      // here means what a Team Members list actually needs: drop them from
+      // profiles/user_roles so they disappear from every admin view. Their
+      // auth login itself isn't deleted.
+      if (id === currentUser?.id) {
+        throw new Error("You can't remove your own account");
+      }
+      const { error: roleError } = await supabase.from("user_roles").delete().eq("user_id", id);
+      if (roleError) throw roleError;
+      const { error: profileError } = await supabase.from("profiles").delete().eq("user_id", id);
+      if (profileError) throw profileError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });

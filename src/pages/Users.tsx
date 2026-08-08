@@ -144,22 +144,19 @@ const UsersPage = () => {
     }
   };
 
+  // Deliberately no optimistic toast here — deleteUser's own onSuccess/
+  // onError (in useUsers) already reports the real outcome. Firing a
+  // "removed" toast unconditionally before the mutation even resolves is
+  // exactly how a genuine failure (self-removal guard, a denied RLS write)
+  // used to look identical to success: a cheerful toast and a row that's
+  // still sitting right there.
   const handleDeleteUser = (userId: string) => {
-    const user = users.find((u) => u.id === userId);
     deleteUser(userId);
     setSelectedUsers(selectedUsers.filter((id) => id !== userId));
-    toast({
-      title: t("users.userRemoved"),
-      description: t("users.userRemovedDesc", { name: user?.name || "User" }),
-    });
   };
 
   const handleBulkDelete = () => {
     selectedUsers.forEach(id => deleteUser(id));
-    toast({
-      title: t("users.usersRemoved"),
-      description: t("users.usersRemovedDesc", { count: selectedUsers.length }),
-    });
     setSelectedUsers([]);
   };
 
