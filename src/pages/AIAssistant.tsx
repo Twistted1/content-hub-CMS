@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Send,
   Bot,
@@ -93,7 +95,7 @@ function AISidebar({ onQuickAction, onNewChat }: any) {
     { text: t("aiAssistant.tip4"), icon: "📊" },
   ];
   return (
-    <aside className="w-[310px] bg-card border-r border-border flex flex-col h-full overflow-y-auto custom-scrollbar">
+    <aside className="w-full md:w-[310px] bg-card border-r border-border flex flex-col h-full overflow-y-auto custom-scrollbar">
       <div className="p-6">
         <div className="flex items-center gap-4 mb-8">
           <Button variant="ghost" className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary hover:text-white hover:bg-primary transition-all">
@@ -163,6 +165,17 @@ const AIAssistant = () => {
   const { templates } = useTemplates();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+
+  // AISidebar was a fixed 310px inline column regardless of viewport - on a
+  // phone that left almost nothing for the chat panel, which is exactly the
+  // vertical-wrapped-text overflow seen on mobile. Same fix as Calendar's
+  // sidebar: an overlay Sheet on mobile, closed by default, instead of a
+  // column that shares layout flow with the chat.
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false);
+  }, [isMobile]);
 
   const [enhancing, setEnhancing] = useState(false);
 
@@ -286,23 +299,41 @@ const AIAssistant = () => {
   return (
     <DashboardLayout>
       <div className="flex bg-transparent overflow-hidden h-[calc(100vh-8rem)]">
-        <AISidebar onQuickAction={handleQuickAction} onNewChat={handleNewChat} />
-        
+        {isMobile ? (
+          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <SheetContent side="left" className="w-[85vw] max-w-[310px] p-0 bg-card border-border overflow-y-auto custom-scrollbar">
+              <AISidebar onQuickAction={(prompt: string) => { handleQuickAction(prompt); setSidebarOpen(false); }} onNewChat={() => { handleNewChat(); setSidebarOpen(false); }} />
+            </SheetContent>
+          </Sheet>
+        ) : (
+          <AISidebar onQuickAction={handleQuickAction} onNewChat={handleNewChat} />
+        )}
+
         <div className="flex-1 flex flex-col min-w-0 relative">
-          <div className="px-8 py-4 flex items-center justify-between z-30">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
-                <h1 className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground">{t("aiAssistant.strategyConsole")}</h1>
+          <div className="px-4 md:px-8 py-3 md:py-4 flex items-center justify-between gap-2 z-30">
+            <div className="flex items-center gap-2 md:gap-6 min-w-0">
+              {isMobile && (
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label={t("aiAssistant.title")}
+                  className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-white/[0.07] border border-border text-muted-foreground"
+                >
+                  <Menu className="w-4 h-4" />
+                </button>
+              )}
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)] shrink-0" />
+                <h1 className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground truncate">{t("aiAssistant.strategyConsole")}</h1>
               </div>
-              <div className="h-4 w-px bg-border/50" />
-              <div className="flex items-center gap-2">
+              <div className="h-4 w-px bg-border/50 hidden sm:block" />
+              <div className="items-center gap-2 hidden sm:flex">
                 <Bot className="h-3 w-3 text-primary" />
                 <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{t("aiAssistant.activeAssistant")}</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4 shrink-0">
               <button
                 type="button"
                 disabled={!ttsSupported}
@@ -313,14 +344,14 @@ const AIAssistant = () => {
                 }}
                 title={!ttsSupported ? t("aiAssistant.voiceUnsupported") : voiceRepliesOn ? t("aiAssistant.voiceRepliesOn") : t("aiAssistant.voiceRepliesOff")}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all",
+                  "flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all shrink-0",
                   voiceRepliesOn ? "bg-primary/10 text-primary border-primary/30" : "bg-muted text-muted-foreground border-border hover:text-foreground",
                   !ttsSupported && "opacity-40 cursor-not-allowed"
                 )}
               >
                 {voiceRepliesOn ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
               </button>
-              <div className="relative group">
+              <div className="relative group hidden sm:block">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-foreground transition-colors" />
                 <input
                   type="text"
@@ -331,8 +362,8 @@ const AIAssistant = () => {
             </div>
           </div>
 
-          <main className="flex-1 overflow-hidden flex flex-col items-center pt-8">
-            <div className="w-full max-w-4xl flex-1 flex flex-col px-6">
+          <main className="flex-1 overflow-hidden flex flex-col items-center pt-4 md:pt-8">
+            <div className="w-full max-w-4xl flex-1 flex flex-col px-3 md:px-6">
               <ScrollArea className="flex-1 pr-4 custom-scrollbar mb-4">
                 <div className="flex-1 overflow-y-auto space-y-6 px-4 py-8 custom-scrollbar mb-4" id="chat-messages">
                 {messages.map((m) => {
@@ -420,11 +451,11 @@ const AIAssistant = () => {
                           handleSend();
                         }
                       }}
-                      className="min-h-[100px] max-h-[300px] w-full bg-transparent border-none focus-visible:ring-0 text-foreground placeholder-muted-foreground text-sm px-8 py-6 resize-none custom-scrollbar font-medium"
+                      className="min-h-[100px] max-h-[300px] w-full bg-transparent border-none focus-visible:ring-0 text-foreground placeholder-muted-foreground text-sm px-4 md:px-8 py-4 md:py-6 resize-none custom-scrollbar font-medium"
                       disabled={isLoading}
                     />
-                    <div className="px-8 pb-6 flex items-center justify-between border-t border-border/50 pt-4">
-                      <div className="flex gap-3">
+                    <div className="px-3 md:px-8 pb-4 md:pb-6 flex items-center justify-between gap-2 border-t border-border/50 pt-3 md:pt-4">
+                      <div className="flex gap-1.5 md:gap-3">
                         <button
                           type="button"
                           title={t("aiAssistant.enhancePrompt")}
@@ -471,9 +502,9 @@ const AIAssistant = () => {
                       <Button
                         onClick={handleSend}
                         disabled={isLoading}
-                        className="h-12 px-8 rounded-2xl bg-gradient-to-r from-primary to-[#a855f7] hover:opacity-90 text-white font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-primary/20 border-0"
+                        className="h-9 md:h-12 px-3 md:px-8 rounded-2xl bg-gradient-to-r from-primary to-[#a855f7] hover:opacity-90 text-white font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-primary/20 border-0 shrink-0"
                       >
-                        <span className="mr-2">{t("aiAssistant.sendMessage")}</span>
+                        <span className="mr-2 hidden sm:inline">{t("aiAssistant.sendMessage")}</span>
                         <Send className="w-4 h-4" />
                       </Button>
                     </div>
