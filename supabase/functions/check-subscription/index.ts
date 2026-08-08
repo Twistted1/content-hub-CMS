@@ -59,7 +59,7 @@ serve(async (req) => {
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-    logStep("Stripe key verified");
+    logStep("Stripe key verified", { prefix: stripeKey.slice(0, 12) });
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
@@ -133,8 +133,11 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const stack = error instanceof Error ? error.stack : undefined;
-    logStep("ERROR", { message: errorMessage, stack });
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    const stripeType = (error as { type?: string })?.type;
+    const stripeCode = (error as { code?: string })?.code;
+    const stripeStatus = (error as { statusCode?: number })?.statusCode;
+    logStep("ERROR", { message: errorMessage, stack, stripeType, stripeCode, stripeStatus });
+    return new Response(JSON.stringify({ error: errorMessage, stripeType, stripeCode, stripeStatus }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
