@@ -8,8 +8,19 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-08-08 (Phase 7). Phase 7 (2026-08-08) added a new
-feature, not a bug fix: a Review Inbox (`/review`, sidebar → Tools) giving
+**Last verified:** 2026-08-08 (Phase 8). Phase 8 (2026-08-08) is a
+user-driven bug-fix pass across four separate reports in one day: the
+Review Inbox redesigned from a modal into a persistent split-pane layout
+plus a tag-contrast fix, a global dark-theme/glassmorphism contrast pass
+(borders and panel edges were nearly invisible against the background),
+the Calendar sidebar's three panels resized to match widths, and — the
+two substantive ones — the AI Assistant (was failing on every message,
+two composer buttons had no handler at all) and the Users page (Remove
+and Deactivate were both silent no-ops that never touched the database).
+See "Phase 8" section below for all of it, including **one item that
+needs your action** — marked 🔴 in that section and in "Open, waiting on
+you" below. Phase 7 (2026-08-08) added a new feature, not a bug fix: a
+Review Inbox (`/review`, sidebar → Tools) giving
 the AI content pipeline a real human-in-the-loop approval step — see
 "Phase 7" section below. Phase 3 (2026-07-31) was a 5-agent
 independent audit against live production Supabase
@@ -45,11 +56,98 @@ Everything else re-checked (RLS, auth, CI, i18n, CSP, secrets) held up
 with no regressions. See "Open — found in Phase 3 audit, today" below
 for the remaining non-blocking cleanup item (edge function drift).
 
-**Open, waiting on you:** nothing code-related is blocking core CMS use.
-Remaining items are GitHub/Supabase settings only you can change, or
-decisions only you can make — see the two "Open" sections below.
+**Open, waiting on you:** 🔴 **`OPENAI_API_KEY` needs to be checked/set in
+the Supabase project's Edge Function secrets** — the AI Assistant fails on
+every message and the evidence points at this (see "Phase 8" below); I
+have no tool that can read or set project secrets, so this one is
+genuinely only actionable by you. Beyond that, nothing else code-related
+is blocking core CMS use — remaining items are GitHub/Supabase settings
+only you can change, or decisions only you can make — see the two "Open"
+sections below.
 
 ---
+
+## Phase 8 — Four user-reported bugs in one pass (2026-08-08)
+
+- [x] **Review Inbox redesigned: modal → persistent split-pane.** The
+      first cut of Phase 7 opened the per-post editor as a centered modal
+      over the list; the user wanted a Gmail-style layout with the list
+      and editor both on screen at once. Rebuilt as list (left) + editor
+      (right), auto-advancing to the next post after Approve/Reject/Send
+      to draft, Select-all/Approve-all moved into the page header. Then a
+      follow-up fix: the "TWITTER" platform tag was rendering unreadable
+      (white text on `platformColors.twitter`'s near-white `#F8FAFC` fill)
+      — added a luminance-based contrast check so tags pick black or
+      white text off their actual fill color, plus squared the tag
+      corners off (`rounded-sm`, not `rounded-full`) per an established
+      no-rounded-corners preference.
+- [x] **Dark theme / glassmorphism contrast — fixed globally.** Report:
+      "the app is too dark and the lines are invisible." Root cause was
+      two-fold: `--background`/`--card`/`--border` were packed within ~11
+      points of HSL lightness (4/6/15), and ~90 hardcoded
+      `border-white/[0.0X]` / `bg-white/[0.0X]` classes across Sidebar,
+      Calendar, Index, Platforms, Settings, Articles, and ContentPipeline
+      were tuned for the old near-black background (some as low as 1-2%
+      opacity). Widened the CSS variable ladder and ran one consistent
+      opacity remap across all of them. Spot-checked via a local preview
+      build + Playwright screenshot of Landing/Auth (the only pages this
+      sandbox can reach without live Supabase auth) — borders that were
+      flush with the background are now clearly visible.
+- [x] **Calendar sidebar panel widths — fixed.** The mini calendar card
+      was the only one of the sidebar's three panels capped at
+      `max-w-[272px] mx-auto`; Filter Stream and Live Queue had no width
+      constraint and stretched to fill the column, reading as
+      misaligned edges. Applied the same cap to all three.
+- [x] **AI Assistant was failing on every message; Enhance/Insert
+      Template did nothing — fixed what's fixable, one item needs you.**
+      `novee-chat` now returns a stable `code` plus the real failure
+      reason (including OpenAI's own truncated error text) in every
+      error response instead of a generic "AI service temporarily
+      unavailable" — this project's Supabase log viewer only shows HTTP
+      status lines, not thrown error text (same limitation hit during
+      the Stripe webhook debugging in Phase 6), so the response body is
+      the only place that detail can live. `useChat` now shows that real
+      reason inline in the chat bubble and toast instead of a hardcoded
+      apology. Deployed (`novee-chat` v40). "Enhance prompt" now actually
+      rewrites the draft via the assistant; "Insert template" is a
+      dropdown of the user's saved templates — both were dead buttons
+      with no `onClick` at all. Added voice input (mic → Web Speech
+      Recognition into the composer) and voice output (auto-read toggle
+      + per-message play/stop via Speech Synthesis), both gracefully
+      disabled with a tooltip where the browser doesn't implement the
+      API. 🔴 **What's still open:** every observed failure was a fast
+      500 with the OpenAI stream never starting — the signature of
+      `OPENAI_API_KEY` being missing or invalid in this Supabase
+      project's Edge Function secrets. No tool available in this session
+      can read or write Supabase project secrets (confirmed by search —
+      the Supabase MCP surface here covers DB migrations, SQL, edge
+      function *code* deploy, and logs, but not secrets management), so
+      this is a check/fix only doable from the Supabase dashboard
+      (Project Settings → Edge Functions → Secrets) or `supabase secrets
+      set OPENAI_API_KEY=...` via CLI. A redeploy after setting it isn't
+      required (secrets are read fresh per invocation, unlike the warm-
+      instance caching issue hit with `STRIPE_WEBHOOK_SECRET` in Phase 6)
+      but doesn't hurt. Once set, the improved error handling above will
+      immediately show if the real problem is something else instead.
+- [x] **Users page: Remove and Deactivate were both silent no-ops —
+      fixed.** `deleteUser` only ever handled pending invitations; for
+      any real team member it just showed a fake "User deactivated"
+      toast and touched nothing, so the row was still there on refresh.
+      Full Supabase Auth account deletion needs the service role key
+      (not available client-side); "Remove" now does what a Team Members
+      list actually needs — deletes their `user_roles` and `profiles`
+      rows so they disappear from every admin view (the underlying login
+      itself is untouched, and removing your own account is blocked).
+      Activate/Deactivate had the identical shape of bug: `updateUser`
+      never read `updates.status` at all. Added a real `profiles.status`
+      column (migration `add_status_to_profiles`; RLS already let admins
+      write other users' profile rows, so no policy change was needed)
+      and wired the write. Also removed a page-level "User removed" toast
+      that fired unconditionally *before* the mutation resolved — it made
+      a genuine failure (e.g. the new self-removal guard) look identical
+      to success.
+- Verified throughout: `npx tsc --noEmit` clean, `npx eslint` clean
+  (pre-existing-style `any` warnings only), `npx vite build` clean.
 
 ## Phase 7 — Review Inbox: human-in-the-loop approval (2026-08-08)
 
