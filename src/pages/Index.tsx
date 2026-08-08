@@ -289,7 +289,7 @@ const Index = () => {
                 <span className="h-[1px] w-8 bg-primary/50" />
                 <p className="text-[11px] font-black uppercase tracking-[0.4em] text-primary">{dayLabel}</p>
               </div>
-              <h1 className="text-5xl font-black tracking-tighter text-white mb-4 leading-[0.9]">
+              <h1 className="text-3xl font-black tracking-tighter text-white mb-4 leading-[0.9]">
                 {greeting},<br />
                 <span className="head-neon">{userName.charAt(0).toUpperCase() + userName.slice(1)}</span> 👋
               </h1>
