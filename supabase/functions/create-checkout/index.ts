@@ -81,17 +81,18 @@ serve(async (req) => {
     }
 
     // Build redirect URLs from a server-controlled allowlist to prevent open-redirect attacks
-    // via a caller-controlled Origin header.
+    // via a caller-controlled Origin header. SITE_URL (the real production domain) is the only
+    // legitimate default -- no hardcoded preview-host fallback here, that was stale leftover
+    // from before this project moved off Lovable and silently redirected real payments to a
+    // dead page.
+    const PRODUCTION_URL = "https://content-cms-hub.vercel.app";
     const ALLOWED_ORIGINS = new Set<string>(
-      [
-        Deno.env.get("SITE_URL"),
-        "https://id-preview--31c64459-d7d6-45e8-9eeb-bedede902146.lovable.app",
-      ].filter((v): v is string => !!v),
+      [Deno.env.get("SITE_URL"), PRODUCTION_URL].filter((v): v is string => !!v),
     );
     const requestOrigin = req.headers.get("origin") ?? "";
     const origin = ALLOWED_ORIGINS.has(requestOrigin)
       ? requestOrigin
-      : (Deno.env.get("SITE_URL") || "https://id-preview--31c64459-d7d6-45e8-9eeb-bedede902146.lovable.app");
+      : (Deno.env.get("SITE_URL") || PRODUCTION_URL);
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create({

@@ -7,6 +7,27 @@ const logStep = (step: string, details?: unknown) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
+// Retries transient failures (network blips, Stripe 5xx/429) up to twice with backoff.
+// Does NOT retry 4xx client errors (bad request, auth) since retrying those just repeats
+// the same failure.
+async function withRetry<T>(label: string, fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const status = (err as { statusCode?: number })?.statusCode;
+      const isClientError = typeof status === "number" && status >= 400 && status < 500;
+      const message = err instanceof Error ? err.message : String(err);
+      logStep(`${label} failed (attempt ${i + 1}/${attempts})`, { message, status });
+      if (isClientError || i === attempts - 1) throw err;
+      await new Promise((r) => setTimeout(r, 300 * Math.pow(3, i)));
+    }
+  }
+  throw lastErr;
+}
+
 serve(async (req) => {
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -30,7 +51,7 @@ serve(async (req) => {
 
   try {
     event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
-    logStep("Webhook verified", { type: event.type });
+    logStep("Webhook verified", { type: event.type, id: event.id });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logStep("Webhook verification failed", { message });
@@ -82,7 +103,8 @@ serve(async (req) => {
         { onConflict: "user_id" }
       );
     if (error) {
-      logStep("Failed to upsert subscription", { userId, tier, error: error.message });
+      logStep("Failed to upsert subscription", { userId, tier, error: error.message, code: error.code, details: error.details, hint: error.hint });
+      throw new Error(`DB upsert failed: ${error.message}`);
     } else {
       logStep("Subscription synced", { userId, tier, endDate });
     }
@@ -109,13 +131,18 @@ serve(async (req) => {
 
   try {
     switch (event.type) {
-      // ── Subscription activated or renewed ──────────────────────────────────
+      // ── Subscription activated or renewed ───────────────────────────────────
       case "customer.subscription.created":
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
+        const customer = await withRetry("customers.retrieve", () =>
+          stripe.customers.retrieve(subscription.customer as string)
+        ) as Stripe.Customer;
         const userId = await getUserId(customer);
-        if (!userId) break;
+        if (!userId) {
+          logStep("No matching Supabase user, skipping", { customerId: customer.id, email: customer.email });
+          break;
+        }
 
         const isActive = subscription.status === "active" || subscription.status === "trialing";
         const tier = isActive ? resolveTier(subscription) : "free";
@@ -125,10 +152,12 @@ serve(async (req) => {
         break;
       }
 
-      // ── Subscription cancelled or expired ──────────────────────────────────
+      // ── Subscription cancelled or expired ───────────────────────────────────
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
+        const customer = await withRetry("customers.retrieve", () =>
+          stripe.customers.retrieve(subscription.customer as string)
+        ) as Stripe.Customer;
         const userId = await getUserId(customer);
         if (!userId) break;
 
@@ -136,19 +165,23 @@ serve(async (req) => {
         break;
       }
 
-      // ── Invoice paid (successful renewal) ─────────────────────────────────
+      // ── Invoice paid (successful renewal) ─────────────────────────────
       case "invoice.paid": {
         const invoice = event.data.object as Stripe.Invoice;
-        const invoiceCustomer = await stripe.customers.retrieve(invoice.customer as string) as Stripe.Customer;
+        const invoiceCustomer = await withRetry("customers.retrieve", () =>
+          stripe.customers.retrieve(invoice.customer as string)
+        ) as Stripe.Customer;
         const userId = await getUserId(invoiceCustomer);
         if (!userId) break;
 
         // Re-check subscription to get current tier on renewal
-        const subs = await stripe.subscriptions.list({
-          customer: invoice.customer as string,
-          status: "active",
-          limit: 1,
-        });
+        const subs = await withRetry("subscriptions.list", () =>
+          stripe.subscriptions.list({
+            customer: invoice.customer as string,
+            status: "active",
+            limit: 1,
+          })
+        );
 
         if (subs.data.length > 0) {
           const subscription = subs.data[0];
@@ -159,7 +192,7 @@ serve(async (req) => {
         break;
       }
 
-      // ── Payment failed ─────────────────────────────────────────────────────
+      // ── Payment failed ──────────────────────────────────────────
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
         logStep("Payment failed", {
@@ -176,7 +209,8 @@ serve(async (req) => {
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    logStep("ERROR handling event", { type: event.type, message });
+    const stack = err instanceof Error ? err.stack : undefined;
+    logStep("ERROR handling event", { type: event.type, id: event.id, message, stack });
     return new Response(`Handler error: ${message}`, { status: 500 });
   }
 
