@@ -9,7 +9,6 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import { platforms as platformIdentities, platformColors } from "@/components/platforms/platformsData";
 import { getPlatformLimit } from "@/utils/platformLimits";
 import { format, parseISO, formatDistanceToNow } from "date-fns";
@@ -50,12 +49,29 @@ const LABEL_CLS = "block text-[10px] font-black uppercase tracking-widest text-m
 
 /* ── small tags ──────────────────────────────────────────── */
 
+// platformColors is tuned for tinting icons on a dark surface, where
+// near-white values like Twitter/X's #F8FAFC read fine. Used as a *solid
+// fill* behind white text (as these tags do), that same near-white color
+// makes the label unreadable - white text vanishes onto a near-white chip.
+// Pick black or white text per-tag based on the fill's actual luminance
+// instead of assuming white always works.
+function getContrastText(hex: string): string {
+  if (!hex.startsWith("#")) return "#FFFFFF";
+  const clean = hex.slice(1);
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 150 ? "#0a0a0a" : "#FFFFFF";
+}
+
+// rounded-sm, not rounded-full/rounded-md - square-ish tags, not pills.
 function PlatformTag({ platform }: { platform: string }) {
   const color = platformColors[platform.toLowerCase()] || "hsl(var(--primary))";
   return (
     <span
-      className="text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-md text-white shrink-0"
-      style={{ backgroundColor: color }}
+      className="text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-sm shrink-0"
+      style={{ backgroundColor: color, color: getContrastText(color) }}
     >
       {platform}
     </span>
@@ -65,7 +81,7 @@ function PlatformTag({ platform }: { platform: string }) {
 function AiTag() {
   const { t } = useTranslation();
   return (
-    <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-md bg-muted text-muted-foreground shrink-0">
+    <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-sm bg-muted text-muted-foreground shrink-0">
       <Sparkles className="w-2.5 h-2.5" />
       {t("review.aiGenerated")}
     </span>
@@ -82,9 +98,15 @@ function StatusBadge({ status }: { status: string }) {
     status === "rejected" ? "bg-destructive/10 text-destructive border-destructive/20" :
     "bg-primary/10 text-primary border-primary/20";
   return (
-    <Badge variant="outline" className={`text-[10px] shrink-0 ${variant}`}>
+    // Plain span, not the shared Badge component: Badge's base classes bake
+    // in rounded-full, and Tailwind's border-radius utilities are ordered
+    // none/sm/md/lg/xl/full in the generated stylesheet - "full" is defined
+    // last and would win over any rounded-sm passed in via className
+    // regardless of class order in the JSX, so overriding it that way
+    // doesn't actually work.
+    <span className={`inline-flex items-center rounded-sm border px-2 py-0.5 text-[10px] font-bold shrink-0 ${variant}`}>
       {t(`calendar.status${cap}`, { defaultValue: status.replace("_", " ") })}
-    </Badge>
+    </span>
   );
 }
 
