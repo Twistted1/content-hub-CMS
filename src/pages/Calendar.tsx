@@ -985,7 +985,7 @@ export default function ContentCalendar() {
                 </SheetContent>
               </Sheet>
             ) : sidebarOpen && (
-              <div className="w-[340px] bg-background/20 backdrop-blur-2xl border-r border-white/[0.10] p-8 shrink-0 overflow-y-auto custom-scrollbar relative z-10">
+              <div className="w-[340px] bg-background/20 backdrop-blur-2xl border-r border-white/[0.10] pl-4 pr-8 py-8 shrink-0 overflow-y-auto custom-scrollbar relative z-10">
                 <CalSidebar
                   events={filtered}
                   miniMonth={miniMonth}
