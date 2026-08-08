@@ -140,21 +140,31 @@ export function PlatformCard({ platform, isSelected, onSelect, getPlatformColor,
             ))}
           </div>
 
-          {/* Latest Post */}
-          {platform.latestPost && (
-            <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
-              <p className="text-[10px] text-muted-foreground mb-1.5 flex items-center gap-1">
-                <FileText className="h-3 w-3" />
-                {t("platforms.latestPost")}
-              </p>
-              <p className="text-xs font-medium text-foreground mb-1 truncate">
-                "{platform.latestPost.title}"
-              </p>
-              <Badge variant="outline" className="text-[10px] capitalize">
-                {t(`calendar.status${platform.latestPost.status.charAt(0).toUpperCase()}${platform.latestPost.status.slice(1)}`, { defaultValue: platform.latestPost.status.replace("_", " ") })}
-              </Badge>
-            </div>
-          )}
+          {/* Latest Post - always rendered (with a placeholder state when
+              empty) so every card has the same internal structure. This
+              block used to be omitted entirely for platforms with 0 posts,
+              which left it out of that card's height while a sibling card
+              in the same row still had it - a CSS grid only equalizes
+              height *within* a row, so cards changed size row to row
+              depending on which platforms happened to have posts. */}
+          <div className="bg-muted/30 rounded-lg p-3 border border-border/50 min-h-[72px]">
+            <p className="text-[10px] text-muted-foreground mb-1.5 flex items-center gap-1">
+              <FileText className="h-3 w-3" />
+              {t("platforms.latestPost")}
+            </p>
+            {platform.latestPost ? (
+              <>
+                <p className="text-xs font-medium text-foreground mb-1 truncate">
+                  "{platform.latestPost.title}"
+                </p>
+                <Badge variant="outline" className="text-[10px] capitalize">
+                  {t(`calendar.status${platform.latestPost.status.charAt(0).toUpperCase()}${platform.latestPost.status.slice(1)}`, { defaultValue: platform.latestPost.status.replace("_", " ") })}
+                </Badge>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground/50 italic">{t("platforms.noPostsYet")}</p>
+            )}
+          </div>
 
           {/* Schedule Info */}
           <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-primary/5 border border-primary/10">

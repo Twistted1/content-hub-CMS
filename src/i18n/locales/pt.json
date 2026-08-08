@@ -690,6 +690,7 @@
     "statScheduledShort": "Agendadas",
     "statPublishedShort": "Publicadas",
     "latestPost": "Última Postagem",
+    "noPostsYet": "Nenhuma postagem ainda",
     "postsScheduledSuffix": "postagens agendadas",
     "publishedSuffix": "publicadas",
     "lastActivity": "Última atividade {{time}}",

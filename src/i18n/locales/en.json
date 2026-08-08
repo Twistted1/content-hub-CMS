@@ -690,6 +690,7 @@
     "statScheduledShort": "Scheduled",
     "statPublishedShort": "Published",
     "latestPost": "Latest Post",
+    "noPostsYet": "No posts yet",
     "postsScheduledSuffix": "posts scheduled",
     "publishedSuffix": "published",
     "lastActivity": "Last activity {{time}}",
