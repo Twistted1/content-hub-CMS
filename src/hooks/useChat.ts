@@ -153,19 +153,83 @@ ${JSON.stringify(CONTENT_SCHEDULE, null, 2)}`;
       }
     } catch (error) {
       console.error('Novee chat error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to get response from Novee');
-      
-      // Add fallback response
+      const reason = error instanceof Error ? error.message : 'Failed to get response from Novee';
+      toast.error(reason);
+
+      // Fallback response — carries the real reason (e.g. "OPENAI_API_KEY is
+      // not configured on the server") inline instead of a generic apology,
+      // so a broken assistant is diagnosable from the chat itself, not just
+      // a toast that's easy to miss.
       setMessages(prev => [...prev, {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: "Oops! My circuits got a bit tangled there. 🤖💫 Could you try again?",
+        content: `Oops! My circuits got a bit tangled there. 🤖💫 (${reason})`,
         timestamp: new Date(),
       }]);
     } finally {
       setIsLoading(false);
     }
   }, [messages]);
+
+  // One-off, history-free call used by the composer's "Enhance" action:
+  // rewrites a draft prompt into a sharper one and returns the full text
+  // (not streamed into the visible transcript).
+  const enhanceText = useCallback(async (draft: string): Promise<string> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error('You must be signed in to use the AI assistant.');
+    }
+
+    const resp = await fetch(CHAT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: 'system',
+            content: 'Rewrite the user\'s draft into a sharper, more specific content-generation prompt. Reply with ONLY the rewritten prompt text - no preamble, no quotes, no explanation.',
+          },
+          { role: 'user', content: draft },
+        ],
+      }),
+    });
+
+    if (!resp.ok || !resp.body) {
+      const errorData = await resp.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to enhance prompt');
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let result = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+        let line = buffer.slice(0, newlineIndex);
+        buffer = buffer.slice(newlineIndex + 1);
+        if (line.endsWith('\r')) line = line.slice(0, -1);
+        if (line.startsWith(':') || line.trim() === '' || !line.startsWith('data: ')) continue;
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) result += content;
+        } catch { /* ignore partial chunk */ }
+      }
+    }
+
+    return result.trim();
+  }, []);
 
   const resetChat = useCallback(() => {
     setMessages([]);
@@ -180,5 +244,5 @@ ${JSON.stringify(CONTENT_SCHEDULE, null, 2)}`;
     }]);
   }, []);
 
-  return { messages, isLoading, sendMessage, resetChat, addGreeting };
+  return { messages, isLoading, sendMessage, resetChat, addGreeting, enhanceText };
 }
