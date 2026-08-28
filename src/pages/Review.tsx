@@ -536,15 +536,25 @@ export default function Review() {
           </TabsList>
 
           {/* Two-pane body: list on the left, editor on the right — always
-              visible side by side, no modal popup to open/close. */}
-          <div className="flex-1 min-h-0 flex gap-4 mt-4">
-            <div className="w-[360px] shrink-0 overflow-y-auto space-y-2 pr-1">
-              {isLoading ? (
-                <EmptyState icon={Loader2} label={t("review.loadingPosts")} spin />
-              ) : list.length === 0 ? (
-                <EmptyState icon={emptyIcon} label={emptyLabel} />
-              ) : (
-                list.map((post) => (
+              visible side by side, no modal popup to open/close. Only once
+              there's actually something to show a list *and* an editor
+              for, though: with zero posts in the tab, splitting the row
+              still gave the (empty) list column its own "Nothing waiting
+              on your review" state AND the editor pane its own identical
+              fallback state side by side - the same message twice, and an
+              oversized mostly-empty box on the right for a case that was
+              never a real 2-pane view to begin with (selectedPost can
+              only be null here, since it falls back to list[0] the moment
+              the list has anything in it). One full-width empty state
+              instead. */}
+          {isLoading || list.length === 0 ? (
+            <div className="flex-1 min-h-0 mt-4 rounded-2xl border border-border bg-card">
+              <EmptyState icon={isLoading ? Loader2 : emptyIcon} label={isLoading ? t("review.loadingPosts") : emptyLabel} spin={isLoading} />
+            </div>
+          ) : (
+            <div className="flex-1 min-h-0 flex gap-4 mt-4">
+              <div className="w-[360px] shrink-0 overflow-y-auto space-y-2 pr-1">
+                {list.map((post) => (
                   <PostRow
                     key={post.id}
                     post={post}
@@ -554,18 +564,17 @@ export default function Review() {
                     onToggleCheck={toggleCheck}
                     onClick={() => setSelectedPostId(post.id)}
                   />
-                ))
-              )}
-            </div>
+                ))}
+              </div>
 
-            <div className="flex-1 min-w-0 rounded-2xl border border-border bg-card overflow-hidden">
-              {selectedPost ? (
-                <ReviewEditorPane key={selectedPost.id} post={selectedPost} />
-              ) : (
-                <EmptyState icon={emptyIcon} label={isLoading ? t("review.loadingPosts") : emptyLabel} spin={isLoading} />
-              )}
+              <div className="flex-1 min-w-0 rounded-2xl border border-border bg-card overflow-hidden">
+                {/* selectedPost is guaranteed here - list is non-empty in
+                    this branch, and selectedPost always falls back to
+                    list[0]. */}
+                <ReviewEditorPane key={selectedPost!.id} post={selectedPost!} />
+              </div>
             </div>
-          </div>
+          )}
         </Tabs>
       </div>
     </DashboardLayout>

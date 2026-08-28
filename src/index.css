@@ -224,7 +224,7 @@
   }
 
   .page-title {
-    @apply text-3xl md:text-4xl font-black tracking-tight text-foreground uppercase;
+    @apply text-xs md:text-sm font-black tracking-tight text-foreground uppercase;
   }
 
   .head-neon {
