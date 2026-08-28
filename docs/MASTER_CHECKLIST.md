@@ -8,7 +8,35 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-08-08 (Phase 8). Phase 8 (2026-08-08) is a
+**Last verified:** 2026-08-28 (Phase 9). Phase 9 found and fixed the actual
+root cause of a recurring "the calendar has duplicate/wrong content no
+matter how many times I wipe it" report: `schedule-content`, a `pg_cron`
+job firing every 15 minutes forever, called an edge function
+(`schedule-from-templates`) carrying its own separate hardcoded schedule
+copy — still with the pre-Phase-8 broken weekly-only LinkedIn — plus two
+active "scheduled" automations both matching nearly every platform, so
+every cron tick did the work twice with no overlap protection. Fixed the
+schedule copy, added an overlap guard, paused the duplicate automation,
+and (separately) fixed a real Platforms-page bug where cards changed
+height row-to-row. Then, re-auditing this file's own open items against
+live state: confirmed the 🔴 OPENAI_API_KEY blocker from Phase 8 is very
+likely resolved (`content-pipeline` — same secret store — has been
+generating real AI content successfully every 15 minutes for 20 days
+straight; `novee-chat` itself couldn't be directly re-tested, see Phase 8
+note below for why), confirmed 5 of the 6 orphaned/dangerous edge
+functions flagged in Phase 3 have since been formally deleted (only the
+harmless `run-scheduled-automations` stub remains, unchanged), and found
+one real regression the Phase 1 project-wide RLS performance sweep
+couldn't have caught: `csp_reports` (added in Phase 4, after that sweep
+ran) still had its `auth.uid()` re-evaluating per-row. Fixed directly
+against prod, advisor re-run confirms 0 `auth_rls_initplan` warnings.
+**At the user's explicit request, the `posts` table was wiped again and
+both scheduled automations paused** — the calendar is intentionally empty
+right now, not broken; re-enable "Weekly Content Schedule" (not the
+"(templates)" duplicate) when ready for content to generate again. See
+"Phase 9" section below for full detail.
+
+**Previously last verified:** 2026-08-08 (Phase 8). Phase 8 (2026-08-08) is a
 user-driven bug-fix pass across four separate reports in one day: the
 Review Inbox redesigned from a modal into a persistent split-pane layout
 plus a tag-contrast fix, a global dark-theme/glassmorphism contrast pass
@@ -56,14 +84,116 @@ Everything else re-checked (RLS, auth, CI, i18n, CSP, secrets) held up
 with no regressions. See "Open — found in Phase 3 audit, today" below
 for the remaining non-blocking cleanup item (edge function drift).
 
-**Open, waiting on you:** 🔴 **`OPENAI_API_KEY` needs to be checked/set in
-the Supabase project's Edge Function secrets** — the AI Assistant fails on
-every message and the evidence points at this (see "Phase 8" below); I
-have no tool that can read or set project secrets, so this one is
-genuinely only actionable by you. Beyond that, nothing else code-related
-is blocking core CMS use — remaining items are GitHub/Supabase settings
-only you can change, or decisions only you can make — see the two "Open"
-sections below.
+**Open, waiting on you:** the calendar is currently empty and content
+generation is paused — see Phase 9 — resume it by re-activating "Weekly
+Content Schedule" in Automation whenever you're ready. The 🔴
+`OPENAI_API_KEY` item from Phase 8 is very likely resolved (see Phase 9),
+downgraded from a confirmed blocker to "believed fixed, not directly
+re-tested." Beyond that, nothing else code-related is blocking core CMS
+use — remaining items are GitHub/Supabase settings only you can change,
+or decisions only you can make — see the "Open" sections below.
+
+---
+
+## Phase 9 — Recurring duplicate-content root cause, and a fresh full audit (2026-08-28)
+
+Picked back up after a 20-day gap. Two things happened in this phase:
+a user bug report (duplicate/wrong calendar content that survived
+repeated database wipes) that turned out to have a real, previously
+unknown root cause; and, once that was fixed, a fresh audit of every
+open item in this file against live state rather than trusting the
+Aug 8 snapshot.
+
+- [x] **Root cause of "wiping the calendar never sticks" — found and
+      fixed.** Not a data bug, a live infrastructure one: `pg_cron` job
+      `schedule-content` calls `schedule-from-templates` every 15 minutes,
+      forever, independent of anything in this repo's git history. That
+      edge function carries its **own separate hardcoded copy** of the
+      platform schedule (inlined from `src/data/platforms/*.json` at some
+      point in the past, never kept in sync since) — it still had the
+      pre-Phase-8 broken weekly-only LinkedIn (`Tuesday: ["09:00"]`)
+      instead of daily. No matter how many times `posts` got wiped, this
+      cron refilled it within 15 minutes using stale logic. On top of
+      that: two automations (`Weekly Content Schedule`, run_count 815 at
+      the time, and a duplicate `Weekly Schedule (templates)`) were both
+      `status: active, trigger: scheduled` and both matched nearly every
+      platform — every single cron tick processed both, and a slow tick
+      (content-pipeline's OpenAI + DALL-E calls can each run long,
+      especially right after a wipe when many slots are untaken at once)
+      could overlap the next tick before either's insert committed,
+      producing the exact-duplicate-pairs pattern found in the data
+      (e.g. two identical "Twitter post for Sat, 08 Aug 2026 18:00"
+      rows). Fixed: corrected the LinkedIn schedule inside
+      `schedule-from-templates` to match `linkedin.json`, added an
+      overlap guard (skip an automation if a run for it was marked
+      "running" in the last 20 minutes), paused the duplicate automation,
+      deployed (v12). Verified over real elapsed time, not just a
+      one-shot check: 20 days later, 145 posts spanning Aug 8–29, every
+      single day showing correct non-duplicated counts, cron healthy
+      (last run 8 minutes before checking), zero recent failures.
+- [x] **Platforms page: cards visibly changed size row to row — fixed.**
+      `PlatformCard`'s "Latest Post" block only rendered for platforms
+      with ≥1 post. A CSS grid only equalizes height *within* a row, not
+      across the whole grid, so a row where every card had that block was
+      taller than a row where none did. Now always renders, with a
+      "No posts yet" placeholder state when empty, so every card has
+      identical internal structure. `platforms.noPostsYet` added to both
+      locale files.
+- [x] **Calendar sidebar left/right gap imbalance — fixed.** The
+      desktop sidebar column used uniform `p-8` padding, but the page's
+      own outer layout padding stacks on top of the sidebar's left edge
+      and not its right, so the gap to the mini-calendar card read wider
+      on the left than the gap from the sidebar to the main grid on the
+      right. Split into `pl-4 pr-8 py-8`.
+- [x] **Re-audited every open item in this file against live state**
+      (not assumed from the Aug 8 snapshot):
+      - 🔴 `OPENAI_API_KEY` (Phase 8's flagged blocker) — **downgraded
+        from confirmed-broken to very-likely-fixed.** `content-pipeline`
+        reads the exact same project-wide secret and has been
+        successfully generating real AI-written content every 15 minutes
+        for 20 consecutive days (145 posts, real generated text, not
+        error fallbacks) — that's strong indirect evidence the key is
+        set and working. Could not directly re-test `novee-chat` itself:
+        no real chat traffic in the last 24h (the log tool's window cap)
+        to confirm from, and this sandbox's network policy still blocks
+        reaching the Supabase project directly (confirmed again today —
+        same `403` on the outbound proxy noted in earlier phases), so an
+        edge-function call can't be driven from here either. If the AI
+        Assistant still fails on a real message, tell me and I'll dig
+        further with a live repro instead of inferring.
+      - **Edge function drift (Phase 3) — mostly resolved since.** Of
+        the 6 orphaned/dangerous functions stubbed out in Phase 3, 5
+        (`scheduled-pipeline`, `fire-webhooks`, `publish-twitter`,
+        `execute-automation`, `generate-broadcast-script`) are gone from
+        `list_edge_functions` entirely — formally deleted at some point,
+        closing out that "nice-to-have cleanup" note. Only
+        `run-scheduled-automations` remains, confirmed still the exact
+        inert 410 stub from Phase 3, unchanged (`updated_at` matches the
+        2026-07-31 stubbing exactly) — not a new gap, just not yet
+        deleted.
+      - **New finding, not in any prior phase**: `csp_reports`' RLS
+        policy (`Admins can view CSP reports`) was still re-evaluating
+        `auth.uid()` per row — the Phase 1 project-wide fix swept every
+        policy that existed *at the time*, but `csp_reports` wasn't
+        created until Phase 4, three days later, so it was never covered.
+        Fixed directly (`alter policy ... using (has_role((select
+        auth.uid()), 'admin'))`), advisor re-run confirms 0
+        `auth_rls_initplan` warnings project-wide, still.
+      - Security/performance advisors otherwise unchanged from prior
+        phases: `has_role()` definer-function and leaked-password-
+        protection warnings are the same previously-accepted items
+        (Free tier, no live exposure); the 18 unused-index INFO items are
+        the same deliberately-deferred set (still no real production
+        traffic to judge "unused" by).
+- [x] **At the user's explicit request: `posts`/`post_platforms`/`media`/
+      `pipeline_runs` wiped, and both scheduled automations paused** (not
+      just the duplicate one this time) — the calendar is deliberately
+      empty right now, a decision, not a bug. Resume by re-activating
+      "Weekly Content Schedule" (`8b5334b4-...`) in the Automation page
+      when ready; leave "Weekly Schedule (templates)" (`1728f488-...`)
+      paused, it's the duplicate.
+- Verified: `npx tsc --noEmit` clean, `npx eslint` on all changed files
+  clean (no new warnings), full unit suite (63/63) still passing.
 
 ---
 
