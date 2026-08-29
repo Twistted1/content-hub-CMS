@@ -80,7 +80,12 @@
     --popover: 0 0% 100%;
     --popover-foreground: 230 25% 8%;
 
-    --primary: 263.4 85% 55%;
+    /* Toned down from the dark theme's 85%/55% - full saturation at that
+       lightness reads as a calm accent against near-black but screams
+       against white. Same hue, pulled 30 points of saturation and 10 of
+       lightness down instead - still unmistakably "brand purple," just
+       not neon. */
+    --primary: 263.4 55% 45%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 230 20% 96%;
@@ -97,7 +102,7 @@
 
     --border: 230 20% 88%;
     --input: 230 20% 88%;
-    --ring: 263.4 85% 55%;
+    --ring: 263.4 55% 45%;
 
     --radius: 1rem;
 
@@ -126,8 +131,12 @@
     --sidebar-border: 0 0% 100%;
     --sidebar-ring: 263.4 85% 55%;
 
-    /* Premium Gradients */
-    --grad-primary: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%);
+    /* Premium Gradients - same violet-to-fuchsia hue as the dark theme's,
+       shifted two shades darker (500 -> 700) for the same reason as
+       --primary above: this gradient also drives the .head-neon glow-text
+       effect, which read as an actual neon sign on white instead of the
+       premium accent it is on near-black. */
+    --grad-primary: linear-gradient(135deg, #6D28D9 0%, #A21CAF 100%);
     --grad-surface: linear-gradient(180deg, rgba(10, 12, 26, 0.04) 0%, rgba(10, 12, 26, 0) 100%);
     --grad-dark: linear-gradient(180deg, rgba(10, 12, 26, 0.8) 0%, rgba(10, 12, 26, 1) 100%);
   }
@@ -161,11 +170,11 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-white/10 rounded-full;
+    @apply bg-foreground/10 rounded-full;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-white/20;
+    @apply bg-foreground/20;
   }
 
   /* Glass Effects — tinted off --foreground, not a hardcoded white, so the
@@ -208,11 +217,11 @@
   }
   
   .calendar-day-circle:hover {
-    @apply bg-white/10 text-white;
+    @apply bg-foreground/10 text-foreground;
   }
 
   .calendar-day-active {
-    @apply bg-primary text-white shadow-lg shadow-primary/30 font-bold scale-110;
+    @apply bg-primary text-primary-foreground shadow-lg shadow-primary/30 font-bold scale-110;
   }
 
   .event-bar {
@@ -245,3 +254,103 @@
     appearance: none;
   }
 }
+/* ---------------------------------------------------------------------
+   Light-theme accent muting.
+
+   The app's status/trend/chart-legend colors (emerald for success,
+   blue for scheduled, amber for warning, rose/red for danger, violet for
+   secondary accents, etc.) are literal Tailwind utilities
+   (text-emerald-400, bg-blue-500, ...) hardcoded across ~15 files, not
+   CSS-variable tokens - by design, so status meaning stays visually
+   consistent regardless of theme. Those exact 300/400/500 shades read
+   as clean, saturated accents against the dark theme's near-black
+   background, but the same saturation reads as "screaming" against a
+   white one - explicit user feedback after the light-theme sweep.
+
+   Rather than touching every file (which would also affect dark theme,
+   not requested), override the specific utility classes at the CSS
+   layer, scoped to .light only, using the same "shift ~2 shades darker
+   within the same hue" technique already proven in this codebase
+   (Calendar.tsx's platform chips moved from bright 500/600/700 to
+   deeper 800/900 for the identical "too saturated" complaint).
+
+   [class~="..."] matches an exact whitespace-delimited class token, not
+   a substring - so "bg-emerald-500" (solid, meant to be muted) is
+   matched, but "bg-emerald-500/10" (Tailwind's opacity-modifier syntax,
+   already a soft translucent tint that doesn't need this) is a
+   different token entirely and is correctly left alone. Declared
+   outside any @layer so it always outranks Tailwind's own (layered)
+   utilities regardless of selector specificity, per the CSS Cascade
+   Layers spec - no !important needed anywhere below.
+   --------------------------------------------------------------------- */
+.light .head-neon {
+  /* The neon drop-shadow glow (see .head-neon above) is striking on
+     near-black and a garish smudge on white - the muted --grad-primary
+     gradient above is enough on its own in light theme. */
+  filter: none;
+}
+
+.light [class~="text-amber-300"] { color: #b45309; }
+.light [class~="bg-amber-300"] { background-color: #b45309; }
+.light [class~="border-amber-300"] { border-color: #b45309; }
+.light [class~="text-amber-400"] { color: #b45309; }
+.light [class~="bg-amber-400"] { background-color: #b45309; }
+.light [class~="border-amber-400"] { border-color: #b45309; }
+.light [class~="text-amber-500"] { color: #b45309; }
+.light [class~="bg-amber-500"] { background-color: #b45309; }
+.light [class~="border-amber-500"] { border-color: #b45309; }
+.light [class~="text-blue-300"] { color: #1d4ed8; }
+.light [class~="bg-blue-300"] { background-color: #1d4ed8; }
+.light [class~="border-blue-300"] { border-color: #1d4ed8; }
+.light [class~="text-blue-400"] { color: #1d4ed8; }
+.light [class~="bg-blue-400"] { background-color: #1d4ed8; }
+.light [class~="border-blue-400"] { border-color: #1d4ed8; }
+.light [class~="text-blue-500"] { color: #1d4ed8; }
+.light [class~="bg-blue-500"] { background-color: #1d4ed8; }
+.light [class~="border-blue-500"] { border-color: #1d4ed8; }
+.light [class~="text-emerald-300"] { color: #047857; }
+.light [class~="bg-emerald-300"] { background-color: #047857; }
+.light [class~="border-emerald-300"] { border-color: #047857; }
+.light [class~="text-emerald-400"] { color: #047857; }
+.light [class~="bg-emerald-400"] { background-color: #047857; }
+.light [class~="border-emerald-400"] { border-color: #047857; }
+.light [class~="text-emerald-500"] { color: #047857; }
+.light [class~="bg-emerald-500"] { background-color: #047857; }
+.light [class~="border-emerald-500"] { border-color: #047857; }
+.light [class~="text-fuchsia-400"] { color: #a21caf; }
+.light [class~="bg-fuchsia-400"] { background-color: #a21caf; }
+.light [class~="border-fuchsia-400"] { border-color: #a21caf; }
+.light [class~="text-green-500"] { color: #15803d; }
+.light [class~="bg-green-500"] { background-color: #15803d; }
+.light [class~="border-green-500"] { border-color: #15803d; }
+.light [class~="text-indigo-400"] { color: #4338ca; }
+.light [class~="bg-indigo-400"] { background-color: #4338ca; }
+.light [class~="border-indigo-400"] { border-color: #4338ca; }
+.light [class~="text-pink-400"] { color: #be185d; }
+.light [class~="bg-pink-400"] { background-color: #be185d; }
+.light [class~="border-pink-400"] { border-color: #be185d; }
+.light [class~="text-red-300"] { color: #b91c1c; }
+.light [class~="bg-red-300"] { background-color: #b91c1c; }
+.light [class~="border-red-300"] { border-color: #b91c1c; }
+.light [class~="text-red-400"] { color: #b91c1c; }
+.light [class~="bg-red-400"] { background-color: #b91c1c; }
+.light [class~="border-red-400"] { border-color: #b91c1c; }
+.light [class~="text-red-500"] { color: #b91c1c; }
+.light [class~="bg-red-500"] { background-color: #b91c1c; }
+.light [class~="border-red-500"] { border-color: #b91c1c; }
+.light [class~="text-rose-400"] { color: #be123c; }
+.light [class~="bg-rose-400"] { background-color: #be123c; }
+.light [class~="border-rose-400"] { border-color: #be123c; }
+.light [class~="text-rose-500"] { color: #be123c; }
+.light [class~="bg-rose-500"] { background-color: #be123c; }
+.light [class~="border-rose-500"] { border-color: #be123c; }
+.light [class~="text-sky-400"] { color: #0369a1; }
+.light [class~="bg-sky-400"] { background-color: #0369a1; }
+.light [class~="border-sky-400"] { border-color: #0369a1; }
+.light [class~="text-violet-400"] { color: #6d28d9; }
+.light [class~="bg-violet-400"] { background-color: #6d28d9; }
+.light [class~="border-violet-400"] { border-color: #6d28d9; }
+.light [class~="text-violet-500"] { color: #6d28d9; }
+.light [class~="bg-violet-500"] { background-color: #6d28d9; }
+.light [class~="border-violet-500"] { border-color: #6d28d9; }
+.light [class~="ring-red-400"] { --tw-ring-color: #b91c1c; }
