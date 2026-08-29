@@ -267,6 +267,18 @@ export function useMedia() {
     }) => {
       if (!user) throw new Error("Not authenticated");
 
+      // The "media" bucket already enforces this server-side (50MB,
+      // image/video/audio only), so this isn't the real security boundary -
+      // it just turns a raw Supabase storage rejection into a message that
+      // actually tells the user what's wrong, before spending the upload.
+      const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "video/mp4", "video/webm", "audio/mpeg", "audio/wav"];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error("Unsupported file type. Upload an image, video, or audio file.");
+      }
+      if (file.size > 50 * 1024 * 1024) {
+        throw new Error("File is too large. Maximum size is 50MB.");
+      }
+
       const fileExt = file.name.split(".").pop();
       const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
