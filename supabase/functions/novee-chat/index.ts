@@ -125,7 +125,25 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
-        return errRes(429, "rate_limited", "Rate limit exceeded. Please try again in a moment.");
+        // OpenAI uses 429 for two very different situations - a genuine
+        // per-minute rate limit (retry shortly, it'll work) and the account
+        // being out of quota/credit (retrying never helps until billing is
+        // fixed) - distinguished only by the body's error.code/type, not
+        // the status. The old blanket "Rate limit exceeded" message showed
+        // the same text for both, which would have hidden a real billing
+        // problem behind what looks like a transient hiccup.
+        const errorText = await response.text();
+        console.error("OpenAI 429:", errorText);
+        let openaiCode = "";
+        try { openaiCode = JSON.parse(errorText)?.error?.code || JSON.parse(errorText)?.error?.type || ""; } catch { /* not JSON */ }
+        if (openaiCode === "insufficient_quota") {
+          return errRes(429, "insufficient_quota", "The AI service is out of usage credit. This needs to be fixed in the OpenAI billing dashboard, not by retrying.", {
+            detail: errorText.slice(0, 300),
+          });
+        }
+        return errRes(429, "rate_limited", "Rate limit exceeded. Please try again in a moment.", {
+          detail: errorText.slice(0, 300),
+        });
       }
       const errorText = await response.text();
       console.error("OpenAI error:", response.status, errorText);
