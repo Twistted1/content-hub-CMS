@@ -150,7 +150,7 @@ export function AutomationCard({
                 <MoreHorizontal className="h-6 w-6" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 rounded-3xl border-border/50 bg-[#0a0c10]/95 backdrop-blur-3xl shadow-2xl p-3">
+            <DropdownMenuContent align="end" className="w-64 rounded-3xl border-border/50 bg-popover/95 backdrop-blur-3xl shadow-2xl p-3">
               <DropdownMenuItem onClick={() => onRun(automation.id)} className="rounded-xl h-12 font-black text-[11px] uppercase tracking-widest cursor-pointer gap-4">
                 <div className="p-2 bg-emerald-500/10 rounded-lg">
                    <Play className="h-4 w-4 text-emerald-500" />
