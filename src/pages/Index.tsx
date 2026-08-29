@@ -47,7 +47,7 @@ const PLATFORM_CFG: Record<string, { Icon: any; color: string; bar: string; hex:
 };
 
 // ── Heatmap builder ────────────────────────────────────────────────────────────
-const HEAT_COLORS = ["bg-white/5", "bg-emerald-900/60", "bg-emerald-700/70", "bg-emerald-500/80", "bg-emerald-400"];
+const HEAT_COLORS = ["bg-foreground/5", "bg-emerald-900/60", "bg-emerald-700/70", "bg-emerald-500/80", "bg-emerald-400"];
 function heatColor(n: number) {
   if (n === 0) return HEAT_COLORS[0];
   if (n === 1) return HEAT_COLORS[1];
@@ -132,7 +132,7 @@ function StatCard({ title, value, badge, sub, trendUp, color }: {
   return (
     <div className="glass-card p-6 flex flex-col gap-4 hover:border-primary/40 transition-all duration-300 group">
       <div className="flex items-center justify-between">
-        <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.15em] bg-white/[0.07] border-white/[0.16] text-muted-foreground/60 py-1 px-3 rounded-xl">{badge}</Badge>
+        <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.15em] bg-foreground/[0.07] border-foreground/[0.16] text-muted-foreground/60 py-1 px-3 rounded-xl">{badge}</Badge>
         <div className={cn("w-2 h-2 rounded-full animate-pulse shadow-[0_0_8px]", trendUp ? "bg-emerald-400 shadow-emerald-400/50" : "bg-rose-400 shadow-rose-400/50")} />
       </div>
       <div>
@@ -279,7 +279,7 @@ const Index = () => {
       <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
         {/* ── Greeting Banner ─────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/[0.16] bg-zinc-950/80 backdrop-blur-3xl p-10 group">
+        <div className="relative overflow-hidden rounded-[2.5rem] glass-card p-10 group">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-blue-600/10 opacity-50" />
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 blur-[100px] rounded-full animate-pulse" />
           
@@ -289,21 +289,21 @@ const Index = () => {
                 <span className="h-[1px] w-8 bg-primary/50" />
                 <p className="text-[11px] font-black uppercase tracking-[0.4em] text-primary">{dayLabel}</p>
               </div>
-              <h1 className="text-3xl font-black tracking-tighter text-white mb-4 leading-[0.9]">
+              <h1 className="text-3xl font-black tracking-tighter text-foreground mb-4 leading-[0.9]">
                 {greeting},<br />
                 <span className="head-neon">{userName.charAt(0).toUpperCase() + userName.slice(1)}</span> 👋
               </h1>
               <div className="flex items-center gap-6 mt-6">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">{t("dashboard.home.todaysPulse")}</span>
-                  <p className="text-sm text-white font-bold">
+                  <span className="text-[10px] font-black text-foreground/50 uppercase tracking-widest mb-1">{t("dashboard.home.todaysPulse")}</span>
+                  <p className="text-sm text-foreground font-bold">
                     <span className="text-primary">{todayQueue.length}</span> {t("dashboard.home.itemsInQueueSuffix")}
                   </p>
                 </div>
-                <div className="w-[1px] h-8 bg-white/10" />
+                <div className="w-[1px] h-8 bg-foreground/10" />
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">{t("dashboard.home.strategyHealth")}</span>
-                  <p className="text-sm text-white font-bold">
+                  <span className="text-[10px] font-black text-foreground/50 uppercase tracking-widest mb-1">{t("dashboard.home.strategyHealth")}</span>
+                  <p className="text-sm text-foreground font-bold">
                     <span className="text-emerald-400">{stats.scheduledPosts}</span> {t("dashboard.home.readyToDeploySuffix")}
                   </p>
                 </div>
@@ -311,10 +311,10 @@ const Index = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch gap-4 shrink-0">
-              <Button onClick={() => navigate("/calendar")} className="bg-primary hover:bg-primary/90 text-white font-black uppercase text-[11px] tracking-[0.2em] gap-3 px-8 py-7 rounded-2xl shadow-2xl shadow-primary/40 group active:scale-95 transition-all">
+              <Button onClick={() => navigate("/calendar")} className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase text-[11px] tracking-[0.2em] gap-3 px-8 py-7 rounded-2xl shadow-2xl shadow-primary/40 group active:scale-95 transition-all">
                 <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> {t("dashboard.home.newCampaign")}
               </Button>
-              <Button onClick={() => navigate("/pipeline")} variant="outline" className="bg-white/[0.07] border-white/[0.20] hover:bg-white/[0.12] text-white font-black uppercase text-[11px] tracking-[0.2em] gap-3 px-8 py-7 rounded-2xl backdrop-blur-xl active:scale-95 transition-all">
+              <Button onClick={() => navigate("/pipeline")} variant="outline" className="bg-foreground/[0.07] border-foreground/[0.20] hover:bg-foreground/[0.12] text-foreground font-black uppercase text-[11px] tracking-[0.2em] gap-3 px-8 py-7 rounded-2xl backdrop-blur-xl active:scale-95 transition-all">
                 <Eye className="w-5 h-5" /> {t("dashboard.home.reviseQueue")}
               </Button>
             </div>
@@ -364,9 +364,9 @@ const Index = () => {
                     <stop offset="95%" stopColor="#a78bfa" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#6b7280" }} tickLine={false} axisLine={false} interval={4} />
-                <YAxis tick={{ fontSize: 9, fill: "#6b7280" }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ background: "hsl(222 47% 6%)", border: "1px solid hsl(217 33% 17%)", borderRadius: 12, fontSize: 11 }} />
+                <XAxis dataKey="label" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} interval={4} />
+                <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 11, color: "hsl(var(--popover-foreground))" }} itemStyle={{ color: "hsl(var(--popover-foreground))" }} labelStyle={{ color: "hsl(var(--popover-foreground))" }} />
                 <Area type="monotone" dataKey="Published" stroke="#34d399" strokeWidth={2} fill="url(#gP)" dot={false} />
                 <Area type="monotone" dataKey="Scheduled" stroke="#60a5fa" strokeWidth={2} fill="url(#gS)" dot={false} />
                 <Area type="monotone" dataKey="Drafts"    stroke="#a78bfa" strokeWidth={2} fill="url(#gD)" dot={false} />
@@ -377,14 +377,14 @@ const Index = () => {
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.platformHealth")}</h2>
-              <button onClick={() => navigate("/platforms")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.07] border border-white/[0.16] hover:bg-white/[0.12] text-primary transition-all">
+              <button onClick={() => navigate("/platforms")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-foreground/[0.07] border border-foreground/[0.16] hover:bg-foreground/[0.12] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-3">
               {platformHealth.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground/30">
-                  <BarChart3 className="w-10 h-10 mb-3 opacity-10" />
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground opacity-60">
+                  <BarChart3 className="w-10 h-10 mb-3 opacity-20" />
                   <p className="text-[10px] font-black uppercase tracking-widest text-center">{t("dashboard.home.noHealthData")}</p>
                 </div>
               )}
@@ -420,7 +420,7 @@ const Index = () => {
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.distribution")}</h2>
-              <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.07] border border-white/[0.16] hover:bg-white/[0.12] text-primary transition-all">
+              <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-foreground/[0.07] border border-foreground/[0.16] hover:bg-foreground/[0.12] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
@@ -446,8 +446,8 @@ const Index = () => {
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/30">
-                <BarChart3 className="w-12 h-12 mb-4 opacity-10" />
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground opacity-60">
+                <BarChart3 className="w-12 h-12 mb-4 opacity-20" />
                 <p className="text-[10px] font-black uppercase tracking-widest">{t("dashboard.home.noData")}</p>
               </div>
             )}
@@ -462,13 +462,13 @@ const Index = () => {
                 </div>
                 <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.todaysQueueTitle")}</h2>
               </div>
-              <button onClick={() => navigate("/pipeline")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.07] border border-white/[0.16] hover:bg-white/[0.12] text-primary transition-all">
+              <button onClick={() => navigate("/pipeline")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-foreground/[0.07] border border-foreground/[0.16] hover:bg-foreground/[0.12] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
             {todayQueue.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/30">
-                <Calendar className="w-12 h-12 mb-4 opacity-10" />
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground opacity-60">
+                <Calendar className="w-12 h-12 mb-4 opacity-20" />
                 <p className="text-[10px] font-black uppercase tracking-widest">{t("dashboard.home.quietCycles")}</p>
                 <button onClick={() => navigate("/calendar")} className="mt-4 text-[10px] font-black text-primary hover:underline uppercase tracking-widest">{t("dashboard.home.initialize")}</button>
               </div>
@@ -485,7 +485,7 @@ const Index = () => {
                   return (
                     <div key={post.id} className="flex items-center gap-4 group cursor-pointer">
                       <span className="text-[10px] font-black text-muted-foreground w-10 shrink-0 tabular-nums opacity-60 group-hover:opacity-100 transition-opacity">{timeStr}</span>
-                      <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center bg-white/[0.07] border border-white/[0.16] group-hover:border-primary/40 transition-all", cfg?.color ?? "text-muted-foreground")}>
+                      <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center bg-foreground/[0.07] border border-foreground/[0.16] group-hover:border-primary/40 transition-all", cfg?.color ?? "text-muted-foreground")}>
                         <Icon className="w-4 h-4" />
                       </div>
                       <span className="text-xs text-foreground flex-1 truncate font-bold group-hover:text-primary transition-colors">{post.title}</span>
@@ -549,7 +549,7 @@ const Index = () => {
             </div>
             <div className="space-y-6">
               {activityFeed.length === 0 ? (
-                <p className="text-xs text-muted-foreground/30 text-center py-10 uppercase tracking-widest font-black">{t("dashboard.home.noRecentActivity")}</p>
+                <p className="text-xs text-muted-foreground opacity-60 text-center py-10 uppercase tracking-widest font-black">{t("dashboard.home.noRecentActivity")}</p>
               ) : activityFeed.map((item, i) => (
                 <div key={i} className="flex items-start gap-5 group">
                   <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border transition-all",
@@ -639,13 +639,13 @@ const Index = () => {
                 <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.strategicTargets")}</h2>
                 <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1 opacity-50">{t("dashboard.home.benchmarks")}</p>
               </div>
-              <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.07] border border-white/[0.16] hover:bg-white/[0.12] text-primary transition-all">
+              <button onClick={() => navigate("/analytics")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-foreground/[0.07] border border-foreground/[0.16] hover:bg-foreground/[0.12] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {goals.map(g => (
-                <div key={g.label} className="bg-white/[0.05] border border-white/[0.12] rounded-2xl p-6 group hover:border-primary/30 transition-all">
+                <div key={g.label} className="bg-foreground/[0.05] border border-foreground/[0.12] rounded-2xl p-6 group hover:border-primary/30 transition-all">
                   {g.change && (
                     <div className="flex justify-end mb-2">
                       <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg">{g.change}</span>
@@ -654,7 +654,7 @@ const Index = () => {
                   <p className="text-3xl font-black text-foreground tracking-tighter mb-1">{g.value}</p>
                   <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60 mb-1">{g.label}</p>
                   <p className="text-[9px] text-muted-foreground/40 font-bold">{t("dashboard.home.target", { value: g.target })}</p>
-                  <div className="h-2 bg-white/[0.10] rounded-full overflow-hidden mt-4">
+                  <div className="h-2 bg-foreground/[0.10] rounded-full overflow-hidden mt-4">
                     <div className={cn("h-full rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]", g.color)} style={{ width: `${g.pct}%` }} />
                   </div>
                 </div>
@@ -670,26 +670,26 @@ const Index = () => {
                 </div>
                 <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.neuralPathways")}</h2>
               </div>
-              <button onClick={() => navigate("/automation")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.07] border border-white/[0.16] hover:bg-white/[0.12] text-primary transition-all">
+              <button onClick={() => navigate("/automation")} className="w-10 h-10 flex items-center justify-center rounded-xl bg-foreground/[0.07] border border-foreground/[0.16] hover:bg-foreground/[0.12] text-primary transition-all">
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
             {automations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/30">
-                <Sparkles className="w-12 h-12 mb-4 opacity-10" />
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground opacity-60">
+                <Sparkles className="w-12 h-12 mb-4 opacity-20" />
                 <p className="text-[10px] font-black uppercase tracking-widest text-center">{t("dashboard.home.noActivePathways")}</p>
                 <button onClick={() => navigate("/automation")} className="mt-4 text-[10px] font-black text-primary hover:underline uppercase tracking-widest">{t("dashboard.home.connectHub")}</button>
               </div>
             ) : (
               <div className="space-y-4">
                 {automations.slice(0, 6).map((a: any) => (
-                  <div key={a.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.05] border border-white/[0.12] hover:bg-white/[0.08] transition-all group">
+                  <div key={a.id} className="flex items-center justify-between p-4 rounded-2xl bg-foreground/[0.05] border border-foreground/[0.12] hover:bg-foreground/[0.08] transition-all group">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">{a.name}</p>
                       <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-50">{a.platforms?.join(", ") ?? t("dashboard.home.multiPlatform")}</p>
                     </div>
-                    <div className={cn("w-10 h-5 rounded-full relative ml-4 shrink-0 cursor-pointer transition-all", a.status === "active" ? "bg-primary shadow-[0_0_15px_rgba(155,135,245,0.4)]" : "bg-white/10")}>
-                      <div className={cn("absolute top-1 w-3 h-3 rounded-full bg-white transition-all shadow-sm", a.status === "active" ? "right-1" : "left-1")} />
+                    <div className={cn("w-10 h-5 rounded-full relative ml-4 shrink-0 cursor-pointer transition-all", a.status === "active" ? "bg-primary shadow-[0_0_15px_rgba(155,135,245,0.4)]" : "bg-foreground/10")}>
+                      <div className={cn("absolute top-1 w-3 h-3 rounded-full bg-background transition-all shadow-sm", a.status === "active" ? "right-1" : "left-1")} />
                     </div>
                   </div>
                 ))}
