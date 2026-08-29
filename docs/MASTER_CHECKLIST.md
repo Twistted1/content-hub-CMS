@@ -89,7 +89,13 @@ generation is paused — see Phase 9 — resume it by re-activating "Weekly
 Content Schedule" in Automation whenever you're ready. The 🔴
 `OPENAI_API_KEY` item from Phase 8 is very likely resolved (see Phase 9),
 downgraded from a confirmed blocker to "believed fixed, not directly
-re-tested." Beyond that, nothing else code-related is blocking core CMS
+re-tested." 🔴 **New:** the E2E Supabase test project was recreated
+(`amyzklcdwrspazveutqz`, see Phase 9) — set `E2E_SUPABASE_SERVICE_ROLE_KEY`
+in the repo's GitHub Actions secrets to that new project's service role
+key (Project Settings → API in the Supabase dashboard; no MCP tool here
+can read or set it) to get the E2E workflow green again;
+`E2E_SUPABASE_URL`/`E2E_SUPABASE_PUBLISHABLE_KEY` are already covered in
+Phase 9. Beyond that, nothing else code-related is blocking core CMS
 use — remaining items are GitHub/Supabase settings only you can change,
 or decisions only you can make — see the "Open" sections below.
 
@@ -192,6 +198,47 @@ Aug 8 snapshot.
       "Weekly Content Schedule" (`8b5334b4-...`) in the Automation page
       when ready; leave "Weekly Schedule (templates)" (`1728f488-...`)
       paused, it's the duplicate.
+- [x] **E2E workflow was failing on every push — root cause found, test
+      project recreated.** A GitHub Actions failure notification ("E2E:
+      All jobs have failed", ~43s) turned out to predate today's changes
+      entirely — even a docs-only commit (this file, no app code) failed
+      the same way, ruling out a code regression. The actual cause: the
+      disposable Supabase project E2E tests run against
+      (`content-hub-cms-e2e-test`, PR #2) had become unreachable -
+      `global-setup.ts`'s `admin.auth.admin.listUsers()` call threw a bare
+      `fetch failed` (not an auth error - the request never reached the
+      project), and the project no longer appeared in this session's
+      Supabase project list at all, consistent with the free-tier project
+      having been deleted after weeks of no traffic. Not hardcoded
+      anywhere in the repo, only in GitHub Actions secrets, so nothing in
+      source needed changing.
+      **Fix:** provisioned a fresh disposable project
+      (`amyzklcdwrspazveutqz`, same org, $0/month, user confirmed) and
+      rebuilt its schema - but *not* by replaying the 38 files in
+      `supabase/migrations/`, which turned out to contain a real conflict
+      (`automations` is `CREATE TABLE`'d twice with different column sets
+      across two migration files; live production's actual table matches
+      only the first - the second migration never successfully ran, or
+      its table was later replaced, and mechanically replaying both would
+      have errored or silently diverged from reality). Instead, introspected
+      the live production schema directly (`pg_attribute`, `pg_constraint`,
+      `pg_policy`, `pg_proc`, `pg_trigger`, `storage.buckets`) and built one
+      clean script from what's actually there today: all 25 tables, RLS
+      policies (already carrying the Phase 1 `(select auth.uid())`
+      optimization, for free), the 4 functions, 15 triggers, and all 3
+      storage buckets with their policies. Deliberately excluded
+      `pg_cron`/`get_cron_secret` - no E2E spec exercises the cron
+      pipeline and this project has no edge functions deployed to call.
+      Verified: all 25 tables present with RLS enabled, security advisor
+      shows only the same accepted `has_role`/`handle_new_user`
+      definer-function pattern already accepted on production, no new
+      findings. 🔴 **One step only you can do:** GitHub Actions secrets
+      need updating to point at the new project -
+      `E2E_SUPABASE_URL=https://amyzklcdwrspazveutqz.supabase.co`,
+      `E2E_SUPABASE_PUBLISHABLE_KEY` (the new project's anon key, already
+      fetched, ask if you need it restated), and
+      `E2E_SUPABASE_SERVICE_ROLE_KEY` (Project Settings → API on the new
+      project - no tool available here can read or set secrets).
 - Verified: `npx tsc --noEmit` clean, `npx eslint` on all changed files
   clean (no new warnings), full unit suite (63/63) still passing.
 
