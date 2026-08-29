@@ -31,7 +31,7 @@ export default function Settings() {
             variant="outline"
             size="icon"
             onClick={() => navigate(-1)}
-            className="shrink-0 h-12 w-12 rounded-2xl bg-white/[0.07] border-white/[0.16] hover:bg-white/[0.16] text-white transition-all"
+            className="shrink-0 h-12 w-12 rounded-2xl bg-foreground/[0.07] border-foreground/[0.16] hover:bg-foreground/[0.16] text-foreground transition-all"
           >
             <ChevronLeft className="h-6 w-6" />
           </Button>
@@ -45,32 +45,32 @@ export default function Settings() {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-8">
-          <TabsList className="bg-white/[0.07] border border-white/[0.16] p-1.5 rounded-2xl h-auto flex flex-wrap max-w-fit">
-            <TabsTrigger value="profile" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+          <TabsList className="bg-foreground/[0.07] border border-foreground/[0.16] p-1.5 rounded-2xl h-auto flex flex-wrap max-w-fit">
+            <TabsTrigger value="profile" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
               <User className="h-3.5 w-3.5" />
               <span>{t("settings.tabs.profile")}</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+            <TabsTrigger value="notifications" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
               <Bell className="h-3.5 w-3.5" />
               <span>{t("settings.tabs.alerts")}</span>
             </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+            <TabsTrigger value="security" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
               <Shield className="h-3.5 w-3.5" />
               <span>{t("settings.tabs.security")}</span>
             </TabsTrigger>
-            <TabsTrigger value="billing" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+            <TabsTrigger value="billing" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
               <CreditCard className="h-3.5 w-3.5" />
               <span>{t("settings.tabs.billing")}</span>
             </TabsTrigger>
-            <TabsTrigger value="integrations" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+            <TabsTrigger value="integrations" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
               <Link2 className="h-3.5 w-3.5" />
               <span>{t("settings.tabs.links")}</span>
             </TabsTrigger>
-            <TabsTrigger value="data" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+            <TabsTrigger value="data" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
               <Database className="h-3.5 w-3.5" />
               <span>{t("settings.tabs.data")}</span>
             </TabsTrigger>
-            <TabsTrigger value="appearance" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
+            <TabsTrigger value="appearance" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] px-6 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
               <Palette className="h-3.5 w-3.5" />
               <span>{t("settings.tabs.theme")}</span>
             </TabsTrigger>

@@ -128,7 +128,7 @@ export default function ContentPipeline() {
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t("pipeline.totalOperations")}</span>
               <Zap className="h-5 w-5 text-primary" />
             </div>
-            <div className="text-4xl font-black text-white tracking-tighter relative z-10">{pipelineRuns.length}</div>
+            <div className="text-4xl font-black text-foreground tracking-tighter relative z-10">{pipelineRuns.length}</div>
           </div>
 
           <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-emerald-500/40 transition-all duration-500">
@@ -156,17 +156,17 @@ export default function ContentPipeline() {
               <Webhook className="h-5 w-5 text-blue-500" />
             </div>
             <div className="flex items-baseline gap-2 relative z-10">
-              <div className="text-4xl font-black text-white tracking-tighter">{webhooks.filter(w => w.isActive).length}</div>
+              <div className="text-4xl font-black text-foreground tracking-tighter">{webhooks.filter(w => w.isActive).length}</div>
               <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">{t("pipeline.active")}</span>
             </div>
           </div>
         </div>
 
         <Tabs defaultValue="create" className="space-y-6">
-          <TabsList className="bg-white/[0.07] border border-white/[0.16] p-1.5 rounded-2xl h-auto">
-            <TabsTrigger value="create" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">{t("pipeline.tabCreate")}</TabsTrigger>
-            <TabsTrigger value="history" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">{t("pipeline.tabHistory")}</TabsTrigger>
-            <TabsTrigger value="webhooks" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white transition-all">{t("pipeline.tabWebhooks")}</TabsTrigger>
+          <TabsList className="bg-foreground/[0.07] border border-foreground/[0.16] p-1.5 rounded-2xl h-auto">
+            <TabsTrigger value="create" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">{t("pipeline.tabCreate")}</TabsTrigger>
+            <TabsTrigger value="history" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">{t("pipeline.tabHistory")}</TabsTrigger>
+            <TabsTrigger value="webhooks" className="text-[10px] font-black uppercase tracking-[0.2em] px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">{t("pipeline.tabWebhooks")}</TabsTrigger>
           </TabsList>
 
           {/* CREATE PIPELINE TAB */}
@@ -249,7 +249,7 @@ export default function ContentPipeline() {
                   {/* Run Button */}
                   <Button
                     size="lg"
-                    className="w-full gap-2 bg-primary hover:opacity-90 text-white font-black uppercase tracking-widest py-6 rounded-2xl shadow-xl shadow-primary/20 border-0"
+                    className="w-full gap-2 bg-primary hover:opacity-90 text-primary-foreground font-black uppercase tracking-widest py-6 rounded-2xl shadow-xl shadow-primary/20 border-0"
                     onClick={handleRun}
                     disabled={isRunning || !topic.trim() || selectedPlatforms.length === 0}
                   >

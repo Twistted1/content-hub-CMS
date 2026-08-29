@@ -105,7 +105,7 @@ function ProfileSync() {
 }
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
+  <ThemeProvider attribute="class" defaultTheme="dark">
     <ThemeSync />
     <ProfileSync />
     <ErrorBoundary>

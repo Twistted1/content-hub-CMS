@@ -146,9 +146,9 @@ function MiniCal({ current, selected, events, onSelect, onNav }: { current: Date
   return (
     <div className="w-full glass-card rounded-2xl p-4">
       <div className="flex items-center justify-between mb-4 px-1">
-        <button onClick={() => onNav(-1)} aria-label="Previous Month" className="w-7 h-7 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">‹</button>
-        <span className="text-xs font-black text-white tracking-[0.2em] uppercase">{MONTHS[current.getMonth()].slice(0,3)} {current.getFullYear()}</span>
-        <button onClick={() => onNav(1)} aria-label="Next Month" className="w-7 h-7 rounded-xl text-muted-foreground hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">›</button>
+        <button onClick={() => onNav(-1)} aria-label="Previous Month" className="w-7 h-7 rounded-xl text-muted-foreground hover:text-foreground hover:bg-foreground/10 flex items-center justify-center transition-all">‹</button>
+        <span className="text-xs font-black text-foreground tracking-[0.2em] uppercase">{MONTHS[current.getMonth()].slice(0,3)} {current.getFullYear()}</span>
+        <button onClick={() => onNav(1)} aria-label="Next Month" className="w-7 h-7 rounded-xl text-muted-foreground hover:text-foreground hover:bg-foreground/10 flex items-center justify-center transition-all">›</button>
       </div>
       <div className="grid grid-cols-7 justify-items-center mb-2">
         {DAYS_SHORT.map((d, i) => <div key={i} className="text-center text-[10px] text-muted-foreground font-black py-1 w-7">{d}</div>)}
@@ -164,7 +164,7 @@ function MiniCal({ current, selected, events, onSelect, onNav }: { current: Date
               key={i}
               onClick={() => onSelect(new Date(day))}
               className={`relative flex items-center justify-center w-7 h-7 rounded-xl text-xs font-bold transition-all
-                ${today ? "bg-primary text-white shadow-lg shadow-primary/30" : sel ? "bg-white/20 text-white" : inMonth ? "text-muted-foreground hover:bg-white/5 hover:text-white" : "text-white/10"}`}
+                ${today ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30" : sel ? "bg-foreground/20 text-foreground" : inMonth ? "text-muted-foreground hover:bg-foreground/5 hover:text-foreground" : "text-foreground/10"}`}
             >
               {day.getDate()}
               {hasEvt && !today && <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-primary/60" />}
@@ -202,15 +202,15 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
                 key={f.value}
                 onClick={() => onFilter(f.value)}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all group
-                  ${active ? "bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5" : "text-muted-foreground hover:bg-white/[0.07] hover:text-white"}`}
+                  ${active ? "bg-primary/10 text-primary border border-primary/20 shadow-lg shadow-primary/5" : "text-muted-foreground hover:bg-foreground/[0.07] hover:text-foreground"}`}
               >
                 <span className="flex items-center gap-3">
-                  <span className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${cat ? cat.iconBg : "bg-white/[0.10]"} ${active ? "scale-110" : "group-hover:scale-105"}`}>
+                  <span className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${cat ? cat.iconBg : "bg-foreground/[0.10]"} ${active ? "scale-110" : "group-hover:scale-105"}`}>
                     {cat ? <cat.Icon className={`w-4 h-4 ${cat.iconColor}`} /> : <Diamond className="w-4 h-4 text-primary" />}
                   </span>
                   {f.label}
                 </span>
-                <span className={`text-[10px] px-2.5 py-1 rounded-lg font-black transition-all ${active ? "bg-primary/20 text-primary" : "bg-white/[0.10] text-muted-foreground"}`}>
+                <span className={`text-[10px] px-2.5 py-1 rounded-lg font-black transition-all ${active ? "bg-primary/20 text-primary" : "bg-foreground/[0.10] text-muted-foreground"}`}>
                   {count}
                 </span>
               </button>
@@ -226,7 +226,7 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
           <span className="text-[10px] text-muted-foreground font-bold">{done}/{todayEvents.length} {t("calendar.ready")}</span>
         </div>
         {todayEvents.length > 0 && (
-          <div className="h-1.5 bg-white/[0.10] rounded-full overflow-hidden mb-5">
+          <div className="h-1.5 bg-foreground/[0.10] rounded-full overflow-hidden mb-5">
             <div
               className="h-full bg-gradient-to-r from-primary to-blue-500 rounded-full transition-all duration-1000 ease-out"
               style={{ width: `${todayEvents.length > 0 ? (done / todayEvents.length) * 100 : 0}%` }}
@@ -236,7 +236,7 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
         <div className="space-y-3">
           {todayEvents.length === 0 && (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <Sprout className="w-10 h-10 text-white/[0.10] mb-3" />
+              <Sprout className="w-10 h-10 text-foreground/[0.10] mb-3" />
               <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-40 italic">{t("calendar.nothingQueued")}</p>
             </div>
           )}
@@ -247,12 +247,12 @@ function CalSidebar({ events, miniMonth, selectedDate, onSelectDate, onNavMonth,
               <div
                 key={evt.id}
                 onClick={() => onClickEvent(evt)}
-                className={`relative rounded-2xl overflow-hidden cursor-pointer group transition-all hover:translate-x-1 glass-hover border border-white/[0.10] ${cat.bg.replace('/10', '/5')}`}
+                className={`relative rounded-2xl overflow-hidden cursor-pointer group transition-all hover:translate-x-1 glass-hover border border-foreground/[0.10] ${cat.bg.replace('/10', '/5')}`}
               >
                 <div className="px-4 py-3.5">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className={`w-4 h-4 rounded-full border-2 shrink-0 transition-all ${evt.completed ? "bg-primary border-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" : "border-white/20"}`} />
-                    <p className={`text-xs font-bold truncate tracking-tight ${evt.completed ? "line-through text-muted-foreground/60" : "text-white"}`}>{evt.title}</p>
+                    <div className={`w-4 h-4 rounded-full border-2 shrink-0 transition-all ${evt.completed ? "bg-primary border-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" : "border-foreground/20"}`} />
+                    <p className={`text-xs font-bold truncate tracking-tight ${evt.completed ? "line-through text-muted-foreground/60" : "text-foreground"}`}>{evt.title}</p>
                   </div>
                   <div className="flex items-center justify-between ml-7">
                     {evt.startTime && (
@@ -287,8 +287,8 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-white/[0.03] rounded-[2.5rem] border border-white/[0.10] overflow-hidden">
-      <div className="grid grid-cols-7 text-center text-[8px] md:text-[10px] font-black text-muted-foreground uppercase tracking-[0.05em] md:tracking-[0.3em] py-2 md:py-5 border-b border-white/[0.10] sticky top-0 bg-background/80 backdrop-blur-3xl z-10">
+    <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-foreground/[0.03] rounded-[2.5rem] border border-foreground/[0.10] overflow-hidden">
+      <div className="grid grid-cols-7 text-center text-[8px] md:text-[10px] font-black text-muted-foreground uppercase tracking-[0.05em] md:tracking-[0.3em] py-2 md:py-5 border-b border-foreground/[0.10] sticky top-0 bg-background/80 backdrop-blur-3xl z-10">
         {DAYS.map(d => <div key={d}>{d}</div>)}
       </div>
       <div className="flex-1 grid grid-cols-7">
@@ -314,13 +314,13 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                 setDraggingId(null);
                 if (id && onDropEvent) onDropEvent(id, new Date(day));
               }}
-              className={`min-h-[64px] md:min-h-[150px] p-1.5 md:p-3 border-r border-b border-white/[0.07] cursor-pointer transition-all group relative
+              className={`min-h-[64px] md:min-h-[150px] p-1.5 md:p-3 border-r border-b border-foreground/[0.07] cursor-pointer transition-all group relative
                 ${!inMonth ? "opacity-10 pointer-events-none" : ""}
-                ${isDropTarget ? "bg-primary/10 ring-2 ring-inset ring-primary/40 shadow-[inset_0_0_50px_rgba(var(--primary),0.1)]" : today ? "bg-primary/[0.02]" : "hover:bg-white/[0.035]"}`}
+                ${isDropTarget ? "bg-primary/10 ring-2 ring-inset ring-primary/40 shadow-[inset_0_0_50px_rgba(var(--primary),0.1)]" : today ? "bg-primary/[0.02]" : "hover:bg-foreground/[0.035]"}`}
             >
               <div className="flex justify-between items-start mb-1 md:mb-3">
                 <span className={`inline-flex items-center justify-center w-5 h-5 md:w-8 md:h-8 rounded-md md:rounded-xl text-[10px] md:text-xs font-black transition-all
-                  ${today ? "bg-primary text-white shadow-xl shadow-primary/40 scale-110" : inMonth ? "text-muted-foreground group-hover:text-white group-hover:scale-105" : "text-white/5"}`}>
+                  ${today ? "bg-primary text-primary-foreground shadow-xl shadow-primary/40 scale-110" : inMonth ? "text-muted-foreground group-hover:text-foreground group-hover:scale-105" : "text-foreground/5"}`}>
                   {day.getDate()}
                 </span>
                 {dayEvts.length > 0 && <span className="hidden md:inline rounded-full bg-muted px-2 py-0.5 text-[9px] font-bold text-muted-foreground">{dayEvts.length}</span>}
@@ -345,7 +345,7 @@ function MonthGrid({ current, events, categoryFilter, onClickDay, onClickEvent, 
                       onClick={(e) => { e.stopPropagation(); if (!evt.isTemplate) onClickEvent(evt); }}
                       className={`flex h-4 md:h-8 min-w-0 items-center gap-1 md:gap-1.5 rounded-none px-1 md:px-2 text-[7px] md:text-[9px] font-black transition-all group/evt relative shadow-lg
                         ${p ? p.card : "bg-muted text-muted-foreground border border-border"}
-                        ${isReview ? "ring-1 ring-white/35" : ""}
+                        ${isReview ? "ring-1 ring-foreground/35" : ""}
                         ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-grab active:cursor-grabbing"}
                         ${isDragging ? "opacity-20 scale-90" : "hover:brightness-110"}`}
                     >
@@ -380,19 +380,19 @@ function WeekView({ current, events, onClickEvent }: any) {
   const weekDays = getWeekDays(current);
   return (
     <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar">
-      <div className="grid grid-cols-7 text-center py-3 border-b border-white/5 sticky top-0 bg-[#0a0d1a] z-10">
+      <div className="grid grid-cols-7 text-center py-3 border-b border-border sticky top-0 bg-background/80 backdrop-blur-3xl z-10">
         {weekDays.map(d => (
-          <div key={d.toISOString()} className={isToday(d) ? "text-primary" : "text-gray-500"}>
+          <div key={d.toISOString()} className={isToday(d) ? "text-primary" : "text-muted-foreground"}>
             <div className="text-[10px] font-black uppercase tracking-widest">{DAYS[d.getDay()]}</div>
-            <div className={`mt-1 text-lg font-black ${isToday(d) ? "text-primary" : "text-gray-300"}`}>{d.getDate()}</div>
+            <div className={`mt-1 text-lg font-black ${isToday(d) ? "text-primary" : "text-muted-foreground"}`}>{d.getDate()}</div>
           </div>
         ))}
       </div>
-      <div className="flex-1 grid grid-cols-7 border-l border-white/[0.07] min-h-[600px]">
+      <div className="flex-1 grid grid-cols-7 border-l border-foreground/[0.07] min-h-[600px]">
         {weekDays.map((day, i) => {
           const dayEvts = getEventsForDay(events, day);
           return (
-            <div key={i} className="min-h-[140px] p-2 border-r border-b border-white/[0.07] hover:bg-white/[0.05] transition-colors">
+            <div key={i} className="min-h-[140px] p-2 border-r border-b border-foreground/[0.07] hover:bg-foreground/[0.05] transition-colors">
               <div className="space-y-1.5">
                 {dayEvts.map((evt: CalEvent) => {
                   const barColor = getBarColor(evt);
@@ -401,10 +401,10 @@ function WeekView({ current, events, onClickEvent }: any) {
                     <div
                       key={evt.id}
                       onClick={() => { if (!evt.isTemplate) onClickEvent(evt); }}
-                      className={`px-2.5 py-2 rounded-xl text-[10px] font-bold transition-all ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-pointer hover:brightness-125"} ${barColor} border border-white/10`}
+                      className={`px-2.5 py-2 rounded-xl text-[10px] font-bold transition-all ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-pointer hover:brightness-125"} ${barColor} border border-foreground/10`}
                     >
-                      {evt.startTime && <span className="text-white/50 mr-1">{fmtHour(evt.startTime, appearance.timeFormat)}</span>}
-                      <span className="text-white/90">{evt.title}</span>
+                      {evt.startTime && <span className="text-foreground/50 mr-1">{fmtHour(evt.startTime, appearance.timeFormat)}</span>}
+                      <span className="text-foreground/90">{evt.title}</span>
                       {p && <span className={`block text-[9px] mt-1 px-1.5 py-0.5 rounded w-fit font-black uppercase ${p.badge} ${p.badgeText}`}>{p.label}</span>}
                     </div>
                   );
@@ -427,10 +427,10 @@ function DayView({ current, events, onClickEvent }: any) {
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-8">
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center justify-between border-b border-white/5 pb-4">
+        <div className="flex items-center justify-between border-b border-border pb-4">
           <div>
-            <h2 className="text-2xl font-black text-white tracking-tighter">{format(current, "EEEE, MMMM do")}</h2>
-            <p className="text-gray-500 text-sm font-medium">{t("calendar.scheduleForDay")}</p>
+            <h2 className="text-2xl font-black text-foreground tracking-tighter">{format(current, "EEEE, MMMM do")}</h2>
+            <p className="text-muted-foreground text-sm font-medium">{t("calendar.scheduleForDay")}</p>
           </div>
           <span className="text-4xl font-black text-primary/20">{format(current, "dd")}</span>
         </div>
@@ -441,19 +441,19 @@ function DayView({ current, events, onClickEvent }: any) {
             <div
               key={evt.id}
               onClick={() => { if (!evt.isTemplate) onClickEvent(evt); }}
-              className={`flex gap-6 p-5 rounded-2xl transition-all border border-white/10 ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-pointer hover:brightness-110"} ${barColor}`}
+              className={`flex gap-6 p-5 rounded-2xl transition-all border border-foreground/10 ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-pointer hover:brightness-110"} ${barColor}`}
             >
-              <div className="w-16 shrink-0 text-sm font-black text-white/40 tabular-nums">{evt.startTime ? fmt12(evt.startTime, appearance.timeFormat) : t("calendar.allDay")}</div>
+              <div className="w-16 shrink-0 text-sm font-black text-foreground/40 tabular-nums">{evt.startTime ? fmt12(evt.startTime, appearance.timeFormat) : t("calendar.allDay")}</div>
               <div className="flex-1">
-                <h3 className="text-base font-black text-white tracking-tight">{evt.title}</h3>
-                {evt.description && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{evt.description}</p>}
+                <h3 className="text-base font-black text-foreground tracking-tight">{evt.title}</h3>
+                {evt.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{evt.description}</p>}
                 {p && <span className={`inline-block text-[9px] mt-3 px-2 py-0.5 rounded font-black uppercase ${p.badge} ${p.badgeText}`}>{p.label}</span>}
               </div>
             </div>
           );
         }) : (
-          <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-3xl">
-            <p className="text-gray-600 font-medium">{t("calendar.noEventsDay")}</p>
+          <div className="py-20 text-center border-2 border-dashed border-border rounded-3xl">
+            <p className="text-muted-foreground font-medium">{t("calendar.noEventsDay")}</p>
           </div>
         )}
       </div>
@@ -477,8 +477,8 @@ function AgendaView({ events, onClickEvent }: any) {
             <div key={dateStr} className="grid grid-cols-[56px_1fr] md:grid-cols-[160px_1fr] gap-3 md:gap-6">
               <div className="sticky top-0 h-fit pt-1">
                 <div className="text-[9px] md:text-xs font-black text-primary uppercase tracking-widest">{format(dateObj, "MMM")}</div>
-                <div className="text-xl md:text-3xl font-black text-white">{format(dateObj, "do")}</div>
-                <div className="text-[8px] md:text-[10px] font-bold text-gray-600 uppercase">{format(dateObj, "EEE")}</div>
+                <div className="text-xl md:text-3xl font-black text-foreground">{format(dateObj, "do")}</div>
+                <div className="text-[8px] md:text-[10px] font-bold text-muted-foreground uppercase">{format(dateObj, "EEE")}</div>
               </div>
               <div className="space-y-2 min-w-0">
                 {dayEvts.map((evt: CalEvent) => {
@@ -487,10 +487,10 @@ function AgendaView({ events, onClickEvent }: any) {
                     <div
                       key={evt.id}
                       onClick={() => { if (!evt.isTemplate) onClickEvent(evt); }}
-                      className={`flex items-center gap-2 md:gap-4 p-2.5 md:p-4 rounded-xl border border-white/5 transition-all ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-pointer hover:brightness-110"} ${barColor}`}
+                      className={`flex items-center gap-2 md:gap-4 p-2.5 md:p-4 rounded-xl border border-foreground/5 transition-all ${evt.isTemplate ? "cursor-default opacity-80" : "cursor-pointer hover:brightness-110"} ${barColor}`}
                     >
-                      <div className="w-10 md:w-14 shrink-0 text-[10px] md:text-xs font-bold text-white/40 tabular-nums">{evt.startTime || "00:00"}</div>
-                      <div className="flex-1 min-w-0 font-bold text-white truncate text-sm md:text-base">{evt.title}</div>
+                      <div className="w-10 md:w-14 shrink-0 text-[10px] md:text-xs font-bold text-foreground/40 tabular-nums">{evt.startTime || "00:00"}</div>
+                      <div className="flex-1 min-w-0 font-bold text-foreground truncate text-sm md:text-base">{evt.title}</div>
                       {evt.platform && evt.platform !== "none" && PLAT[evt.platform] && (
                         <span className={`shrink-0 text-[8px] md:text-[9px] font-black uppercase px-1.5 md:px-2 py-0.5 rounded ${PLAT[evt.platform].badge} ${PLAT[evt.platform].badgeText}`}>
                           {PLAT[evt.platform].label}
@@ -503,7 +503,7 @@ function AgendaView({ events, onClickEvent }: any) {
             </div>
           );
         }) : (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-600">
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <p className="text-lg font-medium">{t("calendar.nothingOnAgenda")}</p>
           </div>
         )}
@@ -935,7 +935,7 @@ export default function ContentCalendar() {
             <div className="flex items-center gap-2 md:gap-4 min-w-0">
               <button
                 onClick={() => setSidebarOpen(p => !p)}
-                className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-white/[0.07] border border-white/[0.16] hover:bg-white/[0.12] text-muted-foreground transition-all"
+                className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-foreground/[0.07] border border-foreground/[0.16] hover:bg-foreground/[0.12] text-muted-foreground transition-all"
                 aria-label={t("calendar.toggleSidebar")}
               >
                 {sidebarOpen && !isMobile ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
@@ -950,7 +950,7 @@ export default function ContentCalendar() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder={t("calendar.searchPlaceholder")}
-                  className="w-32 md:w-64 bg-white/[0.05] border border-white/[0.10] rounded-xl pl-10 pr-4 py-2 text-xs text-foreground placeholder-muted-foreground/40 focus:outline-none focus:border-primary/30 transition-all"
+                  className="w-32 md:w-64 bg-foreground/[0.05] border border-foreground/[0.10] rounded-xl pl-10 pr-4 py-2 text-xs text-foreground placeholder-muted-foreground/40 focus:outline-none focus:border-primary/30 transition-all"
                 />
               </div>
               <div className="hidden lg:flex items-center gap-2">
@@ -970,7 +970,7 @@ export default function ContentCalendar() {
                 unreadable text instead of a real layout. */}
             {isMobile ? (
               <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-                <SheetContent side="left" className="w-[85vw] max-w-[340px] p-8 bg-background border-white/[0.10] overflow-y-auto custom-scrollbar">
+                <SheetContent side="left" className="w-[85vw] max-w-[340px] p-8 bg-background border-foreground/[0.10] overflow-y-auto custom-scrollbar">
                   <CalSidebar
                     events={filtered}
                     miniMonth={miniMonth}
@@ -985,7 +985,7 @@ export default function ContentCalendar() {
                 </SheetContent>
               </Sheet>
             ) : sidebarOpen && (
-              <div className="w-[340px] bg-background/20 backdrop-blur-2xl border-r border-white/[0.10] pl-4 pr-8 py-8 shrink-0 overflow-y-auto custom-scrollbar relative z-10">
+              <div className="w-[340px] bg-background/20 backdrop-blur-2xl border-r border-foreground/[0.10] pl-4 pr-8 py-8 shrink-0 overflow-y-auto custom-scrollbar relative z-10">
                 <CalSidebar
                   events={filtered}
                   miniMonth={miniMonth}
@@ -1003,19 +1003,19 @@ export default function ContentCalendar() {
             {/* Main grid area */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
               {/* Toolbar */}
-              <div className="flex-shrink-0 flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-4 md:px-8 py-3 md:py-4 border-b border-white/[0.10] bg-background/20 backdrop-blur-xl">
+              <div className="flex-shrink-0 flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-4 md:px-8 py-3 md:py-4 border-b border-foreground/[0.10] bg-background/20 backdrop-blur-xl">
                 <div className="flex items-center gap-3 md:gap-5 min-w-0">
-                  <div className="flex bg-white/[0.07] rounded-2xl p-1.5 border border-white/[0.16] backdrop-blur-md shrink-0">
-                    <button onClick={() => navigate(-1)} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl hover:bg-white/5 text-muted-foreground hover:text-white transition-all group">
+                  <div className="flex bg-foreground/[0.07] rounded-2xl p-1.5 border border-foreground/[0.16] backdrop-blur-md shrink-0">
+                    <button onClick={() => navigate(-1)} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl hover:bg-foreground/5 text-muted-foreground hover:text-foreground transition-all group">
                       <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
                     </button>
                     <button
                       onClick={() => { setCurrent(new Date()); setSelectedDate(new Date()); }}
-                      className={`px-3 md:px-6 py-1 rounded-xl text-[10px] font-black tracking-[0.1em] uppercase transition-all ${isToday(current) ? "bg-primary text-white shadow-lg shadow-primary/30" : "text-muted-foreground hover:text-white"}`}
+                      className={`px-3 md:px-6 py-1 rounded-xl text-[10px] font-black tracking-[0.1em] uppercase transition-all ${isToday(current) ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30" : "text-muted-foreground hover:text-foreground"}`}
                     >
                       {t("calendar.today")}
                     </button>
-                    <button onClick={() => navigate(1)} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl hover:bg-white/5 text-muted-foreground hover:text-white transition-all group">
+                    <button onClick={() => navigate(1)} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl hover:bg-foreground/5 text-muted-foreground hover:text-foreground transition-all group">
                       <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                     </button>
                   </div>
@@ -1023,12 +1023,12 @@ export default function ContentCalendar() {
                 </div>
 
                 <div className="flex items-center gap-2 md:gap-4 overflow-x-auto custom-scrollbar -mx-1 px-1 md:mx-0 md:px-0 md:overflow-visible">
-                  <div className="flex bg-white/[0.07] border border-white/[0.16] rounded-2xl p-1.5 backdrop-blur-md shrink-0">
+                  <div className="flex bg-foreground/[0.07] border border-foreground/[0.16] rounded-2xl p-1.5 backdrop-blur-md shrink-0">
                     {(["month", "week", "day", "agenda"] as const).map(m => (
                       <button
                         key={m}
                         onClick={() => setViewMode(m)}
-                        className={`px-3 md:px-6 py-1.5 md:py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${viewMode === m ? "bg-white/10 text-white shadow-xl shadow-white/5" : "text-muted-foreground hover:text-white hover:bg-white/[0.05]"}`}
+                        className={`px-3 md:px-6 py-1.5 md:py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${viewMode === m ? "bg-foreground/10 text-foreground shadow-xl shadow-foreground/5" : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05]"}`}
                       >
                         {t(`calendar.view${m.charAt(0).toUpperCase()}${m.slice(1)}`)}
                       </button>
@@ -1038,7 +1038,7 @@ export default function ContentCalendar() {
                     onClick={() => { setEditingEvent(null); setDefaultDate(undefined); setModalOpen(true); }}
                     title={t("calendar.addNewEvent")}
                     aria-label={t("calendar.addNewEvent")}
-                    className="w-9 h-9 md:w-11 md:h-11 shrink-0 flex items-center justify-center rounded-[1.25rem] bg-primary text-white hover:brightness-110 transition-all shadow-2xl shadow-primary/40 active:scale-95 group"
+                    className="w-9 h-9 md:w-11 md:h-11 shrink-0 flex items-center justify-center rounded-[1.25rem] bg-primary text-primary-foreground hover:brightness-110 transition-all shadow-2xl shadow-primary/40 active:scale-95 group"
                   >
                     <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
                   </button>

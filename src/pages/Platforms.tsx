@@ -283,14 +283,14 @@ export default function Platforms() {
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
-                className="bg-white/[0.07] border-white/[0.16] hover:bg-white/[0.16] text-white font-black uppercase text-[10px] tracking-widest px-6 py-6 rounded-2xl transition-all"
+                className="bg-foreground/[0.07] border-foreground/[0.16] hover:bg-foreground/[0.16] text-foreground font-black uppercase text-[10px] tracking-widest px-6 py-6 rounded-2xl transition-all"
                 onClick={handleSync}
                 disabled={syncing}
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
                 {syncing ? t("platforms.syncing") : t("platforms.syncAll")}
               </Button>
-              <Button className="bg-primary hover:bg-primary/90 text-white font-black uppercase text-[10px] tracking-widest px-8 py-6 rounded-2xl shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={() => setIsAddPlatformOpen(true)}>
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase text-[10px] tracking-widest px-8 py-6 rounded-2xl shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={() => setIsAddPlatformOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 {t("platforms.addPlatform")}
               </Button>
@@ -313,7 +313,7 @@ export default function Platforms() {
                   <stat.icon className={`h-3.5 w-3.5 ${stat.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
                   <span className="text-[9px] font-black uppercase tracking-[0.1em] text-muted-foreground/50">{stat.label}</span>
                 </div>
-                <div className="text-xl font-black text-white tracking-tighter group-hover:text-primary transition-colors">{stat.value}</div>
+                <div className="text-xl font-black text-foreground tracking-tighter group-hover:text-primary transition-colors">{stat.value}</div>
                 <div className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-widest">{stat.subtext}</div>
               </div>
             ))}
