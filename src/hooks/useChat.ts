@@ -100,7 +100,13 @@ ${JSON.stringify(CONTENT_SCHEDULE, null, 2)}`;
               messages: [{ role: 'system', content: systemContext }, ...chatHistory, { role: 'user', content: userContent }],
             }),
           });
-          if (resp.ok) break;
+          // Only retry a genuine transient failure - a 5xx from our function
+          // or from OpenAI. A 4xx (bad auth, bad payload, rate-limited) will
+          // fail identically on retry; hammering it again 1s later just
+          // wastes the user's time and, for a 429, eats further into
+          // whatever rate-limit window caused it in the first place instead
+          // of giving it a chance to reset.
+          if (resp.ok || resp.status < 500) break;
         } catch (e) {
           if (retries === 0) throw e;
         }
