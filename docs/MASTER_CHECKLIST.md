@@ -728,6 +728,80 @@ real, reproducible bugs one at a time. All merged to `main`, live on
       already-established pattern, not a bug. Verified: `tsc --noEmit`
       clean, `eslint` 0 new errors, `vitest` 63/63 passing, production
       build succeeds.
+- [x] **Root-cause light theme fix from a second Claude session's written
+      diagnosis (Phase 10, 2026-08-29) — supersedes several items
+      above.** After multiple rounds of user-reported design feedback
+      ("purple's too strong," "greens screaming"), the user brought in a
+      second Claude session specifically to diagnose this recurring
+      problem and supplied its findings as a spec (`LIGHT_THEME_FIX.md`).
+      Verified every claim in it against the actual current code before
+      applying anything (it was accurate) and implemented all 6 steps,
+      extending the scope slightly beyond what it specified. Root
+      causes, all fixed at the CSS-token layer rather than per-component,
+      dark theme confirmed unaffected (`tsc`/`eslint`/`vitest`/build
+      clean after every step):
+      1. `.glass`/`.glass-card`/`.glass-hover` tinted straight off
+         `--foreground` — a correct frosted-white sheen in dark theme
+         (foreground is near-white there) but a **10% black wash down
+         every card plus a hard grey outline** in light theme
+         (foreground is near-black there), with zero shadow anywhere to
+         signal elevation any other way and `--background` identical to
+         `--card` (zero page/card separation). This was the actual
+         "smudged/flat" root cause. Added `--elev-tint`/`--elev-line`/
+         `--elev-shadow` tokens (dark values reproduce today's
+         appearance exactly); light theme gets a neutral hairline border
+         + soft brand-tinted shadow instead of a tint wash, plus
+         `--background` nudged off pure white.
+      2. `.head-neon`'s purple glow (a `drop-shadow` behind gradient-text
+         headlines) — striking on near-black, a blurry smudge on white.
+         Now driven by a `--neon-a` token, zeroed in light theme;
+         `--grad-primary` itself also shifted from the 500-shade hex
+         pair to the 700-shade pair in light theme.
+      3. **The sidebar's "stays dark in both themes, by design" decision
+         from earlier in this same phase was reversed** on review — it
+         was never a considered choice, it was the sidebar's own
+         hardcoded white-alpha interaction states (`bg-white/[0.16]`
+         active, `bg-white/[0.10]` hover, directly in Sidebar.tsx's JSX)
+         never having been swept, same bug class as `.glass-card` just
+         in JSX instead of CSS. Sidebar.tsx's `NavItem` now uses a
+         `.sidebar-item` CSS class driven by `[aria-current="page"]`
+         (which React Router's `NavLink` already stamps on the active
+         link — no extra prop plumbing) instead of three conditional
+         Tailwind strings, so light theme gets a genuinely light rail
+         with a brand-tinted (not grey) active fill, dark theme
+         unchanged. Logo mark, upgrade-card CTA, and every
+         `border-sidebar-border/[0.1x]` alpha modifier (which existed
+         only to tame the old always-white token) updated to match.
+      4. ~90 hardcoded status/trend/chart-legend Tailwind classes
+         (`text-emerald-400`, `bg-blue-500`, etc.) across ~15 files,
+         tuned for a dark ground, read as "screaming" on white.
+         Replaced with semantic tokens (`--success`/`--info`/`--warn`/
+         `--brand-accent`, retuned per theme) registered in
+         `tailwind.config.ts` — extended past the spec to also fold
+         `red`/`rose` into the existing `--destructive` token and
+         `green` into `--success`, so nothing regressed to full
+         brightness after removing the prior turn's blunter `.light
+         [class~="..."]` CSS-override patch (which is now deleted).
+         Every genuine platform-brand color (YouTube red, TikTok pink,
+         Twitter/X sky, LinkedIn blue, Instagram fuchsia/pink, Rumble
+         green, the Calendar/Index platform-color objects,
+         Platforms.tsx/PostCard.tsx's brand switch statements) and the
+         heatmap's intensity-scale gradient were deliberately left
+         untouched — correct in both themes by definition, not status
+         colors.
+
+      One deviation from the spec's "must be byte-identical in dark
+      mode" instruction, done knowingly: `.glass-card` gained a subtle
+      box-shadow it didn't have before (the spec's own Step 2 code adds
+      one, unconditionally, using dark theme's non-zero
+      `--elev-shadow-a`). In practice a soft black shadow under an
+      already-near-black card is not visually perceptible, but it is not
+      literally pixel-identical CSS. **Not independently visually
+      verified against a browser** — this session has no way to render
+      the app and take a screenshot; verification here is confined to
+      the build/lint/test suite plus a very close manual reading of the
+      generated CSS math against every value in the spec. Ask the user
+      to confirm the actual on-screen result once deployed.
 - [x] **Production deploy pipeline confirmed working end-to-end**: this
       branch → GitHub push → Vercel auto-deploy (GitHub integration
       already wired up, no action needed) → `content-cms-hub.vercel.app`
