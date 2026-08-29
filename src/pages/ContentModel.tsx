@@ -25,7 +25,7 @@ export default function ContentModel() {
             <Button variant="outline" className="rounded-xl border-border bg-card/50 px-6 font-black uppercase text-[10px] tracking-widest gap-2">
                {t("contentModel.blueprintStatus")}
             </Button>
-            <Button className="rounded-xl bg-primary hover:opacity-90 text-white font-black uppercase text-[10px] tracking-widest px-8 shadow-lg shadow-primary/20 gap-2">
+            <Button className="rounded-xl bg-primary hover:opacity-90 text-primary-foreground font-black uppercase text-[10px] tracking-widest px-8 shadow-lg shadow-primary/20 gap-2">
               <Plus className="h-4 w-4" />
               {t("contentModel.defineModel")}
             </Button>

@@ -6,10 +6,12 @@ import {
   HelpCircle,
   LogOut,
   Moon,
+  Sun,
   Keyboard,
   Bell,
   Shield,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,9 +34,17 @@ import { useTranslation } from "react-i18next";
 export function UserDropdown() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { profile } = useUserPreferencesStore();
+  const { profile, appearance, updateAppearance } = useUserPreferencesStore();
   const { signOut } = useAuth();
+  const { resolvedTheme } = useTheme();
   const [open, setOpen] = useState(false);
+  const isDark = (resolvedTheme ?? appearance.theme) === "dark";
+
+  const handleThemeToggle = (checked: boolean) => {
+    const next = checked ? "dark" : "light";
+    updateAppearance({ theme: next });
+    toast.success(t("settings.theme.toastChanged", { theme: t(`settings.theme.${next}`) }));
+  };
 
   const handleLogout = async () => {
     const { error } = await signOut();
@@ -138,15 +148,14 @@ export function UserDropdown() {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
-          className="justify-between opacity-50 cursor-not-allowed"
-          onClick={(e) => e.preventDefault()}
-          title={t("settings.theme.lightDisabledNote")}
+          className="justify-between"
+          onSelect={(e) => e.preventDefault()}
         >
           <div className="flex items-center">
-            <Moon className="mr-2 h-4 w-4" />
+            {isDark ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
             <span>{t("header.darkMode")}</span>
           </div>
-          <Switch checked={true} disabled className="ml-2" />
+          <Switch checked={isDark} onCheckedChange={handleThemeToggle} className="ml-2" />
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />

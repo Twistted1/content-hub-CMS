@@ -98,12 +98,12 @@ function AISidebar({ onQuickAction, onNewChat }: any) {
     <aside className="w-full md:w-[310px] bg-card border-r border-border flex flex-col h-full overflow-y-auto custom-scrollbar">
       <div className="p-6">
         <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary hover:text-white hover:bg-primary transition-all">
+          <Button variant="ghost" className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary hover:text-primary-foreground hover:bg-primary transition-all">
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-[#a855f7] flex items-center justify-center shadow-lg shadow-primary/20">
-              <Bot className="w-5 h-5 text-white" />
+              <Bot className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
               <h2 className="text-sm font-black text-foreground leading-none tracking-tight">{t("aiAssistant.title")}</h2>
@@ -114,7 +114,7 @@ function AISidebar({ onQuickAction, onNewChat }: any) {
 
         <Button
           onClick={onNewChat}
-          className="w-full h-12 mb-8 bg-gradient-to-r from-primary to-[#a855f7] hover:opacity-90 text-white rounded-2xl flex items-center justify-center gap-2 group transition-all shadow-xl shadow-primary/10 border-0"
+          className="w-full h-12 mb-8 bg-gradient-to-r from-primary to-[#a855f7] hover:opacity-90 text-primary-foreground rounded-2xl flex items-center justify-center gap-2 group transition-all shadow-xl shadow-primary/10 border-0"
         >
           <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
           <span className="text-[11px] font-black uppercase tracking-[0.2em]">{t("aiAssistant.newChat")}</span>
@@ -317,7 +317,7 @@ const AIAssistant = () => {
                   type="button"
                   onClick={() => setSidebarOpen(true)}
                   aria-label={t("aiAssistant.title")}
-                  className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-white/[0.07] border border-border text-muted-foreground"
+                  className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-foreground/[0.07] border border-border text-muted-foreground"
                 >
                   <Menu className="w-4 h-4" />
                 </button>
@@ -394,7 +394,7 @@ const AIAssistant = () => {
                             <p className="text-[11px] text-muted-foreground mb-4">{t("aiAssistant.campaignDetectedDesc")}</p>
                             <Button
                               onClick={() => handleProcessCampaign(m.content)}
-                              className="w-full bg-primary hover:opacity-90 text-white font-black uppercase tracking-widest h-10 rounded-xl shadow-lg shadow-primary/10 gap-2 border-0"
+                              className="w-full bg-primary hover:opacity-90 text-primary-foreground font-black uppercase tracking-widest h-10 rounded-xl shadow-lg shadow-primary/10 gap-2 border-0"
                             >
                               <Play className="h-4 w-4" />
                               {t("aiAssistant.processCampaign")}
@@ -502,7 +502,7 @@ const AIAssistant = () => {
                       <Button
                         onClick={handleSend}
                         disabled={isLoading}
-                        className="h-9 md:h-12 px-3 md:px-8 rounded-2xl bg-gradient-to-r from-primary to-[#a855f7] hover:opacity-90 text-white font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-primary/20 border-0 shrink-0"
+                        className="h-9 md:h-12 px-3 md:px-8 rounded-2xl bg-gradient-to-r from-primary to-[#a855f7] hover:opacity-90 text-primary-foreground font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-primary/20 border-0 shrink-0"
                       >
                         <span className="mr-2 hidden sm:inline">{t("aiAssistant.sendMessage")}</span>
                         <Send className="w-4 h-4" />

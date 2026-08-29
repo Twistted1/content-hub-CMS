@@ -520,7 +520,7 @@ const AutomationPage = () => {
                 <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</span>
               </div>
               <div className="flex items-end justify-between">
-                <span className="text-3xl font-bold text-white">{stat.value}</span>
+                <span className="text-3xl font-bold text-foreground">{stat.value}</span>
                 <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                   +12%
                 </span>
@@ -534,7 +534,7 @@ const AutomationPage = () => {
           <div className="bg-card border border-border rounded-3xl p-6">
             <div className="flex items-start justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-xl font-bold text-white uppercase tracking-tight">{t("automation.weeklyScheduleTitle")}</h2>
+                <h2 className="text-xl font-bold text-foreground uppercase tracking-tight">{t("automation.weeklyScheduleTitle")}</h2>
                 <p className="text-sm text-muted-foreground mt-1">
                   {t("automation.weeklyScheduleDesc")}
                 </p>
@@ -557,7 +557,7 @@ const AutomationPage = () => {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <h3 className="text-sm font-bold text-white">{stream.label}</h3>
+                          <h3 className="text-sm font-bold text-foreground">{stream.label}</h3>
                           <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${active ? "bg-emerald-500/10 text-emerald-400" : "bg-muted text-muted-foreground"}`}>
                             {active ? t("automation.active") : t("automation.configured")}
                           </span>
@@ -566,15 +566,15 @@ const AutomationPage = () => {
                         <div className="mt-3 grid grid-cols-1 gap-2 text-xs">
                           <div>
                             <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("automation.frequency")}</span>
-                            <span className="font-bold text-white">{stream.frequency}</span>
+                            <span className="font-bold text-foreground">{stream.frequency}</span>
                           </div>
                           <div>
                             <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("automation.slots")}</span>
-                            <span className="font-medium text-white/80">{stream.slots}</span>
+                            <span className="font-medium text-foreground/80">{stream.slots}</span>
                           </div>
                           <div>
                             <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("automation.publishing")}</span>
-                            <span className="font-medium text-white/80">{stream.publishing}</span>
+                            <span className="font-medium text-foreground/80">{stream.publishing}</span>
                           </div>
                         </div>
                         <button
@@ -593,7 +593,7 @@ const AutomationPage = () => {
 
           <div className="bg-card border border-border rounded-3xl p-6">
             <div className="mb-5">
-              <h2 className="text-xl font-bold text-white uppercase tracking-tight">{t("automation.next10Slots")}</h2>
+              <h2 className="text-xl font-bold text-foreground uppercase tracking-tight">{t("automation.next10Slots")}</h2>
               <p className="text-sm text-muted-foreground mt-1">{t("automation.upcomingItemsDesc")}</p>
             </div>
             <div className="space-y-3">
@@ -606,7 +606,7 @@ const AutomationPage = () => {
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="text-sm font-bold text-white">{slot.label}</span>
+                        <span className="text-sm font-bold text-foreground">{slot.label}</span>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                           {slot.date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} · {formatSlotTime(slot.time)}
                         </span>
@@ -628,7 +628,7 @@ const AutomationPage = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-white uppercase tracking-tight">{t("automation.myAutomations")}</h2>
+              <h2 className="text-xl font-bold text-foreground uppercase tracking-tight">{t("automation.myAutomations")}</h2>
               <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">
                 {t("automation.configuredActiveCount", { total: automations.length, active: automations.filter(a => a.status === "active").length })}
               </p>
@@ -667,7 +667,7 @@ const AutomationPage = () => {
                 <Clock className="w-5 h-5 text-orange-400" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white uppercase tracking-tight">{t("automation.masterReviewHub")}</h2>
+                <h2 className="text-xl font-bold text-foreground uppercase tracking-tight">{t("automation.masterReviewHub")}</h2>
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">{t("automation.weeklyStagingArea")}</p>
               </div>
             </div>
@@ -679,7 +679,7 @@ const AutomationPage = () => {
               <button
                 onClick={handleApproveAll}
                 disabled={isProcessingPipeline || pendingPosts.length === 0}
-                className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-xl hover:bg-primary hover:text-white disabled:opacity-30 transition-all font-bold text-sm"
+                className="flex items-center gap-2 px-6 py-3 bg-foreground text-background rounded-xl hover:bg-primary hover:text-primary-foreground disabled:opacity-30 transition-all font-bold text-sm"
               >
                 <Check className="w-4 h-4" />
                 {t("automation.approveStrategy")}
@@ -709,12 +709,12 @@ const AutomationPage = () => {
                       })()}
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-white mb-0.5">{post.title}</h4>
+                      <h4 className="text-sm font-bold text-foreground mb-0.5">{post.title}</h4>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
                           {post.scheduledAt ? new Date(post.scheduledAt).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : t("automation.noDate")}
                         </span>
-                        <span className="text-white/20">•</span>
+                        <span className="text-foreground/20">•</span>
                         <span className="text-[10px] text-primary font-bold uppercase tracking-wider">{post.platforms?.[0]?.platform || t("automation.multi")}</span>
                       </div>
                     </div>
@@ -749,7 +749,7 @@ const AutomationPage = () => {
                   <h3 className="text-lg font-bold">{t("automation.strategyPipeline")}</h3>
                 </div>
                 {pipelineStep === 3 && (
-                  <button onClick={() => setPipelineOpen(false)} className="text-muted-foreground hover:text-white">
+                  <button onClick={() => setPipelineOpen(false)} className="text-muted-foreground hover:text-foreground">
                     <RefreshCcw className="w-4 h-4 rotate-45" />
                   </button>
                 )}
@@ -762,7 +762,7 @@ const AutomationPage = () => {
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center border-2 transition-all ${
                         pipelineStep >= step ? 'bg-primary border-primary' : 'border-border bg-muted'
                       }`}>
-                        {pipelineStep > step ? <Check className="w-4 h-4 text-white" /> : <span className="text-xs font-bold">{step + 1}</span>}
+                        {pipelineStep > step ? <Check className="w-4 h-4 text-primary-foreground" /> : <span className="text-xs font-bold">{step + 1}</span>}
                       </div>
                       {step < 3 && <div className={`w-12 h-0.5 mx-1 ${pipelineStep > step ? 'bg-primary' : 'bg-border'}`} />}
                     </div>
@@ -782,7 +782,7 @@ const AutomationPage = () => {
                 <button 
                   onClick={() => setPipelineOpen(false)}
                   className={`px-6 py-2 rounded-lg font-bold text-xs transition-all ${
-                    pipelineStep === 3 ? 'bg-white text-black' : 'bg-muted text-muted-foreground cursor-not-allowed'
+                    pipelineStep === 3 ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground cursor-not-allowed'
                   }`}
                   disabled={pipelineStep !== 3}
                 >
