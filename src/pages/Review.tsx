@@ -93,7 +93,7 @@ function StatusBadge({ status }: { status: string }) {
   const cap = status.charAt(0).toUpperCase() + status.slice(1).replace(/_([a-z])/g, (_, c) => c.toUpperCase());
   const variant =
     status === "awaiting_review" ? "bg-orange-500/10 text-orange-400 border-orange-500/20" :
-    status === "scheduled" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
+    status === "scheduled" ? "bg-info/10 text-info border-info/20" :
     status === "draft" ? "bg-muted text-muted-foreground border-border" :
     status === "rejected" ? "bg-destructive/10 text-destructive border-destructive/20" :
     "bg-primary/10 text-primary border-primary/20";
@@ -276,11 +276,11 @@ function ReviewEditorPane({ post }: { post: Post }) {
             <>
               <div className="mt-1.5 h-1 w-full rounded-full bg-muted/40 overflow-hidden">
                 <div
-                  className={`h-full transition-all ${over ? "bg-destructive" : pct > 85 ? "bg-amber-400" : "bg-primary"}`}
+                  className={`h-full transition-all ${over ? "bg-destructive" : pct > 85 ? "bg-warn" : "bg-primary"}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <p className={`mt-1 text-[10px] font-mono font-bold tabular-nums ${over ? "text-destructive" : pct > 85 ? "text-amber-400" : "text-muted-foreground"}`}>
+              <p className={`mt-1 text-[10px] font-mono font-bold tabular-nums ${over ? "text-destructive" : pct > 85 ? "text-warn" : "text-muted-foreground"}`}>
                 {contentLen.toLocaleString()} / {primaryLimit.caption.toLocaleString()} {t("review.charactersSuffix")}
               </p>
               {over && (

@@ -110,15 +110,15 @@ function MiniCalendar({ posts }: { posts: any[] }) {
             )}>
               {format(day, "d")}
               {sched && !today && (
-                <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-emerald-400" />
+                <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-success" />
               )}
             </div>
           );
         })}
       </div>
       <div className="flex items-center gap-3 mt-3 pt-2 border-t border-border/40 flex-wrap">
-        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /><span className="text-[9px] text-muted-foreground">{t("dashboard.home.calendarScheduled")}</span></div>
-        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /><span className="text-[9px] text-muted-foreground">{t("dashboard.home.highVolume")}</span></div>
+        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-success inline-block" /><span className="text-[9px] text-muted-foreground">{t("dashboard.home.calendarScheduled")}</span></div>
+        <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-warn inline-block" /><span className="text-[9px] text-muted-foreground">{t("dashboard.home.highVolume")}</span></div>
       </div>
     </div>
   );
@@ -133,15 +133,15 @@ function StatCard({ title, value, badge, sub, trendUp, color }: {
     <div className="glass-card p-6 flex flex-col gap-4 hover:border-primary/40 transition-all duration-300 group">
       <div className="flex items-center justify-between">
         <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.15em] bg-foreground/[0.07] border-foreground/[0.16] text-muted-foreground/60 py-1 px-3 rounded-xl">{badge}</Badge>
-        <div className={cn("w-2 h-2 rounded-full animate-pulse shadow-[0_0_8px]", trendUp ? "bg-emerald-400 shadow-emerald-400/50" : "bg-rose-400 shadow-rose-400/50")} />
+        <div className={cn("w-2 h-2 rounded-full animate-pulse shadow-[0_0_8px]", trendUp ? "bg-success shadow-success/50" : "bg-destructive shadow-destructive/50")} />
       </div>
       <div>
         <p className={cn("text-4xl font-black tracking-tighter mb-1", color ?? "text-foreground")}>{value}</p>
         <p className="text-[11px] text-muted-foreground font-black uppercase tracking-widest opacity-60">{title}</p>
       </div>
       {sub && (
-        <div className={cn("flex items-center gap-2 text-[10px] font-black uppercase tracking-wider", trendUp ? "text-emerald-400" : "text-rose-400")}>
-          <div className={cn("p-1 rounded-lg", trendUp ? "bg-emerald-500/10" : "bg-rose-500/10")}>
+        <div className={cn("flex items-center gap-2 text-[10px] font-black uppercase tracking-wider", trendUp ? "text-success" : "text-destructive")}>
+          <div className={cn("p-1 rounded-lg", trendUp ? "bg-success/10" : "bg-destructive/10")}>
             {trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
           </div>
           <span>{sub}</span>
@@ -242,10 +242,10 @@ const Index = () => {
     automationsCount: automations.length,
   });
   const goalLabels: Record<typeof goalValues[number]["key"], { label: string; target: string; color: string }> = {
-    monthlyOutput: { label: t("dashboard.home.goalMonthlyOutput"), target: `90 ${t("dashboard.home.postsLower")}`, color: "bg-emerald-500" },
-    scheduledQueue: { label: t("dashboard.home.goalScheduledQueue"), target: `20 ${t("dashboard.home.postsLower")}`, color: "bg-blue-500" },
-    publishRate: { label: t("dashboard.home.goalPublishRate"), target: "100%", color: "bg-violet-500" },
-    automationCoverage: { label: t("dashboard.home.goalAutomationCoverage"), target: t("dashboard.home.automationsCount", { count: automations.length }), color: "bg-amber-500" },
+    monthlyOutput: { label: t("dashboard.home.goalMonthlyOutput"), target: `90 ${t("dashboard.home.postsLower")}`, color: "bg-success" },
+    scheduledQueue: { label: t("dashboard.home.goalScheduledQueue"), target: `20 ${t("dashboard.home.postsLower")}`, color: "bg-info" },
+    publishRate: { label: t("dashboard.home.goalPublishRate"), target: "100%", color: "bg-brand-accent" },
+    automationCoverage: { label: t("dashboard.home.goalAutomationCoverage"), target: t("dashboard.home.automationsCount", { count: automations.length }), color: "bg-warn" },
   };
   const goals = goalValues.map((g) => ({
     label: goalLabels[g.key].label,
@@ -304,7 +304,7 @@ const Index = () => {
                 <div className="flex flex-col">
                   <span className="text-[10px] font-black text-foreground/50 uppercase tracking-widest mb-1">{t("dashboard.home.strategyHealth")}</span>
                   <p className="text-sm text-foreground font-bold">
-                    <span className="text-emerald-400">{stats.scheduledPosts}</span> {t("dashboard.home.readyToDeploySuffix")}
+                    <span className="text-success">{stats.scheduledPosts}</span> {t("dashboard.home.readyToDeploySuffix")}
                   </p>
                 </div>
               </div>
@@ -324,10 +324,10 @@ const Index = () => {
         {/* ── 6 Stat Cards ────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
           <StatCard title={t("dashboard.stats.totalPosts")}  value={stats.totalPosts}    badge={t("dashboard.home.totalPostsBadge")}   sub={t("dashboard.home.vsLastMonth")} trendUp={totalPostsTrendUp}  color="text-foreground" />
-          <StatCard title={t("dashboard.home.scheduled")}    value={stats.scheduledPosts} badge={t("dashboard.home.scheduledBadge")}  sub={t("dashboard.home.todayCount", { count: todayQueue.length })} trendUp color="text-blue-400" />
-          <StatCard title={t("dashboard.home.drafts")}       value={stats.draftPosts}    badge={t("dashboard.home.draftsBadge")} sub={stats.draftPosts > 0 ? t("dashboard.home.needReview", { count: stats.draftPosts }) : t("dashboard.home.allClear")} color="text-amber-400" />
-          <StatCard title={t("dashboard.stats.publishedPosts")}    value={stats.publishedPosts} badge={t("dashboard.home.publishedBadge")} sub={t("dashboard.home.vsLastWeek")} trendUp={publishedTrendUp} color="text-emerald-400" />
-          <StatCard title={t("dashboard.home.connectedPlatforms")} value={connectedPlatformsCount} badge={t("dashboard.home.platformsBadge")} color="text-violet-400" />
+          <StatCard title={t("dashboard.home.scheduled")}    value={stats.scheduledPosts} badge={t("dashboard.home.scheduledBadge")}  sub={t("dashboard.home.todayCount", { count: todayQueue.length })} trendUp color="text-info" />
+          <StatCard title={t("dashboard.home.drafts")}       value={stats.draftPosts}    badge={t("dashboard.home.draftsBadge")} sub={stats.draftPosts > 0 ? t("dashboard.home.needReview", { count: stats.draftPosts }) : t("dashboard.home.allClear")} color="text-warn" />
+          <StatCard title={t("dashboard.stats.publishedPosts")}    value={stats.publishedPosts} badge={t("dashboard.home.publishedBadge")} sub={t("dashboard.home.vsLastWeek")} trendUp={publishedTrendUp} color="text-success" />
+          <StatCard title={t("dashboard.home.connectedPlatforms")} value={connectedPlatformsCount} badge={t("dashboard.home.platformsBadge")} color="text-brand-accent" />
           <StatCard title={t("dashboard.home.autoSuccess")} value={autoSuccessRate !== null ? `${autoSuccessRate}%` : "—"} badge={t("dashboard.home.liveBadge")} sub={completedAutomationRunsCount > 0 ? t("dashboard.home.runsCount", { count: completedAutomationRunsCount }) : t("dashboard.home.noRunsYet")} trendUp={autoSuccessRate !== null ? autoSuccessRate >= 80 : undefined} color="text-primary" />
         </div>
 
@@ -341,7 +341,7 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center gap-4 mb-3">
-              {[[t("dashboard.home.published"),"bg-emerald-400"],[t("dashboard.home.scheduled"),"bg-blue-400"],[t("dashboard.home.drafts"),"bg-violet-400"]].map(([l,c]) => (
+              {[[t("dashboard.home.published"),"bg-success"],[t("dashboard.home.scheduled"),"bg-info"],[t("dashboard.home.drafts"),"bg-brand-accent"]].map(([l,c]) => (
                 <div key={l} className="flex items-center gap-1.5">
                   <span className={cn("w-3 h-1 rounded-full inline-block", c)} />
                   <span className="text-[10px] text-muted-foreground">{l}</span>
@@ -400,7 +400,7 @@ const Index = () => {
                         <span className="text-[11px] font-bold text-foreground">{cfg.label}</span>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="text-[9px] text-muted-foreground">{t("dashboard.home.queued", { count: queued })}</span>
-                          <span className={cn("text-[10px] font-black", pct >= 90 ? "text-emerald-400" : pct >= 70 ? "text-amber-400" : "text-rose-400")}>{pct}%</span>
+                          <span className={cn("text-[10px] font-black", pct >= 90 ? "text-success" : pct >= 70 ? "text-warn" : "text-destructive")}>{pct}%</span>
                         </div>
                       </div>
                       <div className="h-1 bg-muted rounded-full overflow-hidden">
@@ -479,9 +479,9 @@ const Index = () => {
                   const cfg    = PLATFORM_CFG[plat];
                   const Icon   = cfg?.Icon ?? Globe;
                   const timeStr = post.scheduledAt ? format(new Date(post.scheduledAt), "HH:mm") : "--:--";
-                  const sc = post.status === "scheduled" ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
-                           : post.status === "draft"     ? "text-amber-400 bg-amber-400/10 border-amber-400/20"
-                           : "text-blue-400 bg-blue-400/10 border-blue-400/20";
+                  const sc = post.status === "scheduled" ? "text-success bg-success/10 border-success/20"
+                           : post.status === "draft"     ? "text-warn bg-warn/10 border-warn/20"
+                           : "text-info bg-info/10 border-info/20";
                   return (
                     <div key={post.id} className="flex items-center gap-4 group cursor-pointer">
                       <span className="text-[10px] font-black text-muted-foreground w-10 shrink-0 tabular-nums opacity-60 group-hover:opacity-100 transition-opacity">{timeStr}</span>
@@ -502,8 +502,8 @@ const Index = () => {
           {/* Mini Calendar */}
           <div className="glass-card p-8">
             <div className="flex items-center gap-3 mb-8">
-              <div className="p-2 rounded-xl bg-blue-500/10">
-                <Calendar className="w-5 h-5 text-blue-400" />
+              <div className="p-2 rounded-xl bg-info/10">
+                <Calendar className="w-5 h-5 text-info" />
               </div>
               <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.orchestrator")}</h2>
             </div>
@@ -542,9 +542,9 @@ const Index = () => {
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.liveStream")}</h2>
-              <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_15px_rgba(52,211,153,0.1)]">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">{t("dashboard.home.liveStatus")}</span>
+              <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-success/10 border border-success/20 shadow-[0_0_15px_rgba(52,211,153,0.1)]">
+                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                <span className="text-[10px] font-black text-success uppercase tracking-[0.2em]">{t("dashboard.home.liveStatus")}</span>
               </div>
             </div>
             <div className="space-y-6">
@@ -553,8 +553,8 @@ const Index = () => {
               ) : activityFeed.map((item, i) => (
                 <div key={i} className="flex items-start gap-5 group">
                   <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border transition-all",
-                    item.status === "published" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
-                    item.status === "scheduled" ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                    item.status === "published" ? "bg-success/10 border-success/20 text-success" :
+                    item.status === "scheduled" ? "bg-info/10 border-info/20 text-info" : "bg-warn/10 border-warn/20 text-warn"
                   )}>
                     {item.status === "published" ? <CheckCircle2 className="w-5 h-5" />
                      : item.status === "scheduled" ? <Clock className="w-5 h-5" />
@@ -592,8 +592,8 @@ const Index = () => {
                   ) : posts.slice(0, 6).map(post => {
                     const plat = (post as any).platforms?.[0]?.platform ?? "website";
                     const cfg  = PLATFORM_CFG[plat];
-                    const sc   = post.status === "published" ? "text-emerald-400"
-                               : post.status === "scheduled" ? "text-blue-400" : "text-amber-400";
+                    const sc   = post.status === "published" ? "text-success"
+                               : post.status === "scheduled" ? "text-info" : "text-warn";
                     return (
                       <tr key={post.id} className="hover:bg-muted/20 transition-colors">
                         <td className="py-2.5 pr-3"><span className="text-foreground font-medium truncate max-w-[140px] block">{post.title}</span></td>
@@ -648,7 +648,7 @@ const Index = () => {
                 <div key={g.label} className="bg-foreground/[0.05] border border-foreground/[0.12] rounded-2xl p-6 group hover:border-primary/30 transition-all">
                   {g.change && (
                     <div className="flex justify-end mb-2">
-                      <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg">{g.change}</span>
+                      <span className="text-[10px] font-black text-success bg-success/10 px-2 py-0.5 rounded-lg">{g.change}</span>
                     </div>
                   )}
                   <p className="text-3xl font-black text-foreground tracking-tighter mb-1">{g.value}</p>
@@ -665,7 +665,7 @@ const Index = () => {
           <div className="glass-card p-8">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400">
+                <div className="p-2 rounded-xl bg-warn/10 text-warn">
                   <Zap className="w-5 h-5 shadow-[0_0_15px_rgba(245,158,11,0.2)]" />
                 </div>
                 <h2 className="text-lg font-black text-foreground tracking-tight uppercase">{t("dashboard.home.neuralPathways")}</h2>

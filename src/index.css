@@ -42,6 +42,35 @@
 
     --radius: 1rem;
 
+    /* Elevation tokens - what .glass/.glass-card/.glass-hover actually
+       paint with, instead of reading --foreground directly (see the .light
+       block below for why that was wrong). These values reproduce today's
+       dark-theme appearance exactly: a white sheen tinting up from
+       near-nothing (a2) to 10% (tint-a) reads as a frosted, lit-from-above
+       panel against near-black, and a pure-black shadow at 50% is the
+       existing .premium-shadow value. */
+    --elev-tint: 0 0% 100%;
+    --elev-tint-a: .10;
+    --elev-tint-a2: .02;
+    --elev-line: 0 0% 100%;
+    --elev-line-a: .18;
+    --elev-shadow: 0 0% 0%;
+    --elev-shadow-a: .5;
+    --neon-a: .4;
+
+    /* Semantic status colors - what "success"/"info"/"warn" and the
+       violet secondary accent actually resolve to, so status meaning can
+       be retuned per theme (see .light below) without hunting down every
+       hardcoded text-emerald-400/bg-blue-500/etc across ~15 files. Values
+       below are exactly emerald-400/blue-400/amber-400/violet-400 in HSL,
+       so this reproduces every existing use byte-for-byte in dark theme -
+       nothing visually changes here, only where the color comes from. */
+    --success: 158 64% 52%;
+    --info: 213 94% 68%;
+    --warn: 43 96% 56%;
+    --warn-foreground: 26 40% 15%;
+    --brand-accent: 255 92% 76%;
+
     --platform-youtube: 0 100% 50%;
     --platform-twitter: 203 89% 53%;
     --platform-facebook: 214 89% 52%;
@@ -61,8 +90,24 @@
     --sidebar-primary-foreground: 210 40% 98%;
     --sidebar-accent: 0 0% 100%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 100%;
+    --sidebar-border: 230 20% 18%;
     --sidebar-ring: 263.4 85% 60%;
+
+    /* Sidebar interaction states - were hardcoded white-alpha Tailwind
+       utilities directly in Sidebar.tsx's JSX (bg-white/[0.16] etc.), the
+       same bug class as .glass-card just not in CSS: fine as long as the
+       rail stays dark forever, wrong the moment it doesn't (see .light
+       below). These reproduce that exact prior look in dark theme. */
+    --sidebar-item-hover: 0 0% 100%;
+    --sidebar-item-hover-a: .10;
+    --sidebar-item-active: 0 0% 100%;
+    --sidebar-item-active-a: .16;
+    --sidebar-item-line: 0 0% 100%;
+    --sidebar-item-line-a: .20;
+    --sidebar-item-shadow: 0 0% 0%;
+    --sidebar-item-shadow-a: .20;
+    --sidebar-active-foreground: 0 0% 98%;
+    --sidebar-logo: 0 0% 100%;
 
     /* Premium Gradients */
     --grad-primary: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%);
@@ -71,7 +116,10 @@
   }
 
   .light {
-    --background: 0 0% 100%;
+    /* Was 0 0% 100%, identical to --card - zero separation between page
+       and card, unlike dark theme's 7%-vs-11% lightness step. A hair off
+       white lets card panels actually read as raised. */
+    --background: 230 20% 97%;
     --foreground: 230 25% 8%;
 
     --card: 0 0% 100%;
@@ -106,6 +154,36 @@
 
     --radius: 1rem;
 
+    /* Root cause of the "smudged/flat" light theme complaint:
+       .glass-card's background was a gradient of hsl(var(--foreground)/.1)
+       fading to transparent. --foreground is near-white in dark theme, so
+       that's a frosted sheen - correct. In light theme --foreground is
+       near-black, so the exact same rule painted a 10% black wash down
+       every card plus a hard grey border - every panel looked dirty, not
+       elevated. Light UI needs to express elevation with a neutral
+       hairline + shadow instead of a tint wash; --card stays pure white,
+       the panel reads as "raised" via the shadow and the now-nonzero gap
+       from --background above. --neon-a: 0 kills .head-neon's glow here
+       too - striking on near-black, a blurry smudge on white. */
+    --elev-tint: 0 0% 100%;
+    --elev-tint-a: 1;
+    --elev-tint-a2: .86;
+    --elev-line: 230 20% 87%;
+    --elev-line-a: 1;
+    --elev-shadow: 230 30% 25%;
+    --elev-shadow-a: .10;
+    --neon-a: 0;
+
+    /* Same emerald/blue/amber/violet hues as dark theme, shifted from the
+       400-shade to the 700/600-shade equivalent - the 400 shades are
+       tuned for a dark ground and wash out / scream on white, same
+       reasoning as --primary above. */
+    --success: 163 94% 24%;
+    --info: 221 83% 53%;
+    --warn: 26 90% 37%;
+    --warn-foreground: 0 0% 100%;
+    --brand-accent: 262 83% 58%;
+
     --platform-youtube: 0 100% 50%;
     --platform-twitter: 203 89% 53%;
     --platform-facebook: 214 89% 52%;
@@ -119,17 +197,37 @@
     --platform-rumble: 89 53% 52%;
     --platform-podcast: 270 77% 54%;
 
-    /* Sidebar stays on the dark brand rail in both themes, by design —
-       matches the permanently-dark-nav pattern (Vercel, Linear, etc.)
-       instead of going fully white and washing out the icon/logo contrast. */
-    --sidebar-background: 230 30% 3%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 263.4 85% 55%;
+    /* Reverses an earlier decision to keep the sidebar permanently dark in
+       both themes "by design, matching Vercel/Linear's fixed dark nav
+       rail." On review that wasn't actually a considered design choice -
+       it was the sidebar's own hardcoded white-alpha interaction states
+       (bg-white/[0.16] active, bg-white/[0.10] hover, in Sidebar.tsx's
+       JSX) never having been swept, same bug class as .glass-card just
+       expressed in JSX instead of CSS. A properly light sidebar in light
+       theme is more consistent with the rest of the now-light page than
+       a permanently-dark rail next to it. */
+    --sidebar-background: 230 24% 98%;
+    --sidebar-foreground: 230 25% 12%;
+    --sidebar-primary: 263.4 55% 45%;
     --sidebar-primary-foreground: 210 40% 98%;
     --sidebar-accent: 0 0% 100%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 100%;
-    --sidebar-ring: 263.4 85% 55%;
+    --sidebar-accent-foreground: 230 25% 12%;
+    --sidebar-border: 230 20% 88%;
+    --sidebar-ring: 263.4 55% 45%;
+
+    /* Sidebar interaction states, light theme. The active item is a
+       brand-tinted fill, not grey - a neutral grey fill on a light
+       sidebar reads as "disabled," not "selected." */
+    --sidebar-item-hover: 230 25% 12%;
+    --sidebar-item-hover-a: .05;
+    --sidebar-item-active: 263.4 55% 45%;
+    --sidebar-item-active-a: .10;
+    --sidebar-item-line: 263.4 40% 45%;
+    --sidebar-item-line-a: .22;
+    --sidebar-item-shadow: 230 30% 25%;
+    --sidebar-item-shadow-a: .08;
+    --sidebar-active-foreground: 263.4 55% 38%;
+    --sidebar-logo: 230 25% 12%;
 
     /* Premium Gradients - same violet-to-fuchsia hue as the dark theme's,
        shifted two shades darker (500 -> 700) for the same reason as
@@ -177,32 +275,47 @@
     @apply bg-foreground/20;
   }
 
-  /* Glass Effects — tinted off --foreground, not a hardcoded white, so the
-     overlay is a light tint on dark backgrounds (dark theme) and a dark
-     tint on light backgrounds (light theme) instead of going invisible
-     when the page background flips. Opacities bumped up a step across the
-     board — at the original 0.03/0.06/0.08/0.1 values the panel edge was
-     indistinguishable from the page behind it. */
+  /* Glass Effects — elevation, not a --foreground tint. Tinting straight
+     off --foreground reproduced the old hardcoded-white bug one level up:
+     --foreground is near-white in dark theme, so a foreground-tinted wash
+     is a correct frosted sheen there, but --foreground is near-black in
+     light theme, so the identical rule painted a black wash down every
+     card and a hard grey outline - every light-theme panel read as dirty,
+     not raised. The --elev-* tokens (defined per-theme above) carry the
+     same "frosted sheen on dark, neutral hairline + shadow on light"
+     distinction instead, so this class means the same thing - "an
+     elevated panel" - in both themes rather than the same literal color
+     math producing opposite results. */
   .glass {
-    background-color: hsl(var(--foreground) / 0.06);
-    @apply backdrop-blur-xl border border-foreground/[0.16];
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    background-color: hsl(var(--elev-tint) / calc(var(--elev-tint-a) * 0.6));
+    border: 1px solid hsl(var(--elev-line) / calc(var(--elev-line-a) * 0.9));
+    @apply backdrop-blur-xl;
+    box-shadow: 0 8px 32px 0 hsl(var(--elev-shadow) / calc(var(--elev-shadow-a) * 0.74));
   }
 
   .glass-card {
-    background-image: linear-gradient(to bottom, hsl(var(--foreground) / 0.1), transparent);
-    @apply backdrop-blur-xl border border-foreground/[0.18];
+    background-image: linear-gradient(
+      to bottom,
+      hsl(var(--elev-tint) / var(--elev-tint-a)),
+      hsl(var(--elev-tint) / var(--elev-tint-a2))
+    );
+    border: 1px solid hsl(var(--elev-line) / var(--elev-line-a));
+    box-shadow:
+      0 1px 2px hsl(var(--elev-shadow) / var(--elev-shadow-a)),
+      0 10px 30px -14px hsl(var(--elev-shadow) / calc(var(--elev-shadow-a) * 1.6));
+    @apply backdrop-blur-xl;
   }
 
   .glass-hover {
-    @apply transition-all duration-500 hover:border-foreground/[0.3] hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-0.5;
+    @apply transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-0.5;
   }
   .glass-hover:hover {
-    background-color: hsl(var(--foreground) / 0.14);
+    background-color: hsl(var(--elev-tint) / calc(var(--elev-tint-a) * 1.4));
+    border-color: hsl(var(--elev-line) / min(calc(var(--elev-line-a) * 1.6), 1));
   }
 
   .premium-shadow {
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 50px hsl(var(--elev-shadow) / var(--elev-shadow-a));
   }
 
   /* Animations */
@@ -224,6 +337,47 @@
     @apply bg-primary text-primary-foreground shadow-lg shadow-primary/30 font-bold scale-110;
   }
 
+  /* Sidebar nav item - was three hardcoded white-alpha Tailwind class
+     strings switched on react-router's isActive (bg-white/[0.16] active,
+     bg-white/[0.10] hover) directly in Sidebar.tsx. Replaced with these so
+     the interaction states can differ from the resting rail color per
+     theme (see --sidebar-item-* tokens above) instead of assuming the
+     rail is always dark. [aria-current="page"] is what React Router's
+     NavLink already stamps on the active link by default - no extra prop
+     plumbing needed to drive the active state. */
+  .sidebar-item {
+    border: 1px solid transparent;
+    color: hsl(var(--sidebar-foreground) / .6);
+    transition: all .3s;
+  }
+  .sidebar-item:hover {
+    background-color: hsl(var(--sidebar-item-hover) / var(--sidebar-item-hover-a));
+    border-color: hsl(var(--sidebar-item-hover) / var(--sidebar-item-hover-a));
+    color: hsl(var(--sidebar-foreground));
+  }
+  .sidebar-item[aria-current="page"] {
+    background-color: hsl(var(--sidebar-item-active) / var(--sidebar-item-active-a));
+    border-color: hsl(var(--sidebar-item-line) / var(--sidebar-item-line-a));
+    color: hsl(var(--sidebar-active-foreground));
+    box-shadow: 0 4px 12px hsl(var(--sidebar-item-shadow) / var(--sidebar-item-shadow-a));
+  }
+
+  .sidebar-item-icon {
+    background-color: hsl(var(--sidebar-foreground) / .07);
+  }
+  .sidebar-item:hover .sidebar-item-icon {
+    background-color: hsl(var(--primary) / .1);
+  }
+
+  .sidebar-upgrade-card {
+    background-image: linear-gradient(to bottom right, hsl(var(--sidebar-foreground) / .1), transparent);
+    border: 1px solid hsl(var(--sidebar-foreground) / .16);
+  }
+
+  .sidebar-footer {
+    background-color: hsl(var(--sidebar-foreground) / .05);
+  }
+
   .event-bar {
     @apply h-7 flex items-center px-2.5 text-[10px] font-bold uppercase tracking-tight truncate rounded-lg border-l-2 transition-all hover:brightness-110 hover:scale-[1.02] active:scale-[0.98];
   }
@@ -241,7 +395,9 @@
     background: var(--grad-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.4));
+    /* --neon-a is 0 in light theme - a glow that reads as a premium neon
+       accent on near-black is just a blurry purple smudge on white. */
+    filter: drop-shadow(0 0 8px hsl(263 85% 60% / var(--neon-a)));
   }
 
   .input-dark-scheme {
@@ -254,103 +410,3 @@
     appearance: none;
   }
 }
-/* ---------------------------------------------------------------------
-   Light-theme accent muting.
-
-   The app's status/trend/chart-legend colors (emerald for success,
-   blue for scheduled, amber for warning, rose/red for danger, violet for
-   secondary accents, etc.) are literal Tailwind utilities
-   (text-emerald-400, bg-blue-500, ...) hardcoded across ~15 files, not
-   CSS-variable tokens - by design, so status meaning stays visually
-   consistent regardless of theme. Those exact 300/400/500 shades read
-   as clean, saturated accents against the dark theme's near-black
-   background, but the same saturation reads as "screaming" against a
-   white one - explicit user feedback after the light-theme sweep.
-
-   Rather than touching every file (which would also affect dark theme,
-   not requested), override the specific utility classes at the CSS
-   layer, scoped to .light only, using the same "shift ~2 shades darker
-   within the same hue" technique already proven in this codebase
-   (Calendar.tsx's platform chips moved from bright 500/600/700 to
-   deeper 800/900 for the identical "too saturated" complaint).
-
-   [class~="..."] matches an exact whitespace-delimited class token, not
-   a substring - so "bg-emerald-500" (solid, meant to be muted) is
-   matched, but "bg-emerald-500/10" (Tailwind's opacity-modifier syntax,
-   already a soft translucent tint that doesn't need this) is a
-   different token entirely and is correctly left alone. Declared
-   outside any @layer so it always outranks Tailwind's own (layered)
-   utilities regardless of selector specificity, per the CSS Cascade
-   Layers spec - no !important needed anywhere below.
-   --------------------------------------------------------------------- */
-.light .head-neon {
-  /* The neon drop-shadow glow (see .head-neon above) is striking on
-     near-black and a garish smudge on white - the muted --grad-primary
-     gradient above is enough on its own in light theme. */
-  filter: none;
-}
-
-.light [class~="text-amber-300"] { color: #b45309; }
-.light [class~="bg-amber-300"] { background-color: #b45309; }
-.light [class~="border-amber-300"] { border-color: #b45309; }
-.light [class~="text-amber-400"] { color: #b45309; }
-.light [class~="bg-amber-400"] { background-color: #b45309; }
-.light [class~="border-amber-400"] { border-color: #b45309; }
-.light [class~="text-amber-500"] { color: #b45309; }
-.light [class~="bg-amber-500"] { background-color: #b45309; }
-.light [class~="border-amber-500"] { border-color: #b45309; }
-.light [class~="text-blue-300"] { color: #1d4ed8; }
-.light [class~="bg-blue-300"] { background-color: #1d4ed8; }
-.light [class~="border-blue-300"] { border-color: #1d4ed8; }
-.light [class~="text-blue-400"] { color: #1d4ed8; }
-.light [class~="bg-blue-400"] { background-color: #1d4ed8; }
-.light [class~="border-blue-400"] { border-color: #1d4ed8; }
-.light [class~="text-blue-500"] { color: #1d4ed8; }
-.light [class~="bg-blue-500"] { background-color: #1d4ed8; }
-.light [class~="border-blue-500"] { border-color: #1d4ed8; }
-.light [class~="text-emerald-300"] { color: #047857; }
-.light [class~="bg-emerald-300"] { background-color: #047857; }
-.light [class~="border-emerald-300"] { border-color: #047857; }
-.light [class~="text-emerald-400"] { color: #047857; }
-.light [class~="bg-emerald-400"] { background-color: #047857; }
-.light [class~="border-emerald-400"] { border-color: #047857; }
-.light [class~="text-emerald-500"] { color: #047857; }
-.light [class~="bg-emerald-500"] { background-color: #047857; }
-.light [class~="border-emerald-500"] { border-color: #047857; }
-.light [class~="text-fuchsia-400"] { color: #a21caf; }
-.light [class~="bg-fuchsia-400"] { background-color: #a21caf; }
-.light [class~="border-fuchsia-400"] { border-color: #a21caf; }
-.light [class~="text-green-500"] { color: #15803d; }
-.light [class~="bg-green-500"] { background-color: #15803d; }
-.light [class~="border-green-500"] { border-color: #15803d; }
-.light [class~="text-indigo-400"] { color: #4338ca; }
-.light [class~="bg-indigo-400"] { background-color: #4338ca; }
-.light [class~="border-indigo-400"] { border-color: #4338ca; }
-.light [class~="text-pink-400"] { color: #be185d; }
-.light [class~="bg-pink-400"] { background-color: #be185d; }
-.light [class~="border-pink-400"] { border-color: #be185d; }
-.light [class~="text-red-300"] { color: #b91c1c; }
-.light [class~="bg-red-300"] { background-color: #b91c1c; }
-.light [class~="border-red-300"] { border-color: #b91c1c; }
-.light [class~="text-red-400"] { color: #b91c1c; }
-.light [class~="bg-red-400"] { background-color: #b91c1c; }
-.light [class~="border-red-400"] { border-color: #b91c1c; }
-.light [class~="text-red-500"] { color: #b91c1c; }
-.light [class~="bg-red-500"] { background-color: #b91c1c; }
-.light [class~="border-red-500"] { border-color: #b91c1c; }
-.light [class~="text-rose-400"] { color: #be123c; }
-.light [class~="bg-rose-400"] { background-color: #be123c; }
-.light [class~="border-rose-400"] { border-color: #be123c; }
-.light [class~="text-rose-500"] { color: #be123c; }
-.light [class~="bg-rose-500"] { background-color: #be123c; }
-.light [class~="border-rose-500"] { border-color: #be123c; }
-.light [class~="text-sky-400"] { color: #0369a1; }
-.light [class~="bg-sky-400"] { background-color: #0369a1; }
-.light [class~="border-sky-400"] { border-color: #0369a1; }
-.light [class~="text-violet-400"] { color: #6d28d9; }
-.light [class~="bg-violet-400"] { background-color: #6d28d9; }
-.light [class~="border-violet-400"] { border-color: #6d28d9; }
-.light [class~="text-violet-500"] { color: #6d28d9; }
-.light [class~="bg-violet-500"] { background-color: #6d28d9; }
-.light [class~="border-violet-500"] { border-color: #6d28d9; }
-.light [class~="ring-red-400"] { --tw-ring-color: #b91c1c; }

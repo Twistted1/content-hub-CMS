@@ -84,7 +84,7 @@ export function AutomationCard({
               className={cn(
                 "text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1",
                 automation.status === "active" 
-                  ? "border-emerald-500/50 text-emerald-500 bg-emerald-500/10" 
+                  ? "border-success/50 text-success bg-success/10" 
                   : "border-muted-foreground/20 text-muted-foreground bg-muted/10 opacity-60"
               )}
             >
@@ -152,8 +152,8 @@ export function AutomationCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 rounded-3xl border-border/50 bg-popover/95 backdrop-blur-3xl shadow-2xl p-3">
               <DropdownMenuItem onClick={() => onRun(automation.id)} className="rounded-xl h-12 font-black text-[11px] uppercase tracking-widest cursor-pointer gap-4">
-                <div className="p-2 bg-emerald-500/10 rounded-lg">
-                   <Play className="h-4 w-4 text-emerald-500" />
+                <div className="p-2 bg-success/10 rounded-lg">
+                   <Play className="h-4 w-4 text-success" />
                 </div>
                 {t("automation.runPipeline")}
               </DropdownMenuItem>
@@ -165,16 +165,16 @@ export function AutomationCard({
               </DropdownMenuItem>
               {onDuplicate && (
                 <DropdownMenuItem onClick={() => onDuplicate(automation.id)} className="rounded-xl h-12 font-black text-[11px] uppercase tracking-widest cursor-pointer gap-4">
-                  <div className="p-2 bg-blue-500/10 rounded-lg">
-                    <Copy className="h-4 w-4 text-blue-500" />
+                  <div className="p-2 bg-info/10 rounded-lg">
+                    <Copy className="h-4 w-4 text-info" />
                   </div>
                   {t("automation.cloneStream")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator className="bg-border/30 my-2 mx-2" />
               <DropdownMenuItem onClick={() => onEdit(automation)} className="rounded-xl h-12 font-black text-[11px] uppercase tracking-widest cursor-pointer gap-4">
-                <div className="p-2 bg-amber-500/10 rounded-lg">
-                   <Pencil className="h-4 w-4 text-amber-500" />
+                <div className="p-2 bg-warn/10 rounded-lg">
+                   <Pencil className="h-4 w-4 text-warn" />
                 </div>
                 {t("automation.modify")}
               </DropdownMenuItem>

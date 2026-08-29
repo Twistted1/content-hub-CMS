@@ -32,7 +32,7 @@ const STATUS_KEYS: Record<string, string> = {
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "done": return "bg-green-500";
+    case "done": return "bg-success";
     case "in-progress": return "bg-primary";
     case "review": return "bg-chart-4";
     case "todo": return "bg-muted-foreground";
@@ -43,7 +43,7 @@ const getStatusColor = (status: string) => {
 
 const getStatusBadge = (status: string) => {
   switch (status) {
-    case "done": return "bg-green-500/10 text-green-500";
+    case "done": return "bg-success/10 text-success";
     case "in-progress": return "bg-primary/10 text-primary";
     case "review": return "bg-chart-4/10 text-chart-4";
     case "todo": return "bg-muted text-muted-foreground";
@@ -252,7 +252,7 @@ export default function GanttChart() {
               <CardTitle className="text-sm font-medium text-muted-foreground">{t("gantt.completed")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-500">{stats.done}</div>
+              <div className="text-2xl font-bold text-success">{stats.done}</div>
             </CardContent>
           </Card>
           <Card>
@@ -279,7 +279,7 @@ export default function GanttChart() {
             <div className="flex flex-wrap items-center gap-6">
               <span className="text-sm font-medium">{t("gantt.legend")}</span>
               <div className="flex items-center gap-2">
-                <div className="h-3 w-8 rounded bg-green-500" />
+                <div className="h-3 w-8 rounded bg-success" />
                 <span className="text-sm text-muted-foreground">{t("gantt.done")}</span>
               </div>
               <div className="flex items-center gap-2">

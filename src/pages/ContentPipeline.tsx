@@ -33,7 +33,7 @@ const PLATFORM_OPTIONS = [
 
 const getStatusIcon = (status: string) => {
   switch (status) {
-    case "completed": return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    case "completed": return <CheckCircle2 className="h-4 w-4 text-success" />;
     case "running": return <Loader2 className="h-4 w-4 text-primary animate-spin" />;
     case "failed": return <XCircle className="h-4 w-4 text-destructive" />;
     default: return <Clock className="h-4 w-4 text-muted-foreground" />;
@@ -131,29 +131,29 @@ export default function ContentPipeline() {
             <div className="text-4xl font-black text-foreground tracking-tighter relative z-10">{pipelineRuns.length}</div>
           </div>
 
-          <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-emerald-500/40 transition-all duration-500">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-emerald-500/10 transition-all" />
+          <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-success/40 transition-all duration-500">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-success/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-success/10 transition-all" />
             <div className="flex items-center justify-between relative z-10">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t("pipeline.successRate")}</span>
-              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              <CheckCircle2 className="h-5 w-5 text-success" />
             </div>
-            <div className="text-4xl font-black text-emerald-500 tracking-tighter relative z-10">{completedRuns}</div>
+            <div className="text-4xl font-black text-success tracking-tighter relative z-10">{completedRuns}</div>
           </div>
 
-          <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-amber-500/40 transition-all duration-500">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-amber-500/10 transition-all" />
+          <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-warn/40 transition-all duration-500">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-warn/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-warn/10 transition-all" />
             <div className="flex items-center justify-between relative z-10">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t("pipeline.activeNodes")}</span>
-              <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />
+              <Loader2 className="h-5 w-5 text-warn animate-spin" />
             </div>
-            <div className="text-4xl font-black text-amber-500 tracking-tighter relative z-10">{runningRuns}</div>
+            <div className="text-4xl font-black text-warn tracking-tighter relative z-10">{runningRuns}</div>
           </div>
 
-          <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-blue-500/40 transition-all duration-500">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-blue-500/10 transition-all" />
+          <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group hover:border-info/40 transition-all duration-500">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-info/5 blur-[40px] rounded-full -mr-12 -mt-12 group-hover:bg-info/10 transition-all" />
             <div className="flex items-center justify-between relative z-10">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t("pipeline.integrations")}</span>
-              <Webhook className="h-5 w-5 text-blue-500" />
+              <Webhook className="h-5 w-5 text-info" />
             </div>
             <div className="flex items-baseline gap-2 relative z-10">
               <div className="text-4xl font-black text-foreground tracking-tighter">{webhooks.filter(w => w.isActive).length}</div>
@@ -463,7 +463,7 @@ function PipelineRunCard({ run }: { run: PipelineRun }) {
             <p className="text-xs font-medium text-muted-foreground uppercase">{t("pipeline.pipelineSteps")}</p>
             {run.steps.map((step, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
-                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                <CheckCircle2 className="h-3 w-3 text-success" />
                 <span>{getStepLabel(t, step.step)}</span>
                 <span className="text-xs text-muted-foreground ml-auto">
                   {format(new Date(step.ts), "HH:mm:ss")}

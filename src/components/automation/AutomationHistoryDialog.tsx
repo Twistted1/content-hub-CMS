@@ -50,7 +50,7 @@ export function AutomationHistoryDialog({
                 >
                   <div className="mt-0.5">
                     {run.status === "success" && (
-                      <CheckCircle className="h-5 w-5 text-emerald-500" />
+                      <CheckCircle className="h-5 w-5 text-success" />
                     )}
                     {run.status === "failed" && (
                       <XCircle className="h-5 w-5 text-destructive" />

@@ -304,7 +304,7 @@ const ImportData = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                     <div className="flex items-center gap-3 p-4 border rounded-lg">
-                      <FileSpreadsheet className="h-8 w-8 text-green-600" />
+                      <FileSpreadsheet className="h-8 w-8 text-success" />
                       <div>
                         <p className="font-medium">{t("importData.csvFiles")}</p>
                         <p className="text-sm text-muted-foreground">{t("importData.csvFilesDesc")}</p>
@@ -369,7 +369,7 @@ const ImportData = () => {
                           </TableCell>
                           <TableCell>
                             {mapping.target !== "skip" ? (
-                              <Badge variant="outline" className="text-green-600 border-green-600">{t("importData.mapped")}</Badge>
+                              <Badge variant="outline" className="text-success border-success">{t("importData.mapped")}</Badge>
                             ) : (
                               <Badge variant="outline">{t("importData.skipped")}</Badge>
                             )}
@@ -408,7 +408,7 @@ const ImportData = () => {
                       <p className="text-sm text-muted-foreground">{t("importData.totalRecords")}</p>
                     </div>
                     <div className="p-4 bg-muted rounded-lg text-center">
-                      <p className="text-2xl font-bold text-green-600">{validRecords}</p>
+                      <p className="text-2xl font-bold text-success">{validRecords}</p>
                       <p className="text-sm text-muted-foreground">{t("importData.validRecords")}</p>
                     </div>
                     <div className="p-4 bg-muted rounded-lg text-center">
@@ -495,7 +495,7 @@ const ImportData = () => {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               {item.status === "completed" ? (
-                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                <CheckCircle className="h-4 w-4 text-success" />
                               ) : (
                                 <XCircle className="h-4 w-4 text-destructive" />
                               )}

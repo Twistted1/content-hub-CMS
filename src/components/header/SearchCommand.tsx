@@ -25,10 +25,10 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 const typeColors: Record<SearchResult["type"], string> = {
-  project: "bg-blue-500/10 text-blue-500",
-  post: "bg-green-500/10 text-green-500",
+  project: "bg-info/10 text-info",
+  post: "bg-success/10 text-success",
   automation: "bg-yellow-500/10 text-yellow-500",
-  user: "bg-purple-500/10 text-purple-500",
+  user: "bg-brand-accent/10 text-brand-accent",
   strategy: "bg-orange-500/10 text-orange-500",
 };
 
