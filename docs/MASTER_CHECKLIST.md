@@ -852,13 +852,17 @@ was safely fixable, flagged the rest with a specific reason.
 - [x] **404 page exists and works** (`NotFound.tsx`, i18n-wired, correct
       theme tokens, catch-all route registered last in `App.tsx`) — no
       changes needed.
-- [ ] 🔴 **Leaked Password Protection is disabled in Supabase Auth**
-      (flagged by the live security advisor) — Supabase Auth checks new
-      passwords against HaveIBeenPwned when this is on; it's currently
-      off. This is a one-toggle fix in the Supabase dashboard (Authentication
-      → Policies/Providers → Password), not something reachable from a
-      SQL/code change or any tool available in this session — needs the
-      user to flip it directly.
+- [ ] **Leaked Password Protection — blocked by plan tier, not a toggle
+      away.** Flagged by the live security advisor; Supabase Auth checks
+      new passwords against HaveIBeenPwned when this is on. User located
+      the actual setting (Authentication → Sign In/Providers → Email →
+      "Prevent use of leaked passwords") and confirmed live: the control
+      is disabled with "Only available on Pro plan and above" — this
+      project is on Supabase's Free tier. Not fixable from any tool or
+      dashboard click available at the current plan; the only path is
+      upgrading to Pro. User has looked at this before and is not
+      currently planning to upgrade for it — downgraded from 🔴 blocker
+      to an accepted, understood limitation of staying on Free.
 - [ ] **`net._http_response` (pg_net's internal HTTP-response log,
       populated by this project's own `pg_cron` jobs firing every
       1–15 minutes) has 384 live rows but 146MB of table bloat** from
@@ -903,11 +907,13 @@ was safely fixable, flagged the rest with a specific reason.
       versus just unused so far.
 
 **Genuinely left for the user, batched together for one pass later** (per
-explicit request — these two need the user's own action, not more code):
-- 🔴 **Leaked Password Protection is disabled in Supabase Auth** — a
-  one-toggle fix in the Supabase dashboard (Authentication →
-  Policies/Providers → Password), not reachable from any tool available
-  in this session.
+explicit request — these need the user's own action or decision, not
+more code):
+- **Leaked Password Protection — resolved as "accepted, not fixable on
+  Free."** User navigated to the actual setting and confirmed live:
+  greyed out, "Only available on Pro plan and above." Not a toggle
+  anyone missed — genuinely gated behind a Supabase plan upgrade. No
+  further action unless the user decides Pro is worth it for this.
 - **`net._http_response` has 146MB of table bloat** from this project's
   own `pg_cron` churn (384 live rows, confirmed) — a `VACUUM FULL` would
   reclaim it but explicitly incurs downtime per Supabase's own
