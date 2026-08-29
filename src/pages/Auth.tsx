@@ -11,10 +11,12 @@ import { Loader2, Chrome, PlayCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useDocumentMeta } from '@/hooks/useDocumentMeta';
 import { authSchema } from '@/utils/authValidation';
 
 export default function Auth() {
   const { t } = useTranslation();
+  useDocumentMeta(t('auth.welcomeTitle'), t('auth.welcomeSubtitle'));
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();

@@ -11,6 +11,7 @@ import { useSubscription, type BillingInterval } from '@/hooks/useSubscription';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { useDocumentMeta } from '@/hooks/useDocumentMeta';
 
 type PlanKey = 'free' | 'starter' | 'pro';
 
@@ -47,6 +48,7 @@ export default function Pricing() {
   const { tier, createCheckout, isLoading: subLoading } = useSubscription();
   const [billing, setBilling] = useState<BillingInterval>('monthly');
   const faqs = t('pricing.faqs', { returnObjects: true }) as Faq[];
+  useDocumentMeta(t('pricing.heroTitle'), t('pricing.metaDescription'));
 
   useEffect(() => {
     if (searchParams.get('checkout') === 'canceled') {
