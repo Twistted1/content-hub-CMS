@@ -8,7 +8,18 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-08-28 (Phase 9). Phase 9 found and fixed the actual
+**Last verified:** 2026-08-29 (Phase 10). Phase 10 recreated the disposable
+E2E Supabase test project end-to-end (the old one, `myrtlspsinwurffceons`,
+had been deleted — that's what was actually failing the E2E GitHub Actions
+workflow, not any code change) and got the workflow green again after a few
+rounds of secret-configuration troubleshooting with the user. Then completed
+the light-theme re-enablement Phase 9 had left open: swept the remaining 9
+files' hardcoded dark-only classes onto theme tokens, removed
+`forcedTheme="dark"`, and re-enabled both theme-switching UIs. See the
+"Light theme" bullet under Phase 9 below (updated in place) for full detail,
+and "Phase 9" for the E2E project recreation.
+
+**Previously last verified:** 2026-08-28 (Phase 9). Phase 9 found and fixed the actual
 root cause of a recurring "the calendar has duplicate/wrong content no
 matter how many times I wipe it" report: `schedule-content`, a `pg_cron`
 job firing every 15 minutes forever, called an edge function
@@ -89,13 +100,18 @@ generation is paused — see Phase 9 — resume it by re-activating "Weekly
 Content Schedule" in Automation whenever you're ready. The 🔴
 `OPENAI_API_KEY` item from Phase 8 is very likely resolved (see Phase 9),
 downgraded from a confirmed blocker to "believed fixed, not directly
-re-tested." 🔴 **New:** the E2E Supabase test project was recreated
-(`amyzklcdwrspazveutqz`, see Phase 9) — set `E2E_SUPABASE_SERVICE_ROLE_KEY`
-in the repo's GitHub Actions secrets to that new project's service role
-key (Project Settings → API in the Supabase dashboard; no MCP tool here
-can read or set it) to get the E2E workflow green again;
-`E2E_SUPABASE_URL`/`E2E_SUPABASE_PUBLISHABLE_KEY` are already covered in
-Phase 9. Beyond that, nothing else code-related is blocking core CMS
+re-tested." ✅ The E2E Supabase test project was recreated
+(`amyzklcdwrspazveutqz`, see Phase 9), all three GitHub Actions secrets
+(`E2E_SUPABASE_URL`, `E2E_SUPABASE_PUBLISHABLE_KEY`,
+`E2E_SUPABASE_SERVICE_ROLE_KEY`) were set, and the E2E workflow is
+confirmed green on the latest run (Phase 10) — no longer a blocker. Two
+manual verification passes are still on you, not code work: (1) send a
+real message to the AI Assistant to confirm `OPENAI_API_KEY` end-to-end,
+and (2) a live visual pass toggling light/dark theme on each page in your
+own browser now that the Phase 10 sweep has re-enabled it — the CSS
+conversions follow the codebase's already-proven pattern but haven't been
+screenshotted side-by-side. Beyond that, nothing else code-related is
+blocking core CMS
 use — remaining items are GitHub/Supabase settings only you can change,
 or decisions only you can make — see the "Open" sections below.
 
@@ -504,30 +520,48 @@ real, reproducible bugs one at a time. All merged to `main`, live on
       LinkedIn, Instagram, YouTube) moved from bright Tailwind 500/600/700
       shades to deeper 800/900 tones — same per-platform hue, less
       saturated/primary-looking.
-- [x] **Light theme was fundamentally broken, then disabled.** Root cause:
-      the `.glass`/`.glass-card` utility classes (used app-wide) tint
-      themselves with a literal white overlay assuming a dark page behind
-      them, and headings throughout use hardcoded `text-white` — both
-      totally reasonable *while light theme never actually rendered*
-      (the `.light` CSS block didn't exist until Phase 4/5 added it).
-      The moment light mode started working, all of that surfaced as
-      broken: cards near-invisible, text unreadable. Fixed the root
-      `.glass-card` tint (now uses `--foreground`, works in both themes)
-      and swept the Sidebar + Overview/Dashboard page onto theme tokens —
-      but **11 other pages** (Articles, Automation, ContentModel,
-      Platforms, ContentPipeline, Settings, AIAssistant, WorkflowTest,
-      ScheduleCalendar, plus most of Calendar.tsx) still have the same
-      hardcoded-`text-white` pattern, unswept. Rather than ship it
-      half-working, **light theme is now fully disabled**: `ThemeProvider
-      forcedTheme="dark"` in `App.tsx` is the hard guarantee (resolved
-      theme is always dark no matter what any component requests), and
-      both UI paths to it (Settings > Appearance radio group, header
-      dropdown quick-toggle) are disabled/grayed out with an explanatory
-      note. **To actually re-enable light theme**: sweep the remaining 11
-      pages' hardcoded `text-white`/`bg-black/`/`bg-white/[0.0x]` onto
-      theme tokens (same pattern as the Phase 5 Index.tsx fix), verify
-      each page visually in both themes, then remove `forcedTheme` and
-      re-enable the two toggle UIs.
+- [x] **Light theme was fundamentally broken, then disabled — now fully
+      re-enabled (Phase 10, 2026-08-29).** Root cause: the `.glass`/
+      `.glass-card` utility classes (used app-wide) tint themselves with a
+      literal white overlay assuming a dark page behind them, and headings
+      throughout use hardcoded `text-white` — both totally reasonable
+      *while light theme never actually rendered* (the `.light` CSS block
+      didn't exist until Phase 4/5 added it). The moment light mode
+      started working, all of that surfaced as broken: cards
+      near-invisible, text unreadable. Phase 9 fixed the root
+      `.glass-card` tint and swept the Sidebar + Overview/Dashboard page;
+      Phase 10 swept the remaining 9 files (Articles, Automation,
+      ContentModel, Platforms, ContentPipeline, Settings, AIAssistant,
+      ScheduleCalendar, Calendar.tsx — WorkflowTest.tsx needed no change,
+      its one `bg-black/60 text-white` is a legitimate always-dark
+      image-caption overlay) converting every hardcoded `text-white` /
+      `bg-black/X` / `border-white/X` / `bg-white/[0.0x]` occurrence tied
+      to page chrome onto theme tokens (`text-foreground`,
+      `bg-foreground/X`, `border-foreground/X`, `text-primary-foreground`
+      on `bg-primary` surfaces), while deliberately leaving three
+      categories unchanged as correctly theme-independent: solid
+      brand-color platform badges/cards (fixed saturated backgrounds like
+      TikTok's black or YouTube's red — white text stays legible against
+      them in either theme), modal scrims and image-caption overlays
+      (dimming/legibility overlays on top of arbitrary photo content or
+      the whole page, not tied to the page background), and colored
+      action buttons (e.g. the `bg-emerald-600` "Activate Weekly" button)
+      whose white text contrasts the button's own fixed color. Also caught
+      and fixed a hardcoded `bg-[#0a0d1a]` header background and stray
+      `text-gray-*` classes in Calendar's week/day/agenda views that the
+      original `text-white`-only grep had missed. Removed `ThemeProvider
+      forcedTheme="dark"` from `App.tsx` (the `.light` CSS block was
+      already complete) and re-enabled both UI paths: the Settings >
+      Appearance theme radio group (light/dark/system, wired to
+      `useUserPreferencesStore`) and the header dropdown's dark-mode
+      quick-toggle switch (reads `next-themes` `resolvedTheme`, writes
+      back through the same store). Verified: `tsc --noEmit` clean,
+      `eslint` 0 errors (pre-existing `no-explicit-any`/effect warnings
+      only, nothing new), `vitest` 63/63 passing, production build
+      succeeds. Not yet done: a live visual pass toggling both themes on
+      each page in a real browser — the conversions follow the exact
+      idiom already proven correct in the Phase 9 `.glass-card`/
+      Sidebar/Overview fix, but haven't been screenshotted side-by-side.
 - [x] **Production deploy pipeline confirmed working end-to-end**: this
       branch → GitHub push → Vercel auto-deploy (GitHub integration
       already wired up, no action needed) → `content-cms-hub.vercel.app`
@@ -914,3 +948,8 @@ Everything from earlier sections re-checked clean; these two are new:
   the 9 files with real hardcoded text.
 - All three are on `main`; Vercel production deploy tracks `main`, so
   everything above is live.
+- Phase 9 + Phase 10 work: merged directly to `main` (no-ff merge commits,
+  bypassing the PR-review gate at the user's standing direction for this
+  branch) — `74c8329` (Phase 9: recurring duplicate-content fix, E2E
+  project recreation) and `503b364` (Phase 10: light theme
+  re-enablement). Both live on production now.
