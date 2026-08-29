@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Share2,
@@ -68,14 +67,10 @@ const NavItem = ({ icon: Icon, labelKey, href, onNavigate }: NavItemProps & { on
     <NavLink
       to={href}
       onClick={onNavigate}
-      className={cn(
-        "group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300",
-        "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-white/[0.10] border border-transparent hover:border-white/[0.10]"
-      )}
-      activeClassName="bg-white/[0.16] text-sidebar-foreground border-white/[0.20] shadow-lg shadow-black/20"
+      className="sidebar-item group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium"
     >
       <div className="flex items-center gap-3">
-        <div className="p-1 rounded-lg bg-white/[0.07] group-hover:bg-primary/10 transition-colors">
+        <div className="sidebar-item-icon p-1 rounded-lg transition-colors">
           <Icon className="h-4.5 w-4.5 group-hover:text-primary transition-colors" />
         </div>
         <span>{t(labelKey)}</span>
@@ -119,7 +114,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
       <div className="flex items-center gap-3.5 px-6 py-8">
         <div className="flex flex-col gap-[4px] justify-center cursor-pointer w-9 h-11 transition-transform hover:scale-105">
           <div className="w-full h-[5px] bg-[#e62b2b] rounded-full"></div>
-          <div className="w-full h-[5px] bg-white rounded-full"></div>
+          <div className="w-full h-[5px] bg-[hsl(var(--sidebar-logo))] rounded-full"></div>
           <div className="w-full h-[5px] bg-[#8a94a6] rounded-full"></div>
         </div>
         <div>
@@ -128,7 +123,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
           </h1>
           <div className="flex items-center gap-1.5 mt-1">
             <span className="text-[9px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded uppercase tracking-wider">{t("nav.headlessCms")}</span>
-            <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="w-1 h-1 rounded-full bg-success animate-pulse" />
           </div>
         </div>
       </div>
@@ -143,7 +138,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
             unconditionally to everyone, including paid Pro users, which reads as if
             they don't actually have what they paid for. */}
         {tier !== "pro" && (
-        <div className="mt-8 mx-2 p-5 rounded-3xl bg-gradient-to-br from-white/[0.10] to-transparent border border-white/[0.16] relative overflow-hidden group">
+        <div className="sidebar-upgrade-card mt-8 mx-2 p-5 rounded-3xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
             <Sparkles className="h-12 w-12 text-primary" />
           </div>
@@ -151,7 +146,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
           <p className="text-[11px] text-muted-foreground mb-4 relative z-10">{t("nav.proVersionDesc")}</p>
           <button
             onClick={() => navigate("/pricing")}
-            className="w-full py-2.5 rounded-xl bg-white text-black text-xs font-black hover:bg-primary hover:text-white transition-all shadow-lg shadow-white/5 active:scale-95 relative z-10"
+            className="w-full py-2.5 rounded-xl bg-[hsl(var(--sidebar-logo))] text-[hsl(var(--sidebar-background))] text-xs font-black hover:bg-primary hover:text-primary-foreground transition-all shadow-lg active:scale-95 relative z-10"
           >
             {t("nav.upgradeNow")}
           </button>
@@ -160,7 +155,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
       </nav>
 
       {/* Logout */}
-      <div className="p-4 border-t border-sidebar-border/[0.16] bg-white/[0.05]">
+      <div className="sidebar-footer p-4 border-t border-sidebar-border">
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive w-full transition-all duration-300 group"
@@ -184,14 +179,14 @@ export function Sidebar() {
         <button
           onClick={() => setOpen(true)}
           aria-label={t("nav.openMenu")}
-          className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar/90 backdrop-blur-xl border border-sidebar-border/[0.20] text-sidebar-foreground premium-shadow"
+          className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar/90 backdrop-blur-xl border border-sidebar-border text-sidebar-foreground premium-shadow"
         >
           <Menu className="h-5 w-5" />
         </button>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent
             side="left"
-            className="w-72 max-w-[85vw] p-0 flex flex-col bg-sidebar border-sidebar-border/[0.16] text-sidebar-foreground"
+            className="w-72 max-w-[85vw] p-0 flex flex-col bg-sidebar border-sidebar-border text-sidebar-foreground"
           >
             <SidebarContent onNavigate={() => setOpen(false)} />
           </SheetContent>
@@ -201,7 +196,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-72 bg-sidebar/80 backdrop-blur-2xl border-r border-sidebar-border/[0.16] flex flex-col premium-shadow">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-72 bg-sidebar/80 backdrop-blur-2xl border-r border-sidebar-border flex flex-col premium-shadow">
       <SidebarContent />
     </aside>
   );

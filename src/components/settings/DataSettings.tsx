@@ -130,8 +130,8 @@ export function DataSettings() {
     total: 10,
     breakdown: [
       { labelKey: "mediaFiles", size: 1.2, color: "bg-primary" },
-      { labelKey: "analyticsData", size: 0.8, color: "bg-blue-500" },
-      { labelKey: "postsContent", size: 0.3, color: "bg-green-500" },
+      { labelKey: "analyticsData", size: 0.8, color: "bg-info" },
+      { labelKey: "postsContent", size: 0.3, color: "bg-success" },
       { labelKey: "other", size: 0.1, color: "bg-orange-500" },
     ],
   };
@@ -205,7 +205,7 @@ export function DataSettings() {
                     {job.format === "JSON" ? (
                       <FileJson className="h-5 w-5 text-primary" />
                     ) : (
-                      <FileSpreadsheet className="h-5 w-5 text-green-500" />
+                      <FileSpreadsheet className="h-5 w-5 text-success" />
                     )}
                     <div>
                       <p className="text-sm font-medium">

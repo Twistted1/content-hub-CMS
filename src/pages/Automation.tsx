@@ -73,10 +73,10 @@ const AutomationPage = () => {
   const generatedPosts = posts?.filter(p => p.isAiGenerated || p.automationId || p.pipelineRunId) || [];
 
   const workflowSteps = [
-    { label: "Create", value: generatedPosts.length, detail: "Post + image generated", icon: FileText, tone: "text-blue-400" },
+    { label: "Create", value: generatedPosts.length, detail: "Post + image generated", icon: FileText, tone: "text-info" },
     { label: "Review", value: pendingPosts.length, detail: "Waiting approval", icon: Eye, tone: "text-orange-400" },
-    { label: "Schedule", value: scheduledPosts.length, detail: "On calendar", icon: Clock, tone: "text-purple-400" },
-    { label: "Publish", value: publishedPosts.length, detail: "Delivered", icon: Send, tone: "text-emerald-400" },
+    { label: "Schedule", value: scheduledPosts.length, detail: "On calendar", icon: Clock, tone: "text-brand-accent" },
+    { label: "Publish", value: publishedPosts.length, detail: "Delivered", icon: Send, tone: "text-success" },
   ];
 
   const handleApproveAll = async () => {
@@ -99,19 +99,19 @@ const AutomationPage = () => {
       label: t("automation.activeAutomations"),
       value: String(automations.filter((a) => a.status === "active").length),
       icon: Zap,
-      color: "text-emerald-400",
+      color: "text-success",
     },
     {
       label: t("automation.totalRuns"),
       value: String(automations.reduce((s, a) => s + (a.runs || 0), 0)),
       icon: RefreshCcw,
-      color: "text-blue-400",
+      color: "text-info",
     },
     {
       label: t("automation.timeSaved"),
       value: `${Math.max(1, Math.floor(automations.reduce((s, a) => s + (a.runs || 0), 0) * 0.4))}h`,
       icon: Clock,
-      color: "text-purple-400",
+      color: "text-brand-accent",
     },
     {
       label: t("automation.connectedApps"),
@@ -521,7 +521,7 @@ const AutomationPage = () => {
               </div>
               <div className="flex items-end justify-between">
                 <span className="text-3xl font-bold text-foreground">{stat.value}</span>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
                   +12%
                 </span>
               </div>
@@ -539,7 +539,7 @@ const AutomationPage = () => {
                   {t("automation.weeklyScheduleDesc")}
                 </p>
               </div>
-              <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${weeklyScheduleActive ? "bg-emerald-500/10 text-emerald-400" : "bg-primary/10 text-primary"}`}>
+              <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${weeklyScheduleActive ? "bg-success/10 text-success" : "bg-primary/10 text-primary"}`}>
                 {weeklyScheduleActive ? t("automation.active") : t("automation.ready")}
               </span>
             </div>
@@ -558,7 +558,7 @@ const AutomationPage = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <h3 className="text-sm font-bold text-foreground">{stream.label}</h3>
-                          <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${active ? "bg-emerald-500/10 text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+                          <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${active ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
                             {active ? t("automation.active") : t("automation.configured")}
                           </span>
                         </div>
@@ -771,7 +771,7 @@ const AutomationPage = () => {
 
                 <div className="bg-muted p-4 rounded-xl font-mono text-[10px] leading-relaxed max-h-48 overflow-y-auto custom-scrollbar">
                   {pipelineLogs.map((log, i) => (
-                    <div key={i} className={`mb-1 ${log.startsWith('❌') ? 'text-red-400' : log.startsWith('✅') ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                    <div key={i} className={`mb-1 ${log.startsWith('❌') ? 'text-destructive' : log.startsWith('✅') ? 'text-success' : 'text-muted-foreground'}`}>
                       {log}
                     </div>
                   ))}

@@ -180,9 +180,9 @@ export default function Articles() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "published": return "bg-green-500/10 text-green-500 border-green-500/20";
+      case "published": return "bg-success/10 text-success border-success/20";
       case "draft": return "bg-gray-500/10 text-gray-500 border-gray-500/20";
-      case "scheduled": return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+      case "scheduled": return "bg-info/10 text-info border-info/20";
       default: return "bg-gray-500/10 text-gray-500";
     }
   };
@@ -223,9 +223,9 @@ export default function Articles() {
               </SelectTrigger>
               <SelectContent className="bg-background/95 backdrop-blur-xl border-foreground/[0.16] rounded-2xl">
                 <SelectItem value="all" className="text-[10px] font-black uppercase tracking-widest py-3">{t("articles.allTransmissions")}</SelectItem>
-                <SelectItem value="draft" className="text-[10px] font-black uppercase tracking-widest py-3 text-amber-400">{t("articles.drafts")}</SelectItem>
-                <SelectItem value="scheduled" className="text-[10px] font-black uppercase tracking-widest py-3 text-blue-400">{t("articles.scheduled")}</SelectItem>
-                <SelectItem value="published" className="text-[10px] font-black uppercase tracking-widest py-3 text-emerald-400">{t("articles.published")}</SelectItem>
+                <SelectItem value="draft" className="text-[10px] font-black uppercase tracking-widest py-3 text-warn">{t("articles.drafts")}</SelectItem>
+                <SelectItem value="scheduled" className="text-[10px] font-black uppercase tracking-widest py-3 text-info">{t("articles.scheduled")}</SelectItem>
+                <SelectItem value="published" className="text-[10px] font-black uppercase tracking-widest py-3 text-success">{t("articles.published")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -271,7 +271,7 @@ export default function Articles() {
                             <Send className="h-4 w-4" /> {t("articles.deployNow")}
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest gap-3 text-rose-400" onClick={(e) => { e.stopPropagation(); handleDelete(article.id); }}>
+                        <DropdownMenuItem className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest gap-3 text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(article.id); }}>
                           <Trash2 className="h-4 w-4" /> {t("articles.purgeRecord")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -295,8 +295,8 @@ export default function Articles() {
                       </span>
                     </div>
                     {article.status === "published" && (
-                      <div className="flex items-center gap-2 text-emerald-400">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <div className="flex items-center gap-2 text-success">
+                        <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                         <span className="text-[10px] font-black uppercase tracking-widest">{t("articles.liveNode")}</span>
                       </div>
                     )}

@@ -49,6 +49,13 @@ export default {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
   			},
+			success: 'hsl(var(--success))',
+			info: 'hsl(var(--info))',
+			warn: {
+				DEFAULT: 'hsl(var(--warn))',
+				foreground: 'hsl(var(--warn-foreground))'
+			},
+			'brand-accent': 'hsl(var(--brand-accent))',
 			youtube: 'hsl(var(--platform-youtube))',
 			twitter: 'hsl(var(--platform-twitter))',
 			facebook: 'hsl(var(--platform-facebook))',

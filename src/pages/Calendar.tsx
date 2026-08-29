@@ -68,10 +68,10 @@ type CatKey = "content" | "publish" | "meeting" | "deadline" | "personal" | "awa
 
 const CAT: Record<CatKey, { color: string; bg: string; border: string; label: string; Icon: any; iconBg: string; iconColor: string }> = {
   content:  { color: "text-primary",      bg: "bg-primary/10",    border: "border-primary/20",   label: "Content",   Icon: Clapperboard, iconBg: "bg-primary/10",    iconColor: "text-primary" },
-  publish:  { color: "text-amber-300",   bg: "bg-amber-500/10",  border: "border-amber-500/20", label: "Publish",   Icon: Briefcase,    iconBg: "bg-amber-500/10",   iconColor: "text-amber-400" },
-  meeting:  { color: "text-blue-300",    bg: "bg-blue-500/10",   border: "border-blue-500/20",  label: "Meetings",  Icon: UsersIcon,    iconBg: "bg-blue-500/10",    iconColor: "text-blue-400" },
-  deadline: { color: "text-red-300",     bg: "bg-red-500/10",    border: "border-red-500/20",   label: "Deadlines", Icon: AlarmClock,   iconBg: "bg-red-500/10",     iconColor: "text-red-400" },
-  personal: { color: "text-emerald-300", bg: "bg-emerald-500/10", border: "border-emerald-500/20", label: "Personal", Icon: Sprout,      iconBg: "bg-emerald-500/10", iconColor: "text-emerald-400" },
+  publish:  { color: "text-warn",   bg: "bg-warn/10",  border: "border-warn/20", label: "Publish",   Icon: Briefcase,    iconBg: "bg-warn/10",   iconColor: "text-warn" },
+  meeting:  { color: "text-info",    bg: "bg-info/10",   border: "border-info/20",  label: "Meetings",  Icon: UsersIcon,    iconBg: "bg-info/10",    iconColor: "text-info" },
+  deadline: { color: "text-destructive",     bg: "bg-destructive/10",    border: "border-destructive/20",   label: "Deadlines", Icon: AlarmClock,   iconBg: "bg-destructive/10",     iconColor: "text-destructive" },
+  personal: { color: "text-success", bg: "bg-success/10", border: "border-success/20", label: "Personal", Icon: Sprout,      iconBg: "bg-success/10", iconColor: "text-success" },
   awaiting_review: { color: "text-orange-300", bg: "bg-orange-500/10", border: "border-orange-500/20", label: "Needs Review", Icon: AlarmClock, iconBg: "bg-orange-500/10", iconColor: "text-orange-400" },
 };
 
@@ -91,7 +91,7 @@ const PLAT: Record<string, { bar: string; card: string; accent: string; iconColo
 function getBarColor(evt: CalEvent) {
   if (evt.platform && evt.platform !== "none" && PLAT[evt.platform]) return PLAT[evt.platform].bar;
   const c = CAT[evt.category as CatKey];
-  return c ? c.bg : "bg-violet-500/20";
+  return c ? c.bg : "bg-brand-accent/20";
 }
 
 function getCatStyle(evt: CalEvent) {
@@ -586,7 +586,7 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
             <div className="flex items-center justify-between mb-1">
               <label className={LABEL_CLS}>{t("calendar.captionLabel")}</label>
               {limit && (
-                <span className={`text-[10px] font-mono font-bold tabular-nums ${captionOver ? "text-destructive" : captionPct > 85 ? "text-amber-400" : "text-muted-foreground"}`}>
+                <span className={`text-[10px] font-mono font-bold tabular-nums ${captionOver ? "text-destructive" : captionPct > 85 ? "text-warn" : "text-muted-foreground"}`}>
                   {t("calendar.charsOf", { current: captionLen.toLocaleString(), max: captionMax.toLocaleString(), platform: limit.label })}
                 </span>
               )}
@@ -601,7 +601,7 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
             {limit && (
               <div className="mt-1.5 h-1 w-full rounded-full bg-muted/40 overflow-hidden">
                 <div
-                  className={`h-full transition-all ${captionOver ? "bg-destructive" : captionPct > 85 ? "bg-amber-400" : "bg-primary"}`}
+                  className={`h-full transition-all ${captionOver ? "bg-destructive" : captionPct > 85 ? "bg-warn" : "bg-primary"}`}
                   style={{ width: `${captionPct}%` }}
                 />
               </div>
@@ -726,17 +726,17 @@ function EventModal({ event, defaultDate, onSave, onDelete, onApprove, onClose }
 
           {/* Needs approval banner */}
           {event?.status === "awaiting_review" && (
-            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-warn/10 border border-warn/30 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="text-xl">⚠️</span>
                 <div>
-                  <p className="text-sm font-bold text-amber-400">{t("calendar.needsApproval")}</p>
-                  <p className="text-[10px] text-amber-300/60">{t("calendar.aiAwaitingReview")}</p>
+                  <p className="text-sm font-bold text-warn">{t("calendar.needsApproval")}</p>
+                  <p className="text-[10px] text-warn/60">{t("calendar.aiAwaitingReview")}</p>
                 </div>
               </div>
               <button
                 onClick={() => { if (onApprove) onApprove(event.id); onClose(); }}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-black rounded-xl transition-colors"
+                className="px-4 py-2 bg-warn hover:brightness-110 text-warn-foreground text-xs font-black rounded-xl transition-colors"
               >
                 🚀 {t("calendar.approve")}
               </button>
@@ -954,7 +954,7 @@ export default function ContentCalendar() {
                 />
               </div>
               <div className="hidden lg:flex items-center gap-2">
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 uppercase tracking-widest"><CalendarDays className="w-3 h-3" /> {todayCount}</span>
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-success/10 border border-success/20 text-[9px] font-black text-success uppercase tracking-widest"><CalendarDays className="w-3 h-3" /> {todayCount}</span>
                 <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary/10 border border-primary/20 text-[9px] font-black text-primary uppercase tracking-widest"><Send className="w-3 h-3" /> {publishCount}</span>
               </div>
             </div>

@@ -300,9 +300,9 @@ export default function Platforms() {
           {/* Overview Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: CheckCircle2, label: t("platforms.statConnected"), value: `${connectedPlatforms.length}/${platforms.length}`, subtext: t("platforms.statPlatformsSubtext"), color: "text-emerald-400" },
-              { icon: BarChart3, label: t("platforms.statTotalPosts"), value: (posts || []).length.toString(), subtext: t("platforms.statAllTime"), color: "text-purple-400" },
-              { icon: Calendar, label: t("platforms.statScheduled"), value: scheduledPosts.filter((p) => p.status !== "published").length.toString(), subtext: t("platforms.statPending"), color: "text-indigo-400" },
+              { icon: CheckCircle2, label: t("platforms.statConnected"), value: `${connectedPlatforms.length}/${platforms.length}`, subtext: t("platforms.statPlatformsSubtext"), color: "text-success" },
+              { icon: BarChart3, label: t("platforms.statTotalPosts"), value: (posts || []).length.toString(), subtext: t("platforms.statAllTime"), color: "text-brand-accent" },
+              { icon: Calendar, label: t("platforms.statScheduled"), value: scheduledPosts.filter((p) => p.status !== "published").length.toString(), subtext: t("platforms.statPending"), color: "text-info" },
               { icon: FileText, label: t("platforms.statPublished"), value: (posts || []).filter((p) => p.status === "published").length.toString(), subtext: t("platforms.statAllTime"), color: "text-primary" },
             ].map((stat, index) => (
               <div

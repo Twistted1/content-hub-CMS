@@ -70,9 +70,9 @@ const getQuickActions = (t: TFunction) => [
 function HeaderStat({ icon, count, label, color }: any) {
   const colorMap: any = {
     indigo: "bg-primary/10 text-primary border-primary/20",
-    amber: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-    rose: "bg-rose-500/10 text-rose-500 border-rose-500/20",
-    emerald: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+    amber: "bg-warn/10 text-warn border-warn/20",
+    rose: "bg-destructive/10 text-destructive border-destructive/20",
+    emerald: "bg-success/10 text-success border-success/20"
   };
   return (
     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[11px] font-bold tracking-tight ${colorMap[color] || colorMap.indigo}`}>

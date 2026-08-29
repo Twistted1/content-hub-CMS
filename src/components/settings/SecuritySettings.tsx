@@ -255,7 +255,7 @@ export function SecuritySettings() {
                 </p>
               </div>
               {mfaEnrolled && (
-                <Badge variant="secondary" className="bg-green-500/10 text-green-500">
+                <Badge variant="secondary" className="bg-success/10 text-success">
                   {t("settings.security.enabled")}
                 </Badge>
               )}
