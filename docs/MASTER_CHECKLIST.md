@@ -590,10 +590,48 @@ real, reproducible bugs one at a time. All merged to `main`, live on
       around `.start()`) and the AI Assistant page surfaces it as a
       toast with a reason-specific message. New i18n keys added to both
       `en.json`/`pt.json`, parity test passing. Verified: `tsc --noEmit`
-      clean, `eslint` 0 new errors, `vitest` 63/63 passing. **Retest
+      clean, `eslint` 0 new errors, `vitest` 63/63 passing.
+- [x] **Two more real bugs found on retest, both fixed (Phase 10,
+      2026-08-29).** The `getClaims` fix above worked — but the user's
+      retest (different browser, DevTools console open) surfaced two
+      more things the console made diagnosable directly, no guessing:
+      1. **Microphone showed "not allowed" despite the browser
+         permission being granted.** `vercel.json` sends
+         `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+         on every response — `microphone=()` disables the feature for
+         the whole document at the HTTP-header level, overriding
+         whatever the user allowed in the browser's own per-site
+         permission UI. Changed to `microphone=(self)`; camera/
+         geolocation stay locked since nothing uses them.
+      2. **Every chat message, any content, failed with a 400 "Invalid
+         message entry."** Console showed the request payload being
+         rejected before reaching OpenAI. `novee-chat`'s validation caps
+         every message at 8000 characters — meant to stop a
+         runaway/abusive *user* message, but applied uniformly to the
+         *system* message too. The client's system prompt
+         (`useChat.ts`) embeds the full `CONTENT_SCHEDULE` JSON so
+         Novee always works off the real schedule instead of inventing
+         one — measured it directly, that JSON alone is ~14.6KB.
+         Every single request was rejected regardless of what the user
+         typed. Gave the system role its own 50000-char ceiling instead
+         of sharing the 8000 cap meant for user input. Deployed as
+         `novee-chat` v44.
+
+      **Also clarified a real point of confusion**: the user asked
+      whether "Novee" was a separate floating chatbot widget they
+      remembered removing, now somehow back. Traced it — it never was:
+      "Novee" is purely this same AI Assistant's internal backend name
+      (the edge function slug, the system-prompt persona, log-line
+      prefixes); confirmed zero occurrences in any user-facing text or
+      i18n key. What *was* real dead code: `src/hooks/useNoveeChat.ts`,
+      a near-duplicate of `useChat.ts` with zero imports anywhere in the
+      app — a genuine leftover from an earlier iteration. Deleted it.
+
+      Verified: `tsc --noEmit` clean, `vitest` 63/63 passing. **Retest
       needed**: this session's sandbox can't reach the live Supabase
-      endpoint to fire a real chat message itself (outbound network
-      policy) — ask the user to send another message once they see this.
+      endpoint or the deployed site to fire a real chat message or mic
+      request itself (outbound network policy) — ask the user to try
+      both again once they see this.
 - [x] **Production deploy pipeline confirmed working end-to-end**: this
       branch → GitHub push → Vercel auto-deploy (GitHub integration
       already wired up, no action needed) → `content-cms-hub.vercel.app`
