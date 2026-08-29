@@ -106,25 +106,25 @@ handling that hid a billing state behind "rate limit exceeded") — all
 three fixed and deployed. **The user then confirmed directly: the OpenAI
 account genuinely has zero usage credit right now, by choice** — that's
 a billing decision, not a code problem, and the assistant will work as
-soon as credit is added. 🔴 **New, needs one manual step from you**:
-while chasing the AI Assistant issue the user also hit the same stale
-theme bug reappear on a second, different browser — traced to
-`vercel.json` never setting an explicit `Cache-Control`, now fixed (see
-Phase 10), but that only prevents *future* staleness. **Do one hard
-refresh (Ctrl+Shift+R) or open a fresh tab** to clear whatever your
-browser already cached before this fix landed, then the light/dark theme
-visual pass below should reflect the real current state. ✅ The E2E
-Supabase test project was recreated (`amyzklcdwrspazveutqz`, see Phase
-9), all three GitHub Actions secrets (`E2E_SUPABASE_URL`,
-`E2E_SUPABASE_PUBLISHABLE_KEY`, `E2E_SUPABASE_SERVICE_ROLE_KEY`) were
-set, and the E2E workflow is confirmed green on the latest run (Phase
-10) — no longer a blocker. One manual verification pass is still on you,
-not code work: a live visual pass toggling light/dark theme on each page
-in your own browser (after that hard refresh) now that the Phase 10
-sweep has re-enabled it — the CSS
-conversions follow the codebase's already-proven pattern but haven't been
-screenshotted side-by-side. Beyond that, nothing else code-related is
-blocking core CMS
+soon as credit is added. ✅ **Stale-app caching found and fixed**: while
+chasing the AI Assistant issue the user also hit the same stale theme
+bug reappear on a second, different browser — traced to `vercel.json`
+never setting an explicit `Cache-Control`, now fixed (see Phase 10).
+After one hard refresh, the user's next screenshot showed light theme
+genuinely broken on the Overview/Dashboard page specifically — traced to
+that page never actually being swept despite an earlier claim that it
+was; fully fixed, plus a repo-wide re-check afterward caught one more
+real instance elsewhere (see Phase 10 for both). ✅ The E2E Supabase test
+project was recreated (`amyzklcdwrspazveutqz`, see Phase 9), all three
+GitHub Actions secrets (`E2E_SUPABASE_URL`, `E2E_SUPABASE_PUBLISHABLE_KEY`,
+`E2E_SUPABASE_SERVICE_ROLE_KEY`) were set, and the E2E workflow is
+confirmed green on the latest run (Phase 10) — no longer a blocker.
+🔴 **Still open, needs your eyes**: a live visual pass toggling light/dark
+theme on every remaining page (not just Overview) in your own browser —
+the CSS conversions across all 11 files follow the same pattern now
+proven correct on Overview, but haven't all been screenshotted
+side-by-side, and this session has already been wrong once about a page
+being "done." Beyond that, nothing else code-related is blocking core CMS
 use — remaining items are GitHub/Supabase settings only you can change,
 or decisions only you can make — see the "Open" sections below.
 
@@ -685,6 +685,49 @@ real, reproducible bugs one at a time. All merged to `main`, live on
       this fix, so it still needs one hard refresh (Ctrl+Shift+R) or a
       fresh tab to pick it up; every deploy after that should be clean
       automatically.
+- [x] **Overview/Dashboard page fixed for light theme — never actually
+      swept, unlike the other 10 files (Phase 10, 2026-08-29).** After
+      the hard refresh cleared the caching issue, the user's next
+      screenshot showed light theme "looking awful" specifically on
+      Overview: a solid near-black greeting banner sitting on an
+      otherwise white page, a barely-visible "Platform Health" empty
+      state, washed-out chart text. Traced it: `src/pages/Index.tsx` was
+      never actually touched by the earlier sweep despite this file's
+      own Phase 9 entry claiming Overview was covered — it still had
+      ~40 occurrences of the exact hardcoded `text-white`/
+      `bg-white/[0.0x]`/`border-white/[0.0x]` pattern fixed everywhere
+      else. Swept it the same way: the greeting banner (was
+      `bg-zinc-950/80`, opaque near-black regardless of theme) now uses
+      the same `.glass-card` idiom every other panel on that exact page
+      already uses; ~15 more glass-panel occurrences (nav-arrow buttons,
+      goal cards, automation rows, heatmap empty-cell color) converted
+      to `bg-foreground`/`border-foreground` equivalents; 5 empty-state
+      icon+text combos that stacked `text-muted-foreground/30` with
+      `opacity-10` (nearly invisible against white, was a subtle
+      "ghost" hint against near-black) normalized to the
+      opacity-60-text/opacity-20-icon pattern already proven legible in
+      both themes elsewhere (e.g. `Automation.tsx`'s empty states); the
+      activity chart's axis labels and tooltip used hardcoded colors
+      (`fill: "#6b7280"`, `background: "hsl(222 47% 6%)"`) — the tooltip
+      in particular would've popped up as a dark box floating over an
+      otherwise light page — switched to the same
+      `--muted-foreground`/`--popover`/`--popover-foreground`/`--border`
+      tokens used everywhere else. A repo-wide re-check afterward (every
+      page and component, not just the original file list) found one
+      more real instance: `AutomationCard.tsx`'s dropdown menu overrode
+      its base component's already-theme-aware `bg-popover` default with
+      a literal `bg-[#0a0c10]/95` (always near-black) — fixed to
+      `bg-popover/95`. Everything else that re-check flagged (platform
+      brand-color badges in Calendar/Automation, a code-viewer block and
+      an image-caption overlay in WorkflowTest, the Sidebar's
+      white-tinted overlays — the sidebar stays on its own
+      permanently-dark rail in both themes by design, LinkedIn's actual
+      brand blue, a gray status badge matching the same
+      amber/blue/emerald status-color convention used everywhere) is a
+      legitimate theme-independent exception under this session's
+      already-established pattern, not a bug. Verified: `tsc --noEmit`
+      clean, `eslint` 0 new errors, `vitest` 63/63 passing, production
+      build succeeds.
 - [x] **Production deploy pipeline confirmed working end-to-end**: this
       branch → GitHub push → Vercel auto-deploy (GitHub integration
       already wired up, no action needed) → `content-cms-hub.vercel.app`
