@@ -867,30 +867,55 @@ was safely fixable, flagged the rest with a specific reason.
       incurs downtime per Supabase's own remediation note, so this
       wasn't run unprompted — schedule it for a low-traffic window if
       reclaiming the disk space matters, otherwise safe to ignore.
-- [ ] **Migrations/live-schema conflict from Phase 9 still present,
-      not re-litigated here**: `supabase/migrations/` still has two
-      files that both `CREATE TABLE public.automations` — confirmed
-      still true, not fixed. Already documented in Phase 9 as "a blind
-      replay of these migrations would fail; live introspection is the
-      reliable source of truth" (that's how the E2E project's schema was
-      built). Reconciling the migration *history* itself into something
-      that would cleanly replay from scratch is a real but separate
-      piece of work, not done in this pass.
+- [x] **Migrations/live-schema conflict from Phase 9 — fixed
+      (2026-08-29, same session, later pass).** `supabase/migrations/
+      20260222000001_create_automations.sql` attempted `CREATE TABLE
+      public.automations` and `CREATE TYPE public.automation_status`,
+      both already created by the earlier `20260127204449_...sql` with
+      a different, incompatible schema and different enum values — a
+      fresh replay of these migrations in order fails right here.
+      Confirmed directly against live production: the actual
+      `automations` table's columns match the first migration exactly,
+      and this migration's version isn't present in Supabase's own
+      applied-migrations ledger at all — it never successfully ran
+      anywhere, so neutralizing it isn't rewriting history that actually
+      happened. Confirmed nothing later references this file's
+      never-applied columns/types. Replaced its body with a `SELECT 1;`
+      no-op and an explanatory comment, so a fresh migration replay
+      (e.g. rebuilding another disposable E2E project the way Phase 9
+      needed to) no longer fails on it.
+- [x] **Per-page SEO metadata — fixed (2026-08-29, same session, later
+      pass).** Every route, including the public marketing pages search
+      engines actually index (Pricing, Terms, Privacy, Cookies) plus
+      Auth, shared one static `<title>`/`<meta description>` from
+      `index.html`. Added `useDocumentMeta` — a plain `useEffect` + DOM
+      writes, not `react-helmet-async` (this is a client-rendered-only
+      SPA; helmet's real value, SSR-safe head management, doesn't
+      apply) — setting the route's title, meta description, and
+      `og:title`/`og:description`, resetting to the app-wide default on
+      unmount. Wired into Terms, Privacy, Cookies, Pricing, and Auth
+      using each page's existing i18n title key plus a new
+      `metaDescription` key added to both `en.json` and `pt.json`,
+      keeping full bilingual parity.
 - [ ] **~18 unused indexes remain** (from earlier phases' advisor runs,
       re-confirmed present) — deliberately deferred until real
       production traffic exists to judge which are actually dead weight
       versus just unused so far.
-- [ ] **Per-page SEO metadata still static** — every route (including
-      the public marketing pages: Pricing, Terms, Privacy, Cookies)
-      shares one `<title>`/`<meta description>` from `index.html`; there
-      is no `react-helmet`-style per-route override. Low priority for
-      the authenticated dashboard routes, more relevant for the public
-      pages search engines would actually index — not fixed in this
-      pass, flagged for a decision on whether it's worth the added
-      dependency.
+
+**Genuinely left for the user, batched together for one pass later** (per
+explicit request — these two need the user's own action, not more code):
+- 🔴 **Leaked Password Protection is disabled in Supabase Auth** — a
+  one-toggle fix in the Supabase dashboard (Authentication →
+  Policies/Providers → Password), not reachable from any tool available
+  in this session.
+- **`net._http_response` has 146MB of table bloat** from this project's
+  own `pg_cron` churn (384 live rows, confirmed) — a `VACUUM FULL` would
+  reclaim it but explicitly incurs downtime per Supabase's own
+  remediation note, so it's the user's call on timing, not run
+  unprompted.
 
 Verified after every fix: `tsc --noEmit` clean, `eslint` 0 new errors,
-`vitest` 63/63 passing.
+`vitest` 63/63 passing, production build succeeds.
 
 - [x] **Production deploy pipeline confirmed working end-to-end**: this
       branch → GitHub push → Vercel auto-deploy (GitHub integration
