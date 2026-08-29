@@ -79,13 +79,23 @@ serve(async (req) => {
     if (!Array.isArray(messages) || messages.length === 0 || messages.length > 50) {
       return errRes(400, "invalid_payload", "Invalid messages payload");
     }
+    // The 8000-char cap guards against a runaway/abusive *user* message; it
+    // was wrongly applied to the system message too. The client's system
+    // prompt embeds the full CONTENT_SCHEDULE JSON (all 4 periods x 7 days
+    // x every platform's slots) so Novee always has the real schedule
+    // instead of inventing one - that's routinely 14-16KB on its own before
+    // the rest of the prompt text, so every single request (any user text,
+    // any length) was failing this check and never reaching OpenAI. Give
+    // the system role its own, much higher ceiling instead of exempting it
+    // outright, so a genuinely corrupted/runaway prompt still gets caught.
     for (const m of messages) {
+      const maxLen = m?.role === "system" ? 50000 : 8000;
       if (
         !m ||
         typeof m.role !== "string" ||
         !["system", "user", "assistant"].includes(m.role) ||
         typeof m.content !== "string" ||
-        m.content.length > 8000
+        m.content.length > maxLen
       ) {
         return errRes(400, "invalid_message_entry", "Invalid message entry");
       }
