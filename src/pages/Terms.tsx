@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Footer } from '@/components/layout/Footer';
 import { useTranslation } from 'react-i18next';
+import { useDocumentMeta } from '@/hooks/useDocumentMeta';
 
 interface PolicySection {
   title: string;
@@ -13,6 +14,7 @@ interface PolicySection {
 export default function Terms() {
   const { t, i18n } = useTranslation();
   const sections = t('terms.sections', { returnObjects: true }) as PolicySection[];
+  useDocumentMeta(t('terms.title'), t('terms.metaDescription'));
 
   return (
     <div className="min-h-screen bg-background">

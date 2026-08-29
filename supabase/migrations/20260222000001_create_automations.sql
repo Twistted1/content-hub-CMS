@@ -1,74 +1,24 @@
--- Create automation enums
-CREATE TYPE public.automation_trigger_type AS ENUM ('scheduled', 'new-content', 'engagement', 'manual');
-CREATE TYPE public.automation_status AS ENUM ('active', 'paused');
-
--- Create automations table
-CREATE TABLE public.automations (
-    id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    description TEXT,
-    trigger_type automation_trigger_type NOT NULL,
-    trigger_config JSONB DEFAULT '{}'::jsonb,
-    platforms TEXT[] DEFAULT '{}',
-    status automation_status NOT NULL DEFAULT 'paused',
-    last_run_at TIMESTAMP WITH TIME ZONE,
-    run_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-);
-
--- Create automation_runs table
-CREATE TABLE public.automation_runs (
-    id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-    automation_id UUID NOT NULL REFERENCES public.automations(id) ON DELETE CASCADE,
-    status TEXT NOT NULL CHECK (status IN ('success', 'failed', 'running')),
-    started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    completed_at TIMESTAMP WITH TIME ZONE,
-    message TEXT,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-);
-
--- Enable RLS
-ALTER TABLE public.automations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.automation_runs ENABLE ROW LEVEL SECURITY;
-
--- Automations RLS
-CREATE POLICY "Users can view own automations"
-ON public.automations FOR SELECT
-USING (auth.uid() = user_id OR has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "Users can insert own automations"
-ON public.automations FOR INSERT
-WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own automations"
-ON public.automations FOR UPDATE
-USING (auth.uid() = user_id OR has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "Users can delete own automations"
-ON public.automations FOR DELETE
-USING (auth.uid() = user_id OR has_role(auth.uid(), 'admin'));
-
--- Automation Runs RLS
-CREATE POLICY "Users can view own automation runs"
-ON public.automation_runs FOR SELECT
-USING (EXISTS (
-    SELECT 1 FROM public.automations
-    WHERE automations.id = automation_runs.automation_id
-    AND (automations.user_id = auth.uid() OR has_role(auth.uid(), 'admin'))
-));
-
-CREATE POLICY "Users can insert runs for own automations"
-ON public.automation_runs FOR INSERT
-WITH CHECK (EXISTS (
-    SELECT 1 FROM public.automations
-    WHERE automations.id = automation_runs.automation_id
-    AND automations.user_id = auth.uid()
-));
-
--- Triggers for updated_at
-CREATE TRIGGER update_automations_updated_at
-BEFORE UPDATE ON public.automations
-FOR EACH ROW
-EXECUTE FUNCTION public.update_updated_at_column();
+-- This migration never actually applied to any real environment. It
+-- attempts to CREATE TABLE public.automations and CREATE TYPE
+-- public.automation_status, both of which the earlier migration
+-- 20260127204449_88e41d48-e992-4548-9fe0-3cf18d04e0c4.sql already created
+-- (with a different, incompatible schema and a different set of enum
+-- values) - a fresh replay of these migrations in order fails right here.
+--
+-- Confirmed directly against live production (2026-08-29): the actual
+-- `automations` table's columns (id, user_id, name, description, trigger,
+-- schedule, platforms, status, actions, conditions, last_run, next_run,
+-- run_count, created_at, updated_at) match the *first* migration exactly,
+-- not this one - this file's version is not what's running. It's also
+-- absent from Supabase's own applied-migrations ledger
+-- (`supabase_migrations.schema_migrations`), confirming it never
+-- successfully ran anywhere, so rewriting it here isn't rewriting history
+-- that actually happened.
+--
+-- Left in place (rather than deleted) as a historical record, neutralized
+-- so a fresh migration replay - e.g. rebuilding a disposable test project
+-- from these files - no longer fails on it. See docs/MASTER_CHECKLIST.md,
+-- Phase 9 and Phase 11, for how this was found and why live introspection
+-- (not a migration replay) was used to build the E2E test project's schema
+-- in the meantime.
+SELECT 1;

@@ -1721,7 +1721,8 @@
     ],
     "contactTitle": "11. Contact Us",
     "contactPrefix": "If you have questions about this Privacy Policy or our data practices, please contact us at",
-    "contactEmail": "privacy@contenthub.io"
+    "contactEmail": "privacy@contenthub.io",
+    "metaDescription": "Learn how Content Hub CMS collects, uses, and protects your personal data in our Privacy Policy."
   },
   "terms": {
     "navBrand": "Content Hub",
@@ -1786,7 +1787,8 @@
     ],
     "contactTitle": "10. Contact Us",
     "contactPrefix": "If you have any questions about these Terms of Service, please contact us at",
-    "contactEmail": "legal@contenthub.io"
+    "contactEmail": "legal@contenthub.io",
+    "metaDescription": "Read the Terms of Service for Content Hub CMS - the rules and conditions for using our platform."
   },
   "pricing": {
     "navBrand": "Content Hub",
@@ -1874,7 +1876,8 @@
         "question": "Is there a limit on the number of platforms I can connect?",
         "answer": "Free users can connect up to 3 platforms, Starter up to 6, and Pro users have unlimited connections."
       }
-    ]
+    ],
+    "metaDescription": "Compare Content Hub CMS plans and pricing - simple, transparent pricing for teams of every size."
   },
   "landing": {
     "navBrand": "Content Hub",
@@ -2128,6 +2131,7 @@
     ],
     "contactTitle": "7. Contact Us",
     "contactPrefix": "If you have questions about this Cookie Policy, please contact us at",
-    "contactEmail": "privacy@contenthub.io"
+    "contactEmail": "privacy@contenthub.io",
+    "metaDescription": "Understand how Content Hub CMS uses cookies and similar technologies in our Cookie Policy."
   }
 }
