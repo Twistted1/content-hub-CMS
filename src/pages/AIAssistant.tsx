@@ -188,6 +188,16 @@ const AIAssistant = () => {
         const base = micBaseTextRef.current;
         inputRef.current.value = (base ? base + " " : "") + finalTranscript;
       }
+    },
+    (reason) => {
+      const key = reason === "not-allowed" || reason === "permission-denied"
+        ? "aiAssistant.micErrorPermission"
+        : reason === "audio-capture"
+        ? "aiAssistant.micErrorNoDevice"
+        : reason === "no-speech"
+        ? "aiAssistant.micErrorNoSpeech"
+        : "aiAssistant.micErrorGeneric";
+      toast({ title: t("aiAssistant.micErrorTitle"), description: t(key), variant: "destructive" });
     }
   );
   const handleMicToggle = () => {
