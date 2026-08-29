@@ -97,17 +97,18 @@ for the remaining non-blocking cleanup item (edge function drift).
 
 **Open, waiting on you:** the calendar is currently empty and content
 generation is paused — see Phase 9 — resume it by re-activating "Weekly
-Content Schedule" in Automation whenever you're ready. The 🔴
-`OPENAI_API_KEY` item from Phase 8 is very likely resolved (see Phase 9),
-downgraded from a confirmed blocker to "believed fixed, not directly
-re-tested." ✅ The E2E Supabase test project was recreated
+Content Schedule" in Automation whenever you're ready. ✅ The 🔴
+`OPENAI_API_KEY` item from Phase 8 is now actually confirmed, not just
+inferred: the user tested the AI Assistant directly and hit a real crash
+(`supabase.auth.getClaims is not a function`) — not the OpenAI key at
+all. Root cause and fix in Phase 10 below; test it again once you see
+this. ✅ The E2E Supabase test project was recreated
 (`amyzklcdwrspazveutqz`, see Phase 9), all three GitHub Actions secrets
 (`E2E_SUPABASE_URL`, `E2E_SUPABASE_PUBLISHABLE_KEY`,
 `E2E_SUPABASE_SERVICE_ROLE_KEY`) were set, and the E2E workflow is
-confirmed green on the latest run (Phase 10) — no longer a blocker. Two
-manual verification passes are still on you, not code work: (1) send a
-real message to the AI Assistant to confirm `OPENAI_API_KEY` end-to-end,
-and (2) a live visual pass toggling light/dark theme on each page in your
+confirmed green on the latest run (Phase 10) — no longer a blocker. One
+manual verification pass is still on you, not code work: a live visual
+pass toggling light/dark theme on each page in your
 own browser now that the Phase 10 sweep has re-enabled it — the CSS
 conversions follow the codebase's already-proven pattern but haven't been
 screenshotted side-by-side. Beyond that, nothing else code-related is
@@ -562,6 +563,37 @@ real, reproducible bugs one at a time. All merged to `main`, live on
       each page in a real browser — the conversions follow the exact
       idiom already proven correct in the Phase 9 `.glass-card`/
       Sidebar/Overview fix, but haven't been screenshotted side-by-side.
+- [x] **AI Assistant was crashing on every message — real bug, not the
+      Phase 8 OpenAI key concern (Phase 10, 2026-08-29).** User tested
+      it directly, screenshotted the actual error: "Oops! My circuits
+      got a bit tangled there. (`supabase.auth.getClaims is not a
+      function`)". Root cause: both `novee-chat` and `generate-strategy`
+      edge functions call `supabase.auth.getClaims(token)` to validate
+      the caller's session, but pin `@supabase/supabase-js@2.45.0` and
+      `@2.57.2` respectively — versions whose auth client has no
+      `getClaims()` method at all (it's a newer addition that also
+      requires asymmetric JWT signing keys this project doesn't have
+      configured). Every chat message threw a `TypeError` before the
+      request ever reached OpenAI — nothing to do with the API key.
+      Fixed by swapping both to `supabase.auth.getUser(token)`, which
+      has always existed on the client and validates a bearer JWT the
+      same way with no extra project configuration. Confirmed the
+      deployed source matched the repo exactly before touching it (no
+      drift to reconcile), then deployed both to production
+      (`novee-chat` v43, `generate-strategy` v41). Also fixed a smaller
+      bug found in the same screenshot: the mic button's error path was
+      silent — a failed voice-input start (permission denied, no
+      microphone, browser hiccup) just flipped the button back off with
+      no feedback, looking like a "double toggle" that did nothing.
+      `useSpeechRecognition` now takes an `onError` callback (wired
+      through the Web Speech API's `onerror` event plus a `try/catch`
+      around `.start()`) and the AI Assistant page surfaces it as a
+      toast with a reason-specific message. New i18n keys added to both
+      `en.json`/`pt.json`, parity test passing. Verified: `tsc --noEmit`
+      clean, `eslint` 0 new errors, `vitest` 63/63 passing. **Retest
+      needed**: this session's sandbox can't reach the live Supabase
+      endpoint to fire a real chat message itself (outbound network
+      policy) — ask the user to send another message once they see this.
 - [x] **Production deploy pipeline confirmed working end-to-end**: this
       branch → GitHub push → Vercel auto-deploy (GitHub integration
       already wired up, no action needed) → `content-cms-hub.vercel.app`
