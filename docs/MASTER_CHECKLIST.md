@@ -802,6 +802,96 @@ real, reproducible bugs one at a time. All merged to `main`, live on
       the build/lint/test suite plus a very close manual reading of the
       generated CSS math against every value in the spec. Ask the user
       to confirm the actual on-screen result once deployed.
+
+## Phase 11 — Final security/polish pass (2026-08-29)
+
+User asked for a broad pre-launch pass: edge cases/error handling,
+security (auth, input sanitization, file uploads), deployment readiness
+(env vars, migrations), and UX polish (empty states, 404, favicons/SEO).
+Investigated each against live systems rather than assuming; fixed what
+was safely fixable, flagged the rest with a specific reason.
+
+- [x] **Real, live file-upload security gap found and fixed.** The
+      `post-images` storage bucket had `file_size_limit = null` and
+      `allowed_mime_types = null` — no restriction at all, unlike its
+      sibling `avatars`/`media` buckets. Its own RLS policy
+      ("Authenticated users can upload to own post-images folder") lets
+      *any* authenticated user `INSERT` into their own folder there, and
+      the bucket is `public: true` — so any logged-in user could have
+      uploaded an arbitrary file (an executable, anything) of arbitrary
+      size and had it served publicly at a predictable URL. This is
+      exactly the "malicious executable instead of an image" risk asked
+      about, confirmed live via the actual RLS policy and bucket config,
+      not assumed. Fixed directly on prod: `file_size_limit` set to
+      20MB, `allowed_mime_types` set to the same image set
+      `avatars`/`media` already use. Verified the only code path that
+      writes here — `content-pipeline`'s server-side, service-role image
+      upload — always writes PNGs well under that limit, so nothing
+      existing breaks.
+- [x] **`usePosts.ts`'s `uploadMedia` had no client-side file
+      validation** — `ProfileSettings.tsx`'s avatar upload already
+      checked type/size before uploading, this path didn't. The `media`
+      bucket does enforce the real limit server-side (confirmed:
+      50MB, image/video/audio only), so this was never actually
+      exploitable, but a user hitting the block got a raw Supabase
+      storage error instead of a message saying what's wrong. Added the
+      same client-side check, matching the bucket's real limits.
+- [x] **`index.html` had no `<link rel="icon">`** — relied entirely on
+      browsers' implicit `/favicon.ico` convention (the file exists in
+      `public/`, just never explicitly declared). Added the link tag
+      plus a `theme-color` meta tag.
+- [x] **Removed `public/Schedule Digital Presence.txt`** — a stray raw
+      schedule dump that's been sitting in `public/` since very early in
+      the project (predates Phase 1), unreferenced anywhere in the app,
+      silently served to anyone who requested it at the site root.
+- [x] **Confirmed clean**: `.env`/`.env.production`/`.env.e2e` are
+      gitignored, only `.env.example`/`.env.e2e.example` (templates, no
+      real values) are tracked; no `service_role` key or reference to
+      one exists anywhere in client-side `src/` code. Env-var separation
+      is correctly set up.
+- [x] **404 page exists and works** (`NotFound.tsx`, i18n-wired, correct
+      theme tokens, catch-all route registered last in `App.tsx`) — no
+      changes needed.
+- [ ] 🔴 **Leaked Password Protection is disabled in Supabase Auth**
+      (flagged by the live security advisor) — Supabase Auth checks new
+      passwords against HaveIBeenPwned when this is on; it's currently
+      off. This is a one-toggle fix in the Supabase dashboard (Authentication
+      → Policies/Providers → Password), not something reachable from a
+      SQL/code change or any tool available in this session — needs the
+      user to flip it directly.
+- [ ] **`net._http_response` (pg_net's internal HTTP-response log,
+      populated by this project's own `pg_cron` jobs firing every
+      1–15 minutes) has 384 live rows but 146MB of table bloat** from
+      historical churn — Supabase's own advisor flags this INFO/low
+      severity. A `VACUUM FULL` would reclaim the space but explicitly
+      incurs downtime per Supabase's own remediation note, so this
+      wasn't run unprompted — schedule it for a low-traffic window if
+      reclaiming the disk space matters, otherwise safe to ignore.
+- [ ] **Migrations/live-schema conflict from Phase 9 still present,
+      not re-litigated here**: `supabase/migrations/` still has two
+      files that both `CREATE TABLE public.automations` — confirmed
+      still true, not fixed. Already documented in Phase 9 as "a blind
+      replay of these migrations would fail; live introspection is the
+      reliable source of truth" (that's how the E2E project's schema was
+      built). Reconciling the migration *history* itself into something
+      that would cleanly replay from scratch is a real but separate
+      piece of work, not done in this pass.
+- [ ] **~18 unused indexes remain** (from earlier phases' advisor runs,
+      re-confirmed present) — deliberately deferred until real
+      production traffic exists to judge which are actually dead weight
+      versus just unused so far.
+- [ ] **Per-page SEO metadata still static** — every route (including
+      the public marketing pages: Pricing, Terms, Privacy, Cookies)
+      shares one `<title>`/`<meta description>` from `index.html`; there
+      is no `react-helmet`-style per-route override. Low priority for
+      the authenticated dashboard routes, more relevant for the public
+      pages search engines would actually index — not fixed in this
+      pass, flagged for a decision on whether it's worth the added
+      dependency.
+
+Verified after every fix: `tsc --noEmit` clean, `eslint` 0 new errors,
+`vitest` 63/63 passing.
+
 - [x] **Production deploy pipeline confirmed working end-to-end**: this
       branch → GitHub push → Vercel auto-deploy (GitHub integration
       already wired up, no action needed) → `content-cms-hub.vercel.app`
