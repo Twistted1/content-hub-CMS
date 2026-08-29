@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * it at all - `supported` is false there and callers should disable the
  * mic button rather than let it silently no-op.
  */
-export function useSpeechRecognition(onResult: (finalTranscript: string) => void) {
+export function useSpeechRecognition(onResult: (finalTranscript: string) => void, onError?: (reason: string) => void) {
   const [listening, setListening] = useState(false);
   const [supported] = useState(
     () => typeof window !== "undefined" && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
@@ -14,9 +14,13 @@ export function useSpeechRecognition(onResult: (finalTranscript: string) => void
   const recognitionRef = useRef<any>(null);
   const finalTranscriptRef = useRef("");
   const onResultRef = useRef(onResult);
+  const onErrorRef = useRef(onError);
   useEffect(() => {
     onResultRef.current = onResult;
   }, [onResult]);
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   const start = useCallback(() => {
     if (!supported || listening) return;
@@ -35,12 +39,24 @@ export function useSpeechRecognition(onResult: (finalTranscript: string) => void
       }
       onResultRef.current(finalTranscriptRef.current);
     };
-    recognition.onerror = () => setListening(false);
+    // Without this, a mic failure (permission denied, no device, network
+    // hiccup) silently flips `listening` back to false with zero feedback -
+    // the button looks like it double-toggled with nothing recorded and no
+    // indication of why. Surface the browser's reason code to the caller.
+    recognition.onerror = (event: any) => {
+      setListening(false);
+      onErrorRef.current?.(event?.error || "unknown");
+    };
     recognition.onend = () => setListening(false);
 
     recognitionRef.current = recognition;
-    recognition.start();
-    setListening(true);
+    try {
+      recognition.start();
+      setListening(true);
+    } catch {
+      setListening(false);
+      onErrorRef.current?.("start-failed");
+    }
   }, [supported, listening]);
 
   const stop = useCallback(() => {
