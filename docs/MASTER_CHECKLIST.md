@@ -98,18 +98,30 @@ for the remaining non-blocking cleanup item (edge function drift).
 **Open, waiting on you:** the calendar is currently empty and content
 generation is paused — see Phase 9 — resume it by re-activating "Weekly
 Content Schedule" in Automation whenever you're ready. ✅ The 🔴
-`OPENAI_API_KEY` item from Phase 8 is now actually confirmed, not just
-inferred: the user tested the AI Assistant directly and hit a real crash
-(`supabase.auth.getClaims is not a function`) — not the OpenAI key at
-all. Root cause and fix in Phase 10 below; test it again once you see
-this. ✅ The E2E Supabase test project was recreated
-(`amyzklcdwrspazveutqz`, see Phase 9), all three GitHub Actions secrets
-(`E2E_SUPABASE_URL`, `E2E_SUPABASE_PUBLISHABLE_KEY`,
-`E2E_SUPABASE_SERVICE_ROLE_KEY`) were set, and the E2E workflow is
-confirmed green on the latest run (Phase 10) — no longer a blocker. One
-manual verification pass is still on you, not code work: a live visual
-pass toggling light/dark theme on each page in your
-own browser now that the Phase 10 sweep has re-enabled it — the CSS
+`OPENAI_API_KEY` item from Phase 8 is fully closed out, not just
+inferred: the user tested the AI Assistant directly across three rounds,
+each surfacing a real bug (`getClaims` version mismatch, an oversized
+system message hitting the request's own size cap, then generic 429
+handling that hid a billing state behind "rate limit exceeded") — all
+three fixed and deployed. **The user then confirmed directly: the OpenAI
+account genuinely has zero usage credit right now, by choice** — that's
+a billing decision, not a code problem, and the assistant will work as
+soon as credit is added. 🔴 **New, needs one manual step from you**:
+while chasing the AI Assistant issue the user also hit the same stale
+theme bug reappear on a second, different browser — traced to
+`vercel.json` never setting an explicit `Cache-Control`, now fixed (see
+Phase 10), but that only prevents *future* staleness. **Do one hard
+refresh (Ctrl+Shift+R) or open a fresh tab** to clear whatever your
+browser already cached before this fix landed, then the light/dark theme
+visual pass below should reflect the real current state. ✅ The E2E
+Supabase test project was recreated (`amyzklcdwrspazveutqz`, see Phase
+9), all three GitHub Actions secrets (`E2E_SUPABASE_URL`,
+`E2E_SUPABASE_PUBLISHABLE_KEY`, `E2E_SUPABASE_SERVICE_ROLE_KEY`) were
+set, and the E2E workflow is confirmed green on the latest run (Phase
+10) — no longer a blocker. One manual verification pass is still on you,
+not code work: a live visual pass toggling light/dark theme on each page
+in your own browser (after that hard refresh) now that the Phase 10
+sweep has re-enabled it — the CSS
 conversions follow the codebase's already-proven pattern but haven't been
 screenshotted side-by-side. Beyond that, nothing else code-related is
 blocking core CMS
@@ -627,11 +639,52 @@ real, reproducible bugs one at a time. All merged to `main`, live on
       a near-duplicate of `useChat.ts` with zero imports anywhere in the
       app — a genuine leftover from an earlier iteration. Deleted it.
 
-      Verified: `tsc --noEmit` clean, `vitest` 63/63 passing. **Retest
-      needed**: this session's sandbox can't reach the live Supabase
-      endpoint or the deployed site to fire a real chat message or mic
-      request itself (outbound network policy) — ask the user to try
-      both again once they see this.
+      Verified: `tsc --noEmit` clean, `vitest` 63/63 passing.
+- [x] **AI Assistant fully root-caused end to end — chain closed on a
+      billing state, not a bug (Phase 10, 2026-08-29).** User retested
+      again and hit a third failure: every message now returned 429
+      "Rate limit exceeded." Two real problems in how that was handled:
+      (1) OpenAI returns the same 429 status for a genuine transient
+      rate limit *and* for an account with zero usage credit —
+      distinguishable only by the response body's `error.code`, not the
+      status — and `novee-chat` was showing identical generic text for
+      both, which would hide a real billing problem behind something
+      that sounds temporary; now reads OpenAI's actual error body and
+      returns a distinct "out of usage credit, fix this in the OpenAI
+      billing dashboard" message when that's what it is. (2) the
+      client's retry loop retried on *any* non-ok response including
+      4xx, so a 429 got hammered twice more a second apart — useless
+      against a rate limit and actively harmful, burning further into
+      the same window. Retry now only fires on a network exception or a
+      5xx. Deployed as `novee-chat` v45. **User confirmed directly: the
+      OpenAI account genuinely has zero credit right now, by their own
+      choice, not something to fix in code** — this closes the AI
+      Assistant investigation. All three bugs found along the way
+      (`getClaims` version mismatch, the 8000-char system-message cap,
+      generic 429 messaging + retry-hammering) are fixed and deployed;
+      the assistant will work as soon as credit is added, no further
+      code changes needed.
+- [x] **Stale-app caching fixed — explicit `Cache-Control` in
+      `vercel.json` (Phase 10, 2026-08-29).** User hit the same
+      "old dark/light theme behavior" bug reappear on a *different*
+      browser (Chrome) after already confirming it fixed on Opera — the
+      document itself was being served stale, not a per-browser quirk.
+      `vercel.json` never set an explicit `Cache-Control`, so how long
+      the HTML document (served by every route through the SPA rewrite)
+      stayed cached was left to Vercel's implicit default — exactly the
+      kind of thing that produces "different browser, same stale build"
+      symptoms after every deploy. Now explicit: the document response
+      gets `no-cache, must-revalidate` (always checks for a new version
+      before using a cached one — the next deploy is visible without a
+      hard refresh), while the actual JS/CSS bundles under `/assets/`
+      (Vite content-hashes them, so a new build gets a new filename) get
+      `public, max-age=31536000, immutable` — safe to cache forever
+      since a stale copy can never be served under an old build's
+      filename. **User action needed once**: this only prevents *future*
+      staleness — the copy already cached in your Chrome tab predates
+      this fix, so it still needs one hard refresh (Ctrl+Shift+R) or a
+      fresh tab to pick it up; every deploy after that should be clean
+      automatically.
 - [x] **Production deploy pipeline confirmed working end-to-end**: this
       branch → GitHub push → Vercel auto-deploy (GitHub integration
       already wired up, no action needed) → `content-cms-hub.vercel.app`
