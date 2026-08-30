@@ -119,12 +119,10 @@ project was recreated (`amyzklcdwrspazveutqz`, see Phase 9), all three
 GitHub Actions secrets (`E2E_SUPABASE_URL`, `E2E_SUPABASE_PUBLISHABLE_KEY`,
 `E2E_SUPABASE_SERVICE_ROLE_KEY`) were set, and the E2E workflow is
 confirmed green on the latest run (Phase 10) — no longer a blocker.
-🔴 **Still open, needs your eyes**: a live visual pass toggling light/dark
-theme on every remaining page (not just Overview) in your own browser —
-the CSS conversions across all 11 files follow the same pattern now
-proven correct on Overview, but haven't all been screenshotted
-side-by-side, and this session has already been wrong once about a page
-being "done." Beyond that, nothing else code-related is blocking core CMS
+✅ **Light/dark theme visual pass — user-confirmed working (2026-08-30)**:
+user did the live browser pass across the app and reported both themes
+fixed and working. Closes the last open item from the theme-rework
+chain. Nothing else code-related is blocking core CMS
 use — remaining items are GitHub/Supabase settings only you can change,
 or decisions only you can make — see the "Open" sections below.
 
