@@ -1522,6 +1522,18 @@ Everything from earlier sections re-checked clean; these two are new:
       Website), Stripe checkout/webhook against a live account. Code paths
       exist and are read-verified; none of this can be confirmed without
       either real connected accounts or you walking through it live.
+      **Partial verification added 2026-09-19:** the schedule source of truth
+      was proven consistent — the inlined `SCHEDULES` table in
+      `schedule-from-templates` was diffed against all eight
+      `src/data/platforms/*.json` files and matches exactly for every
+      platform, and a parity test now guards the duplicate category maps
+      (`src/utils/websiteCategoryParity.test.ts`). What remains unproven is
+      delivery itself, for the reason above.
+      **Critical caveat confirmed 2026-09-19:** only `linkedin` and `twitter`
+      publish directly (`publish-due-posts/index.ts:15`); the other six
+      platforms require an active `webhook_configs` row or they fail with
+      `No active webhook configured for {platform}`. Webhook configuration is
+      therefore a go-live prerequisite, not an optional extra.
       **Alternative if you want it verified without live accounts:** I can
       write integration tests against Stripe's/the platforms' sandbox/test
       modes where they offer one (Stripe does; most social platforms
