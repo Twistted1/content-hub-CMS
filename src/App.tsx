@@ -4,39 +4,46 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider, useTheme } from "next-themes";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { RouteFallback } from "@/components/ui/RouteFallback";
 import { useUserPreferencesStore } from "@/stores/useUserPreferencesStore";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+
+// Route-level code splitting: every page but Landing and Auth becomes its own
+// chunk, so the entry bundle carries only the shell (providers, router, auth).
+// Landing and Auth stay eager because they are what an unauthenticated first
+// visit renders.
 import Landing from "./pages/Landing";
-import Pricing from "./pages/Pricing";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import Cookies from "./pages/Cookies";
 import Auth from "./pages/Auth";
-import Index from "./pages/Index";
-import Automation from "./pages/Automation";
-import Platforms from "./pages/Platforms";
-import ContentCalendar from "./pages/Calendar";
-import Projects from "./pages/Projects";
-import Strategies from "./pages/Strategies";
-import Notes from "./pages/Notes";
-import Analytics from "./pages/Analytics";
-import Reports from "./pages/Reports";
-import GanttChart from "./pages/GanttChart";
-import Templates from "./pages/Templates";
-import AIAssistant from "./pages/AIAssistant";
-import UsersPage from "./pages/Users";
-import ImportData from "./pages/ImportData";
-import Settings from "./pages/Settings";
-import Articles from "./pages/Articles";
-import ContentModel from "./pages/ContentModel";
-import ContentPipeline from "./pages/ContentPipeline";
-import WorkflowTest from "./pages/WorkflowTest";
-import Review from "./pages/Review";
-import NotFound from "./pages/NotFound";
+
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Cookies = lazy(() => import("./pages/Cookies"));
+const Index = lazy(() => import("./pages/Index"));
+const Automation = lazy(() => import("./pages/Automation"));
+const Platforms = lazy(() => import("./pages/Platforms"));
+const ContentCalendar = lazy(() => import("./pages/Calendar"));
+const Projects = lazy(() => import("./pages/Projects"));
+const Strategies = lazy(() => import("./pages/Strategies"));
+const Notes = lazy(() => import("./pages/Notes"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const Reports = lazy(() => import("./pages/Reports"));
+const GanttChart = lazy(() => import("./pages/GanttChart"));
+const Templates = lazy(() => import("./pages/Templates"));
+const AIAssistant = lazy(() => import("./pages/AIAssistant"));
+const UsersPage = lazy(() => import("./pages/Users"));
+const ImportData = lazy(() => import("./pages/ImportData"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Articles = lazy(() => import("./pages/Articles"));
+const ContentModel = lazy(() => import("./pages/ContentModel"));
+const ContentPipeline = lazy(() => import("./pages/ContentPipeline"));
+const WorkflowTest = lazy(() => import("./pages/WorkflowTest"));
+const Review = lazy(() => import("./pages/Review"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -114,40 +121,42 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              {/* Public pages */}
-              <Route path="/" element={<HomeRoute />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/cookies" element={<Cookies />} />
-              <Route path="/auth" element={<Auth />} />
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                {/* Public pages */}
+                <Route path="/" element={<HomeRoute />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/cookies" element={<Cookies />} />
+                <Route path="/auth" element={<Auth />} />
               
-              {/* Protected dashboard routes */}
-              <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/automation" element={<ProtectedRoute><Automation /></ProtectedRoute>} />
-              <Route path="/platforms" element={<ProtectedRoute><Platforms /></ProtectedRoute>} />
-              <Route path="/calendar" element={<ProtectedRoute><ContentCalendar /></ProtectedRoute>} />
-              <Route path="/articles" element={<ProtectedRoute><Articles /></ProtectedRoute>} />
-              <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
-              <Route path="/strategies" element={<ProtectedRoute><Strategies /></ProtectedRoute>} />
-              <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
-              <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-              <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-              <Route path="/gantt" element={<ProtectedRoute><GanttChart /></ProtectedRoute>} />
-              <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
-              <Route path="/ai" element={<ProtectedRoute><AIAssistant /></ProtectedRoute>} />
-              <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
-              <Route path="/import" element={<ProtectedRoute><ImportData /></ProtectedRoute>} />
-              <Route path="/pipeline" element={<ProtectedRoute><ContentPipeline /></ProtectedRoute>} />
-              <Route path="/models" element={<ProtectedRoute><ContentModel /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/workflow" element={<ProtectedRoute><WorkflowTest /></ProtectedRoute>} />
-              <Route path="/review" element={<ProtectedRoute><Review /></ProtectedRoute>} />
+                {/* Protected dashboard routes */}
+                <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/automation" element={<ProtectedRoute><Automation /></ProtectedRoute>} />
+                <Route path="/platforms" element={<ProtectedRoute><Platforms /></ProtectedRoute>} />
+                <Route path="/calendar" element={<ProtectedRoute><ContentCalendar /></ProtectedRoute>} />
+                <Route path="/articles" element={<ProtectedRoute><Articles /></ProtectedRoute>} />
+                <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+                <Route path="/strategies" element={<ProtectedRoute><Strategies /></ProtectedRoute>} />
+                <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
+                <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+                <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                <Route path="/gantt" element={<ProtectedRoute><GanttChart /></ProtectedRoute>} />
+                <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
+                <Route path="/ai" element={<ProtectedRoute><AIAssistant /></ProtectedRoute>} />
+                <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
+                <Route path="/import" element={<ProtectedRoute><ImportData /></ProtectedRoute>} />
+                <Route path="/pipeline" element={<ProtectedRoute><ContentPipeline /></ProtectedRoute>} />
+                <Route path="/models" element={<ProtectedRoute><ContentModel /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/workflow" element={<ProtectedRoute><WorkflowTest /></ProtectedRoute>} />
+                <Route path="/review" element={<ProtectedRoute><Review /></ProtectedRoute>} />
               
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>

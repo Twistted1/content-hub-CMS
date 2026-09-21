@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import DOMPurify from "dompurify";
+import { reportError } from "@/lib/errorReporting";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -156,7 +157,7 @@ export default function Articles() {
           const result = await uploadMedia.mutateAsync({ file });
           return result.url;
       } catch (error) {
-          console.error("Upload failed", error);
+          reportError(error, { area: "media-upload" });
           throw error;
       }
   };

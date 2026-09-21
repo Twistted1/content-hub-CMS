@@ -101,6 +101,7 @@ export interface Post {
   reviewRequestedAt?: string | null;
   reviewedAt?: string | null;
   publishAttemptedAt?: string | null;
+  publishAttempts?: number;
   publishError?: string | null;
   platforms?: PostPlatform[];
   media?: Media[];

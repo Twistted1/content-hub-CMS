@@ -23,7 +23,8 @@ import { ScheduleCalendar } from "@/components/platforms/ScheduleCalendar";
 import { PostCard } from "@/components/platforms/PostCard";
 import { platforms as platformIdentities, availablePlatforms, platformColors } from "@/components/platforms/platformsData";
 import { DirectPublishingPanel } from "@/components/platforms/DirectPublishingPanel";
-import { usePlatformOAuth, publishPostDirect, DirectPlatform } from "@/hooks/usePlatformOAuth";
+import { usePlatformOAuth, publishPostDirect, DirectPlatform, isDirectPlatform } from "@/hooks/usePlatformOAuth";
+import { localWallClockToUtcIso, utcIsoToLocalParts } from "@/utils/scheduleTime";
 import { subDays, format, isSameDay, formatDistanceToNow } from "date-fns";
 import {
   RefreshCw,
@@ -44,8 +45,8 @@ import { useTranslation } from "react-i18next";
 export default function Platforms() {
   const { t } = useTranslation();
   const { posts, addPost, updatePost, deletePost, publishPost } = usePosts();
-  const { isConnected } = usePlatformOAuth();
-  const { platforms: userPlatforms } = usePlatforms();
+  const { isConnected, connect, connecting, refetch: refetchOAuth } = usePlatformOAuth();
+  const { platforms: userPlatforms, refetch: refetchPlatforms } = usePlatforms();
   const scheduledPosts = (posts || []).filter((p) => p.status === "scheduled");
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [detailPlatform, setDetailPlatform] = useState<PlatformData | null>(null);
@@ -138,12 +139,17 @@ export default function Platforms() {
     }
   };
 
-  const handleSync = () => {
+  const handleSync = async () => {
     setSyncing(true);
-    setTimeout(() => {
-      setSyncing(false);
+    try {
+      // There is no analytics-ingestion backend to pull follower/engagement
+      // figures from, so "sync" means re-reading the live connection + post
+      // state. Say that rather than claiming a data sync that never happened.
+      await Promise.all([refetchPlatforms(), refetchOAuth()]);
       toast({ title: t("platforms.syncCompleteTitle"), description: t("platforms.syncCompleteDesc") });
-    }, 2000);
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const getPlatformColor = (id: string) => platformColors[id] || "hsl(var(--primary))";
@@ -165,7 +171,7 @@ export default function Platforms() {
         content: newPost.content,
         status: isScheduled ? "scheduled" : "draft",
         type: newPost.type,
-        scheduled_at: isScheduled ? new Date(`${newPost.scheduledDate}T${newPost.scheduledTime}`).toISOString() : null
+        scheduled_at: isScheduled ? localWallClockToUtcIso(newPost.scheduledDate, newPost.scheduledTime) : null
       },
       platforms: newPost.platforms as any[]
     });
@@ -240,11 +246,13 @@ export default function Platforms() {
       return;
     }
 
-    // Fallback: mark as published (webhook-driven platforms)
+    // No direct API connection for these platforms. Queue the post for the
+    // publish worker, which delivers it through the user's configured webhooks
+    // and only marks it published once a webhook accepts it.
     publishPost.mutate(id);
     toast({
-      title: t("platforms.postPublishedTitle"),
-      description: t("platforms.postMarkedPublishedDesc"),
+      title: t("platforms.postQueuedTitle"),
+      description: t("platforms.postQueuedDesc"),
     });
   };
 
@@ -501,10 +509,10 @@ export default function Platforms() {
                         <Input
                           id="edit-date"
                           type="date"
-                          value={editingPost.scheduledAt ? editingPost.scheduledAt.split("T")[0] : ""}
+                          value={utcIsoToLocalParts(editingPost.scheduledAt).date}
                           onChange={(e) => {
-                            const time = editingPost.scheduledAt && editingPost.scheduledAt.includes("T") ? editingPost.scheduledAt.split("T")[1] : "00:00:00Z";
-                            setEditingPost({ ...editingPost, scheduledAt: e.target.value ? `${e.target.value}T${time}` : null } as any);
+                            const time = utcIsoToLocalParts(editingPost.scheduledAt).time || "09:00";
+                            setEditingPost({ ...editingPost, scheduledAt: localWallClockToUtcIso(e.target.value, time) } as any);
                           }}
                         />
                       </div>
@@ -513,10 +521,10 @@ export default function Platforms() {
                         <Input
                           id="edit-time"
                           type="time"
-                          value={editingPost.scheduledAt && editingPost.scheduledAt.includes("T") ? editingPost.scheduledAt.split("T")[1].substring(0,5) : ""}
+                          value={utcIsoToLocalParts(editingPost.scheduledAt).time}
                           onChange={(e) => {
-                            const date = editingPost.scheduledAt ? editingPost.scheduledAt.split("T")[0] : new Date().toISOString().split("T")[0];
-                            setEditingPost({ ...editingPost, scheduledAt: `${date}T${e.target.value}:00Z` } as any);
+                            const date = utcIsoToLocalParts(editingPost.scheduledAt).date;
+                            setEditingPost({ ...editingPost, scheduledAt: localWallClockToUtcIso(date, e.target.value) } as any);
                           }}
                         />
                       </div>
@@ -550,20 +558,35 @@ export default function Platforms() {
                       </div>
                       <h3 className="font-semibold text-lg mb-1 text-foreground">{platform.name}</h3>
                       <p className="text-sm text-muted-foreground mb-4 flex-grow">
-                        {t("platforms.connectAccountPrefix")} {platform.name} {t("platforms.connectAccountSuffix")}
+                        {isDirectPlatform(platform.id)
+                          ? t("platforms.connectAccountPrefix") + " " + platform.name + " " + t("platforms.connectAccountSuffix")
+                          : t("platforms.webhookDeliveryDesc", { name: platform.name })}
                       </p>
-                      <Button
-                        className="w-full bg-primary hover:bg-primary/90 mt-auto"
-                        onClick={() => {
-                          toast({
-                            title: t("platforms.connectingToast", { name: platform.name }),
-                            description: t("platforms.connectingDesc"),
-                          });
-                        }}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        {t("platforms.connectButton", { name: platform.name })}
-                      </Button>
+                      {isDirectPlatform(platform.id) ? (
+                        <Button
+                          className="w-full bg-primary hover:bg-primary/90 mt-auto"
+                          disabled={connecting === platform.id}
+                          onClick={() => connect(platform.id as DirectPlatform)}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          {t("platforms.connectButton", { name: platform.name })}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          className="w-full mt-auto"
+                          onClick={() => {
+                            setActiveTab("available");
+                            toast({
+                              title: t("platforms.webhookSetupTitle", { name: platform.name }),
+                              description: t("platforms.webhookSetupDesc"),
+                            });
+                          }}
+                        >
+                          <ArrowUpRight className="h-4 w-4 mr-2" />
+                          {t("platforms.webhookSetupCta")}
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -581,16 +604,12 @@ export default function Platforms() {
                       <p className="text-sm text-muted-foreground mb-2">{platform.description}</p>
                       <p className="text-xs text-primary mb-4 flex-grow">{platform.users} {t("platforms.activeUsersSuffix")}</p>
                       <Button
-                        className="w-full bg-primary hover:bg-primary/90 mt-auto"
-                        onClick={() => {
-                          toast({
-                            title: t("platforms.connectingToast", { name: platform.name }),
-                            description: t("platforms.connectingDesc"),
-                          });
-                        }}
+                        variant="outline"
+                        className="w-full mt-auto"
+                        disabled
+                        title={t("platforms.notYetIntegratedDesc")}
                       >
-                        <Plus className="h-4 w-4 mr-2" />
-                        {t("platforms.connectButton", { name: platform.name })}
+                        {t("platforms.notYetIntegrated")}
                       </Button>
                     </CardContent>
                   </Card>

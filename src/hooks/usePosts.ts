@@ -31,6 +31,7 @@ const mapPost = (row: PostRow): Post => ({
   reviewRequestedAt: row.review_requested_at,
   reviewedAt: row.reviewed_at,
   publishAttemptedAt: row.publish_attempted_at,
+  publishAttempts: row.publish_attempts,
   publishError: row.publish_error,
 });
 
@@ -178,13 +179,20 @@ export function usePosts() {
     },
   });
 
+  // Queue a post for immediate delivery. This does NOT mark the post
+  // published: delivery is performed by the `publish-due-posts` cron worker,
+  // which sets `published_at` only after a platform actually accepts the post.
+  // Setting `scheduled_at` to now makes the post due on the next worker tick.
   const publishPost = useMutation({
     mutationFn: async (id: string) => {
       const { data, error } = await supabase
         .from("posts")
         .update({
-          status: "published" as PostStatus,
-          published_at: new Date().toISOString(),
+          status: "scheduled" as PostStatus,
+          scheduled_at: new Date().toISOString(),
+          publish_error: null,
+          publish_attempted_at: null,
+          publish_attempts: 0,
         })
         .eq("id", id)
         .select()
@@ -195,10 +203,10 @@ export function usePosts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
-      toast.success("Post published");
+      toast.success("Queued for publishing — the scheduler will deliver it shortly");
     },
     onError: (error) => {
-      toast.error("Failed to publish post: " + error.message);
+      toast.error("Failed to queue post for publishing: " + error.message);
     },
   });
 

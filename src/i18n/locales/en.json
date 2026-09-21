@@ -279,7 +279,8 @@
       "toastVerificationFailed": "Verification failed",
       "toastSignedOutOthers": "All other sessions have been signed out",
       "toastSignOutOthersFailed": "Failed to sign out other sessions",
-      "toastDeleteRequiresConfirm": "Account deletion requires confirmation"
+      "toastDeleteRequiresConfirm": "Account deletion requires confirmation",
+      "toastLeakedPassword": "This password has appeared in a known data breach. Please choose a different one."
     },
     "billing": {
       "currentPlanTitle": "Current Plan",
@@ -571,7 +572,9 @@
     "googleInfoTitle": "Google Sign-In:",
     "supabaseDashboard": "Supabase Dashboard",
     "googleInfoPrefix": "Requires OAuth configuration in your",
-    "googleInfoSuffix": ". For email login, create an account using the Sign Up tab."
+    "googleInfoSuffix": ". For email login, create an account using the Sign Up tab.",
+    "leakedPasswordTitle": "Password found in a data breach",
+    "leakedPasswordDesc": "This password has appeared in a known data breach and is unsafe to use. Please choose a different one."
   },
   "platforms": {
     "title": "Platforms",
@@ -618,8 +621,8 @@
     "rest": "Rest",
     "time": "Time",
     "subtitle": "Centralized neural-link for all connected social nodes. Monitor reach and orchestrate global transmissions.",
-    "syncing": "SYNCING...",
-    "syncAll": "SYNC ALL",
+    "syncing": "REFRESHING...",
+    "syncAll": "REFRESH",
     "addPlatform": "ADD PLATFORM",
     "statConnected": "Connected",
     "statPlatformsSubtext": "platforms",
@@ -647,6 +650,12 @@
     "connectingToast": "Connecting {{name}}...",
     "connectingDesc": "You'll be redirected to authenticate with your account.",
     "connectButton": "Connect {{name}}",
+    "webhookDeliveryDesc": "{{name}} is delivered by webhook, not an OAuth login. Configure a destination under Content Pipeline.",
+    "webhookSetupCta": "Set up webhook",
+    "webhookSetupTitle": "{{name}} uses webhook delivery",
+    "webhookSetupDesc": "Add a destination URL under Content Pipeline > Webhooks. Scheduled posts for {{name}} will be delivered there.",
+    "notYetIntegrated": "Not yet available",
+    "notYetIntegratedDesc": "This platform has no integration yet. Use a webhook destination under Content Pipeline, or pick a supported platform.",
     "activeUsersSuffix": "active users",
     "addCustomPlatform": "Add Custom Platform",
     "addCustomPlatformDesc": "Configure a new custom destination for your content.",
@@ -654,8 +663,8 @@
     "recentActivity": "Recent Activity",
     "recentActivityDesc": "Your most recently created posts, across all platforms",
     "noPostsYetActivity": "No posts yet. Create your first post to see activity here.",
-    "syncCompleteTitle": "Sync complete",
-    "syncCompleteDesc": "All platforms have been synced.",
+    "syncCompleteTitle": "Refreshed",
+    "syncCompleteDesc": "Re-read live platform connections and post state. This app does not ingest follower or engagement analytics.",
     "missingFieldsTitle": "Missing fields",
     "missingFieldsDesc": "Please fill in all required fields and select at least one platform.",
     "postCreatedTitle": "Post created",
@@ -669,7 +678,6 @@
     "publishedPartialDesc": "Published. {{count}} platform(s) failed.",
     "publishedToDesc": "Published to {{platforms}}.",
     "publishFailedTitle": "Publish failed",
-    "postMarkedPublishedDesc": "Your post has been marked as published.",
     "addCustomPlatformDialogTitle": "Add Custom Platform",
     "addCustomPlatformDialogDesc": "Create a custom integration endpoint for your content dashboard.",
     "platformName": "Platform Name",
@@ -712,7 +720,9 @@
     "settingContentBackup": "Content backup",
     "settingContentBackupDesc": "Backup all published content",
     "openPlatform": "Open {{name}}",
-    "schedule": "Schedule"
+    "schedule": "Schedule",
+    "postQueuedTitle": "Added to publish queue",
+    "postQueuedDesc": "The scheduler will deliver this post through your platform connections and mark it published once a platform accepts it."
   },
   "projects": {
     "title": "Projects",
@@ -1203,7 +1213,12 @@
     "statusAwaitingReview": "Awaiting Review",
     "statusRejected": "Rejected",
     "statusFailed": "Failed",
-    "statusGenerating": "Generating"
+    "statusGenerating": "Generating",
+    "publishRetry": "Retry {{attempts}}/{{max}}",
+    "publishRetryPending": "Delivery failed. The scheduler will retry automatically.",
+    "publishRetriesExhausted": "Delivery failed ({{count}} attempts)",
+    "publishFailed": "Delivery failed",
+    "publishNoErrorDetail": "No error detail was recorded for this attempt."
   },
   "review": {
     "title": "Review Inbox",

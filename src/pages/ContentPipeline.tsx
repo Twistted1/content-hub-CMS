@@ -18,6 +18,7 @@ import {
   Sparkles, ArrowRight, Globe
 } from "lucide-react";
 import { useContentPipeline, type PipelineRun, type WebhookConfig } from "@/hooks/useContentPipeline";
+import { localWallClockToUtcIso } from "@/utils/scheduleTime";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
 
@@ -77,11 +78,17 @@ export default function ContentPipeline() {
     if (!topic.trim() || selectedPlatforms.length === 0) return;
     setIsRunning(true);
     try {
+      // `datetime-local` yields a local wall-clock string with no offset. The
+      // pipeline writes it straight into `scheduled_at`, so convert to a UTC
+      // instant before sending or the server's timezone decides the moment.
+      const [localDate, localTime] = scheduledAt.split("T");
       await runPipeline.mutateAsync({
         topic: topic.trim(),
         platforms: selectedPlatforms,
         scheduleMode,
-        scheduledAt: scheduleMode === "scheduled" ? scheduledAt : undefined,
+        scheduledAt: scheduleMode === "scheduled"
+          ? (localWallClockToUtcIso(localDate, localTime) ?? undefined)
+          : undefined,
       });
       setTopic("");
     } finally {

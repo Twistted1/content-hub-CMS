@@ -6,6 +6,7 @@ import { Clock, Send, Edit, Trash2, MoreVertical, Image, Video, FileText, Globe 
 import { Post, PlatformType } from "@/types";
 import { LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { PublishStatusBadge } from "./PublishStatusBadge";
 
 interface Platform {
   id: string;
@@ -87,6 +88,7 @@ export function PostCard({ post, platforms, getPlatformColor, onEdit, onDelete, 
                 >
                   {t(`calendar.status${post.status.charAt(0).toUpperCase()}${post.status.slice(1)}`, { defaultValue: post.status })}
                 </Badge>
+                <PublishStatusBadge post={post} />
                 {scheduledDate && (
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
                     <Clock className="h-3 w-3" />

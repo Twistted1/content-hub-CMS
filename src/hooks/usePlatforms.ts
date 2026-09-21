@@ -105,6 +105,7 @@ export function usePlatforms() {
     platforms: platformsQuery.data || [],
     isLoading: platformsQuery.isLoading,
     error: platformsQuery.error,
+    refetch: platformsQuery.refetch,
     updatePlatformSettings,
     togglePlatformStatus,
     disconnectPlatform,

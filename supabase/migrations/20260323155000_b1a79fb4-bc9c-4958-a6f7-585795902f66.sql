@@ -1,13 +1,14 @@
+-- Scheduled the legacy `scheduled-pipeline` function every 15 minutes.
+--
+-- NOTE: this migration originally embedded a live production anon JWT in the
+-- job body and a hardcoded project URL. That credential is committed to git
+-- history and must be treated as compromised; it has been replaced with the
+-- Vault-backed `x-cron-secret` pattern used by every other job. The legacy
+-- function was later retired (see `retire_legacy_pipeline`), so the job is
+-- unscheduled here as well.
+--
+-- History is left intact on purpose: a migration that rewrites what a past
+-- migration did would desynchronise environments that already ran it.
 
-SELECT cron.schedule(
-  'run-scheduled-pipelines',
-  '*/15 * * * *',
-  $$
-  SELECT
-    net.http_post(
-        url:='https://jvbucspwcjahqpoxskvr.supabase.co/functions/v1/scheduled-pipeline',
-        headers:='{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2YnVjc3B3Y2phaHFwb3hza3ZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5NDM5MjksImV4cCI6MjA4NDUxOTkyOX0.X5pA6-DsflBoLEtwSj3N1oISjg_qYCKt2OajMNx6PSU"}'::jsonb,
-        body:=concat('{"time": "', now(), '"}')::jsonb
-    ) as request_id;
-  $$
-);
+SELECT cron.unschedule('run-scheduled-pipelines')
+WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'run-scheduled-pipelines');

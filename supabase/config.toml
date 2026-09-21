@@ -1,28 +1,61 @@
 project_id = "jvbucspwcjahqpoxskvr"
 
+# User-facing: called from the browser with a real session.
 [functions.novee-chat]
 verify_jwt = true
 
+# User-facing: called from the browser with a real session.
+[functions.content-pipeline]
+verify_jwt = true
+
+# User-facing: called from the browser with a real session.
+[functions.generate-strategy]
+verify_jwt = true
+
+# User-facing: called from the browser with a real session.
+[functions.oauth-init]
+verify_jwt = true
+
+# User-facing: called from the browser with a real session.
+[functions.publish-post]
+verify_jwt = true
+
+# Cron target: authenticates via the x-cron-secret header, not a JWT.
+[functions.publish-due-posts]
+verify_jwt = false
+
+# Cron target: authenticates via the x-cron-secret header, not a JWT.
+[functions.schedule-from-templates]
+verify_jwt = false
+
+# Payment flow: intentionally public, scoped by Stripe session.
 [functions.create-checkout]
 verify_jwt = false
 
+# Payment flow: intentionally public, reads caller's own subscription.
 [functions.check-subscription]
 verify_jwt = false
 
-[functions.demo-login]
-verify_jwt = false
-
+# Payment flow: intentionally public, scoped by Stripe session.
 [functions.customer-portal]
 verify_jwt = false
 
-[functions.linkedin-oauth-callback]
-verify_jwt = false
-
-[functions.twitter-oauth-callback]
-verify_jwt = false
-
+# Authenticated by the Stripe signature header instead of a JWT.
 [functions.stripe-webhook]
 verify_jwt = false
 
+# OAuth code exchange: cannot carry a JWT by protocol.
+[functions.linkedin-oauth-callback]
+verify_jwt = false
+
+# OAuth code exchange: cannot carry a JWT by protocol.
+[functions.twitter-oauth-callback]
+verify_jwt = false
+
+# Browser-reported CSP violations: unauthenticated by design.
 [functions.csp-report]
+verify_jwt = false
+
+# Preview-only. Fails closed unless DEMO_LOGIN_ENABLED=true and the Origin is allowlisted.
+[functions.demo-login]
 verify_jwt = false

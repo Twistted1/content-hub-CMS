@@ -48,8 +48,36 @@ Set these in **Supabase Dashboard → Edge Functions → Secrets:**
 |---|---|
 | `STRIPE_SECRET_KEY` | Stripe secret key (`sk_live_...`) |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret (`whsec_...`) |
-| `OPENAI_API_KEY` | OpenAI key for Novee AI assistant |
+| `OPENAI_API_KEY` | OpenAI key for Novee AI assistant and content generation |
 | `SITE_URL` | Production URL for Stripe redirect callbacks |
+| `TWITTER_CLIENT_ID` | X/Twitter OAuth 2.0 client ID (direct publishing) |
+| `TWITTER_CLIENT_SECRET` | X/Twitter OAuth 2.0 client secret (token refresh) |
+| `LINKEDIN_CLIENT_ID` | LinkedIn OAuth client ID (direct publishing) |
+| `LINKEDIN_CLIENT_SECRET` | LinkedIn OAuth client secret (code exchange) |
+
+The following are supplied automatically by the Supabase runtime and must not be set by hand: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+
+#### Cron secret
+
+`scheduled-pipeline`-style jobs authenticate with an `x-cron-secret` header rather than a JWT. The value lives in Vault, not in the source tree:
+
+```sql
+SELECT vault.create_secret('<a long random string>', 'cron_secret');
+```
+
+The jobs read it at run time through the `get_cron_secret()` function, which is executable only by `service_role`. Never inline the secret into a migration — an earlier migration did exactly that and committed a live JWT to git history.
+
+#### Demo login (optional, preview only)
+
+`demo-login` mints a session for a shared demo account and is disabled by default. It only responds when **all** of the following hold:
+
+| Secret | Description |
+|---|---|
+| `DEMO_LOGIN_ENABLED` | Must be exactly `true`. Anything else returns 404. |
+| `DEMO_LOGIN_EMAIL` | Email of the demo account (defaults to `test@contenthub.io`). |
+| `DEMO_ALLOWED_ORIGINS` | Comma-separated Origin allowlist, e.g. `https://staging.example.com`. |
+
+Leave `DEMO_LOGIN_ENABLED` unset in production.
 
 ### Stripe Webhook
 
@@ -88,10 +116,16 @@ supabase/
 
 ## User Roles
 
-Roles are stored in the `user_roles` table. Available roles: `admin`, `moderator`, `user`.
+Roles are stored in the `user_roles` table, typed by the `app_role` enum. Available roles: `admin`, `moderator`, `user`, `editor`, `viewer`, `member`.
 
-- **Admin** — access to Users and Import Data pages
-- **User/Moderator** — standard dashboard access
+- **Admin** — access to the Users and Import Data pages, full management access
+- **Moderator** — elevated review access; resolved as the second-highest privilege tier
+- **Editor** — can create and edit content
+- **Viewer** — read-only analytics and content access
+- **Member** — basic access
+- **User** — the default assigned on signup
+
+`useUserRole` resolves the highest-privilege role a user holds, preferring `admin > moderator > user`.
 
 ## Environment Variables
 

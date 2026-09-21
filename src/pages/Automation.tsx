@@ -26,6 +26,7 @@ import { useTranslation } from "react-i18next";
 
 import { usePosts } from "../hooks/usePosts";
 import { useAutomations, Automation } from "@/hooks/useAutomations";
+import { localWallClockToUtcIso, toLocalDateKey } from "@/utils/scheduleTime";
 import { AutomationCard } from "@/components/automation/AutomationCard";
 import { AutomationDialog } from "@/components/automation/AutomationDialog";
 import { AutomationHistoryDialog } from "@/components/automation/AutomationHistoryDialog";
@@ -253,9 +254,10 @@ const AutomationPage = () => {
       content_strategy.forEach((strategy: any, dayIdx: number) => {
         const d = new Date(upcomingMonday);
         d.setDate(upcomingMonday.getDate() + dayIdx);
-        const dateStr = d.toISOString().split("T")[0];
+        // Local date key, not the UTC slice of a local Date: `toISOString()`
+        // rolls to the next day for evening hours in negative-offset zones.
+        const dateStr = toLocalDateKey(d);
         const dayName = DAYS[d.getDay()] as DayName;
-        const wallClock = (h: string) => `${dateStr}T${h}.000Z`;
 
         const daySlots = periodSchedule[dayName] || [];
         // Track per-platform slot index so multiple Twitter slots map to
@@ -275,7 +277,7 @@ const AutomationPage = () => {
             title: picked.title,
             content: picked.content,
             image: picked.image,
-            scheduled_at: wallClock(startTimeOf(slot.time)),
+            scheduled_at: localWallClockToUtcIso(dateStr, startTimeOf(slot.time)),
           });
         });
       });

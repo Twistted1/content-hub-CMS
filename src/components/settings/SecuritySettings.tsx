@@ -26,6 +26,7 @@ import { useUserPreferencesStore } from "@/stores/useUserPreferencesStore";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
+import { changePasswordWithoutLeaked } from "@/utils/passwordPolicy";
 
 export function SecuritySettings() {
   const { t } = useTranslation();
@@ -92,9 +93,14 @@ export function SecuritySettings() {
         return;
       }
 
-      const { error } = await supabase.auth.updateUser({
-        password: passwordForm.newPassword,
-      });
+      const { leaked, error } = await changePasswordWithoutLeaked(
+        (pw) => supabase.auth.updateUser({ password: pw }),
+        passwordForm.newPassword,
+      );
+      if (leaked) {
+        toast.error(t("settings.security.toastLeakedPassword"));
+        return;
+      }
       if (error) {
         toast.error(error.message);
         return;

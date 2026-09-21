@@ -13,6 +13,7 @@ import { Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDocumentMeta } from '@/hooks/useDocumentMeta';
 import { authSchema } from '@/utils/authValidation';
+import { signUpWithoutLeakedPassword } from '@/utils/passwordPolicy';
 
 export default function Auth() {
   const { t } = useTranslation();
@@ -104,10 +105,19 @@ export default function Auth() {
     }
 
     setIsSubmitting(true);
-    const { error } = await signUpWithEmail(email, password, fullName || undefined);
+    const { leaked, error } = await signUpWithoutLeakedPassword(
+      (pw) => signUpWithEmail(email, pw, fullName || undefined),
+      password,
+    );
     setIsSubmitting(false);
 
-    if (error) {
+    if (leaked) {
+      toast({
+        title: t("auth.leakedPasswordTitle"),
+        description: t("auth.leakedPasswordDesc"),
+        variant: "destructive",
+      });
+    } else if (error) {
       toast({
         title: t("auth.signUpFailed"),
         description: error.message,

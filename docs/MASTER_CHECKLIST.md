@@ -8,7 +8,19 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-08-29 (Phase 10). Phase 10 recreated the disposable
+**Last verified:** 2026-09-18 (Phase 12). Phase 12 is an independent
+re-audit of the whole repo — structure/deps, Supabase migrations, RLS
+and security, frontend hooks/state/i18n, and cron/deployment readiness —
+which found and fixed one unauthenticated session-minting backdoor, a
+live production JWT committed to a migration, two enum/schema values the
+app writes that no migration created, a publish queue that made every
+transient failure permanent, a UI that reported undelivered posts as
+published, an undefined timezone contract for `scheduled_at`, and 6 edge
+functions missing their `config.toml` entries. Full detail below. One
+item still needs your action: **rotate the Supabase anon key** that
+leaked into git history.
+
+**Previously last verified:** 2026-08-29 (Phase 10). Phase 10 recreated the disposable
 E2E Supabase test project end-to-end (the old one, `myrtlspsinwurffceons`,
 had been deleted — that's what was actually failing the E2E GitHub Actions
 workflow, not any code change) and got the workflow green again after a few
@@ -125,6 +137,256 @@ fixed and working. Closes the last open item from the theme-rework
 chain. Nothing else code-related is blocking core CMS
 use — remaining items are GitHub/Supabase settings only you can change,
 or decisions only you can make — see the "Open" sections below.
+
+---
+
+## Phase 12 — Independent audit + critical fixes (2026-09-18)
+
+A fresh independent audit of the whole repo (structure/deps, Supabase
+migrations/RLS/security, frontend hooks/state/i18n, cron/deployment)
+found several items Phase 11 didn't catch. All were fixed in the same
+session; each was verified against source, not assumed.
+
+- [x] **`demo-login` was an unauthenticated session-minting backdoor
+      (🔴 critical).** The function did `signInWithPassword` with a
+      hardcoded email/password against the service-role client and
+      returned that session to any anonymous caller — no JWT, no origin
+      check, `verify_jwt = false`. Anyone who found the URL got a valid
+      logged-in session. Rewritten to fail closed behind three
+      independent server-side controls: `DEMO_LOGIN_ENABLED` must be
+      exactly `true` (otherwise it returns 404 and looks like a missing
+      route), the request `Origin` must be in `DEMO_ALLOWED_ORIGINS`,
+      and a per-IP rate limit caps minting. The demo account's password
+      is now randomly regenerated per call, so no credential for it is
+      stored in the tree or survives a single use, and the account is
+      forced down to the unprivileged `user` role / `free` tier on every
+      call so it can't be used to reach an elevated role.
+- [x] **A live production anon JWT was committed to a migration
+      (🔴 critical).** `20260323155000_...sql` embedded a real
+      `Authorization: Bearer <jwt>` in a `cron.schedule` body alongside
+      a hardcoded project URL. That credential is in git history and
+      must be treated as compromised — **the user still needs to rotate
+      the anon key in the Supabase dashboard.** The migration was
+      replaced with the Vault-backed `x-cron-secret` pattern every other
+      job already uses, and the retired job unscheduled. Rewriting the
+      original body in place is deliberate: rewriting what a past
+      migration did would desynchronise environments that already ran it.
+- [x] **`post_status` had two values the pipeline writes but no migration
+      adds (🔴 critical).** `content-pipeline` inserts
+      `awaiting_review` and the `sync_post_workflow_stage` trigger reads
+      both `awaiting_review` and `generating`; neither was in the enum
+      created by the initial migration. They exist in prod only because
+      they were added out-of-band, exactly like `rejected` in Phase 7 —
+      so replaying the migration history onto a fresh database made every
+      pipeline insert fail with `invalid input value for enum
+      post_status`. New migration `20260918000000_add_pipeline_post_status`
+      closes the gap.
+- [x] **`app_role` enum couldn't hold 3 of the 4 roles the UI offers
+      (🟡 high).** The enum is `admin | moderator | user`, but
+      `usersData.ts` offers `admin | editor | viewer | member` and
+      `useUsers` writes the selected label straight into
+      `user_roles.role`. Selecting Editor, Viewer or Member failed with
+      `invalid input value for enum app_role`. Extended the enum to the
+      UI vocabulary (`20260918000100_add_app_role_ui_values`) rather than
+      renaming the UI, since the labels are what users see and what the
+      i18n catalog is written against; `moderator` is retained because
+      `useUserRole` still resolves it. `types.ts` updated to match.
+- [x] **Publish failures were permanent and invisible (🔴 critical).**
+      `publish-due-posts` claimed work by filtering `publish_attempted_at
+      IS NULL` and then setting that column — and **nothing in the
+      codebase ever cleared it**. One transient failure (webhook 500, 8s
+      timeout, mid-refresh OAuth expiry) removed a post from the queue
+      forever, with no retry. Worse, the claim was a select-then-update
+      pair, so two overlapping cron ticks could both claim the same post
+      and deliver it twice. Replaced with `claim_due_posts`, an atomic
+      `FOR UPDATE SKIP LOCKED` RPC (service-role only) that adds a
+      `publish_attempts` counter and exponential backoff (2m doubling to
+      a 60m cap, 5 attempts). Success clears the bookkeeping; exhausted
+      posts park as `failed` with the attempt count in `publish_error`;
+      partially-delivered posts are kept `published` with the failures
+      recorded rather than re-publishing what already landed.
+- [x] **The UI reported undelivered posts as published (🔴 critical).**
+      `usePosts.publishPost` set `status: "published"` and
+      `published_at: now()` directly from the browser — a post could show
+      as published having never been delivered anywhere. Platforms.tsx
+      had the same problem as a "fallback" for webhook platforms, with a
+      toast reading "Your post has been marked as published". `publishPost`
+      now genuinely queues (status `scheduled`, `scheduled_at` = now,
+      retry bookkeeping reset) and both pages say so; new
+      `platforms.postQueuedTitle/Desc` keys added to both locales.
+- [x] **Timezone contract for `scheduled_at` was undefined, and broken
+      (🟡 high).** The Calendar built `` `${date}T${time}:00` `` with no
+      offset, so Postgres interpreted the value in *the server's*
+      timezone — a user in UTC-5 picking 09:00 had the post stored as
+      09:00 server time, and the calendar and the scheduler disagreed
+      about when it was due. `utils/scheduling.ts` had already been fixed
+      to produce real UTC, so there were two contracts in the same app.
+      Added `src/utils/scheduleTime.ts` (`localWallClockToUtcIso`,
+      `utcIsoToLocalParts`, `toLocalDateKey`) as the single definition,
+      and routed Calendar, Review, Platforms, Automation and
+      ContentPipeline through it. Also fixed `Automation.tsx`'s
+      `wallClock`, which pinned *local* hours to a `Z` suffix, and its
+      `d.toISOString().split("T")[0]` date key, which rolls to the next
+      day for evening hours in negative-offset zones.
+- [x] **6 edge functions were missing from `supabase/config.toml`
+      (🟡 high).** `content-pipeline`, `generate-strategy`, `oauth-init`,
+      `publish-post`, `publish-due-posts` and `schedule-from-templates`
+      had no entry, so they fell back to Supabase's default
+      `verify_jwt = true` — and all three cron-invoked functions
+      (`publish-due-posts`, `schedule-from-templates`) authenticate with
+      the `x-cron-secret` header, not a JWT, so they'd have been rejected
+      in a CLI deploy. Config rewritten with all 15 functions and an
+      explicit, commented `verify_jwt` for each.
+- [x] **Edge secrets were undocumented.** README and `.env.example`
+      listed only 4 of the 14 secrets the functions actually read
+      (missing all four OAuth keys, the three demo-login vars, and the
+      full list of runtime-provided ones), and README's roles section
+      still described the pre-fix 3-role enum. Both updated, including
+      the Vault `cron_secret` procedure.
+
+Verified after every change: `tsc --noEmit` clean, `eslint` 0 errors
+(245 pre-existing `any` warnings), `vitest` 69/69 passing, production
+build clean.
+
+**Still needs the user, not more code:** rotate the anon key that leaked
+in `20260323155000`'s migration (git history is public once pushed);
+decide whether `demo-login` should exist at all in production (it's now
+safe either way — leave `DEMO_LOGIN_ENABLED` unset to disable it).
+
+---
+
+## Phase 13 — Truth-in-UI and role-integrity pass (2026-09-18)
+
+Continued the Phase 12 audit into the area it had not yet reached: what
+the UI *claims* versus what the code actually does, plus the RBAC paths.
+Six real defects, all fixed and verified (TSC clean, 69/69 tests, build
+clean, i18n parity 1719/1719).
+
+- [x] **Platforms page: the Connect button was theatre (🔴 high).** On the
+      disconnected-platform cards, `onClick` only raised a toast saying
+      "You'll be redirected to authenticate with your account" — it never
+      called `connect()`, which `usePlatformOAuth` already exports and
+      which opens the real OAuth popup via `oauth-init`. Every non-OAuth
+      platform (Instagram, Facebook, TikTok, YouTube, Rumble, Podcast,
+      Website) showed the same dead button. Those platforms deliver over
+      `webhook_configs`, not OAuth, so there was never an OAuth flow to
+      wire up — the button was simply lying. Fixed: the card now branches
+      on `isDirectPlatform(id)`. Real OAuth platforms call `connect()` and
+      disable while `connecting`; webhook platforms say so plainly and
+      point at Content Pipeline > Webhooks (`webhookDeliveryDesc`,
+      `webhookSetupCta`).
+- [x] **Pinterest/Snapchat/Threads cards promised a connect that cannot
+      exist (🟡 medium).** `availablePlatforms` is explicitly documented
+      as "not yet integrated", yet each card carried the same
+      "You'll be redirected to authenticate" toast. Replaced with a
+      disabled "Not yet available" button (`notYetIntegrated`) that names
+      the actual workaround.
+- [x] **"SYNC ALL" fabricated a successful sync (🟡 medium).**
+      `handleSync` was `setTimeout(2000)` then a toast reading "All
+      platforms have been synced." No request was made; there is no
+      analytics-ingestion backend to sync from (confirmed: no sync/analytics
+      edge function exists). Now it genuinely refetches platform and OAuth
+      state (`usePlatforms`/`usePlatformOAuth` both gained `refetch`) and
+      says what it actually did — re-read connection and post state, does
+      not ingest analytics.
+- [x] **Publish retries were invisible in the UI (🟡 medium).** Phase 12
+      made failures retry with backoff and recorded `publish_attempts` /
+      `publish_error`, but nothing surfaced them: a post that had failed
+      delivery three times looked identical to one never attempted. Added
+      `PublishStatusBadge` (wired into `PostCard`, next to the status
+      badge) showing "Retry n/5" or "Delivery failed (n attempts)" with
+      the recorded error in a tooltip. Cap mirrors `p_max_attempts` in
+      `claim_due_posts` via an exported `MAX_PUBLISH_ATTEMPTS`.
+- [x] **Role changes could silently no-op, then flip back (🟡 medium).**
+      `useUsers.updateUser` wrote roles with `.update()`. The Users list
+      falls back to `"user"` for anyone without a `user_roles` row, so for
+      such a user the update matched zero rows, reported success, and the
+      displayed role reverted on the next refetch. Switched to a delete-
+      then-upsert: `user_roles` is unique on `(user_id, role)`, so a
+      multi-role user would otherwise keep both rows and the list's
+      last-row-wins map would show a nondeterministic role.
+- [x] **`useUserRole` was dead code carrying a stale role model
+      (⚪ low).** Zero references anywhere; it knew only `admin |
+      moderator | user` while the enum has held `editor | viewer | member`
+      since Phase 12. Deleted rather than updated — nothing consumed it,
+      and leaving it invites someone to rely on the three-role version.
+- [x] **Handled errors left no trace (⚪ low).** Four user-facing failure
+      paths only `console.error`'d. Added `src/lib/errorReporting.ts`
+      (`reportError`, a no-op when `VITE_SENTRY_DSN` is unset) and routed
+      the Novee chat failure, campaign launch, media upload, and editor
+      image upload through it. `ErrorBoundary` already used Sentry.
+
+**Verified as already correct, no change needed:** `user_roles` RLS
+(`Admins can manage roles` is the only write policy — no self-escalation
+path); `profiles.email` exists (`20260222000002`), so `demo-login`'s
+profile lookup is valid; no `SERVICE_ROLE` reference anywhere in `src/`;
+no tracked `.env` files and no JWTs in tracked source; webhook delivery is
+genuinely implemented with SSRF validation, an 8s timeout, and
+`redirect: "error"`.
+
+**Still needs the user, not more code:** the two items carried over from
+Phase 12 (rotate the leaked anon key; decide on `demo-login` in
+production), plus the four plan- or live-account-gated items listed in
+Phase 1.
+
+---
+
+## Phase 14 — Free leaked-password protection (2026-09-18)
+
+Phase 1 carried an open item: Supabase's "Leaked Password Protection" is
+gated behind the Pro plan, so it cannot be switched on for this project.
+Replaced with a free implementation of the same check.
+
+- [x] **Leaked-password check, free, no key, no plan (🔴 high).** New
+      `src/utils/pwnedPassword.ts` queries the HaveIBeenPwned Pwned
+      Passwords **range** API, which is free and unauthenticated, and
+      which is the same corpus the Supabase toggle is built on. Uses
+      k-anonymity: only the first 5 characters of the SHA-1 hash are
+      transmitted (`crypto.subtle.digest`, no dependency added) and the
+      remaining 35 are compared locally against the returned range. Sends
+      `Add-Padding: true` so response size cannot be used to infer whether
+      the prefix matched. 3s timeout via `AbortController`.
+- [x] **Fail-open policy, deliberate and documented.** A HIBP outage must
+      not become a signup outage, so an unreachable API allows the password
+      through and reports the failure to Sentry instead. This matches how
+      Supabase's own protection behaves. `fail_open` is not a flag here —
+      there is one policy, chosen on purpose.
+- [x] **Enforced at both reachable password entry points.** New
+      `src/utils/passwordPolicy.ts`, wired into `Auth.tsx`'s `handleSignUp`
+      and `SecuritySettings.tsx`'s `handlePasswordChange`. The check runs
+      **before** the Supabase call, so a breached password is refused
+      before any account exists — nothing has to be rolled back. (A client
+      cannot delete its own auth user, since `auth.admin.deleteUser`
+      requires a service role, so a check-after-create design would strand
+      a weak account.) Both paths show a specific, translated message.
+- [x] **Rejected design, recorded so it is not retried:** Supabase's
+      `before_user_created` Auth Hook is **not** a substitute, and it is
+      free on all plans. Its payload is the `auth.users` row shape
+      (`id`, `email`, `app_metadata`, `user_metadata`, identities) — the
+      password is only present as the bcrypt `encrypted_password`, so the
+      hook has no plaintext to look up. Verified against the Supabase docs
+      before writing any code.
+- [x] **Verified against the real API, not only mocks.** 13 new tests
+      (`pwnedPassword.test.ts`, `passwordPolicy.test.ts`) covering the
+      count lookup, the 5-char-only prefix, padding, error propagation,
+      fail-open on both rejection and 5xx, and that a breached password
+      never reaches `signUp`/`updateUser`. Plus one network test gated on
+      `HIBP_LIVE=1`, run for real: `isPasswordLeaked("password")` resolved
+      `true` against api.pwnedpasswords.com.
+- [x] **Documented in `.env.example`**, including why the Auth Hook cannot
+      replace it and what true server-side enforcement would require.
+
+**Residual limitation, stated plainly:** this is client-side, so a client
+that calls `supabase.auth.signUp` directly still bypasses it. It is a real
+improvement in default-safe behaviour, not a hard server-side guarantee.
+Hard enforcement requires either the Pro toggle or moving signup behind an
+owned backend that holds a service role key.
+
+**Unrelated, and still open:** the leaked **anon JWT** committed in
+`20260323155000` is a *separate* issue from the Pro-gated password toggle,
+and is not fixed by any of the above. It needs a key rotation in
+Dashboard → Settings → API, which is available on every plan including
+free. That remains the top launch blocker.
 
 ---
 
@@ -850,17 +1112,21 @@ was safely fixable, flagged the rest with a specific reason.
 - [x] **404 page exists and works** (`NotFound.tsx`, i18n-wired, correct
       theme tokens, catch-all route registered last in `App.tsx`) — no
       changes needed.
-- [ ] **Leaked Password Protection — blocked by plan tier, not a toggle
-      away.** Flagged by the live security advisor; Supabase Auth checks
-      new passwords against HaveIBeenPwned when this is on. User located
-      the actual setting (Authentication → Sign In/Providers → Email →
-      "Prevent use of leaked passwords") and confirmed live: the control
-      is disabled with "Only available on Pro plan and above" — this
-      project is on Supabase's Free tier. Not fixable from any tool or
-      dashboard click available at the current plan; the only path is
-      upgrading to Pro. User has looked at this before and is not
-      currently planning to upgrade for it — downgraded from 🔴 blocker
-      to an accepted, understood limitation of staying on Free.
+- [x] **Leaked Password Protection — free substitute shipped (Phase 14,
+      2026-09-18).** Flagged by the live security advisor; Supabase Auth
+      checks new passwords against HaveIBeenPwned when this is on. User
+      located the actual setting (Authentication → Sign In/Providers →
+      Email → "Prevent use of leaked passwords") and confirmed live: the
+      control is disabled with "Only available on Pro plan and above" —
+      this project is on Supabase's Free tier. Supabase's own toggle
+      remains unavailable, but the same check is now implemented for free
+      against the HIBP Pwned Passwords range API — see Phase 14. Two
+      caveats that keep this distinct from the Pro toggle: it is enforced
+      client-side (a direct `supabase.auth.signUp` call still bypasses it),
+      and it fails open during a HIBP outage. The Pro toggle remains the
+      only hard server-side enforcement. Upgrading to Pro is still the way
+      to close the bypass, but is no longer required to get the protection
+      for normal flows.
 - [ ] **`net._http_response` (pg_net's internal HTTP-response log,
       populated by this project's own `pg_cron` jobs firing every
       1–15 minutes) has 384 live rows but 146MB of table bloat** from
@@ -907,11 +1173,14 @@ was safely fixable, flagged the rest with a specific reason.
 **Genuinely left for the user, batched together for one pass later** (per
 explicit request — these need the user's own action or decision, not
 more code):
-- **Leaked Password Protection — resolved as "accepted, not fixable on
-  Free."** User navigated to the actual setting and confirmed live:
-  greyed out, "Only available on Pro plan and above." Not a toggle
-  anyone missed — genuinely gated behind a Supabase plan upgrade. No
-  further action unless the user decides Pro is worth it for this.
+- **Leaked Password Protection — Supabase's toggle is "accepted, not
+  fixable on Free."** User navigated to the actual setting and confirmed
+  live: greyed out, "Only available on Pro plan and above." Not a toggle
+  anyone missed — genuinely gated behind a Supabase plan upgrade. A free
+  substitute covering normal signup and password-change flows is now in
+  place instead (Phase 14, 2026-09-18); the Pro toggle is still the only
+  hard server-side enforcement, and the user can skip Pro unless the
+  client-side bypass matters to them.
 - **`net._http_response` has 146MB of table bloat** from this project's
   own `pg_cron` churn (384 live rows, confirmed) — a `VACUUM FULL` would
   reclaim it but explicitly incurs downtime per Supabase's own
