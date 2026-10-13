@@ -516,6 +516,7 @@ export type Database = {
           is_ai_generated: boolean | null
           pipeline_run_id: string | null
           publish_attempted_at: string | null
+          publish_attempts: number
           publish_error: string | null
           published_at: string | null
           read_time: number | null
@@ -549,6 +550,7 @@ export type Database = {
           is_ai_generated?: boolean | null
           pipeline_run_id?: string | null
           publish_attempted_at?: string | null
+          publish_attempts?: number
           publish_error?: string | null
           published_at?: string | null
           read_time?: number | null
@@ -582,6 +584,7 @@ export type Database = {
           is_ai_generated?: boolean | null
           pipeline_run_id?: string | null
           publish_attempted_at?: string | null
+          publish_attempts?: number
           publish_error?: string | null
           published_at?: string | null
           read_time?: number | null
@@ -1086,6 +1089,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_due_posts: {
+        Args: {
+          p_batch_size?: number
+          p_base_backoff?: string
+          p_max_backoff?: string
+          p_max_attempts?: number
+        }
+        Returns: {
+          id: string
+          user_id: string
+          title: string
+          content: string
+          cover_image_url: string | null
+          publish_attempts: number
+        }[]
+      }
       get_cron_secret: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -1096,7 +1115,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "editor" | "viewer" | "member"
       automation_schedule: "hourly" | "daily" | "weekly" | "monthly"
       automation_status: "active" | "paused" | "draft"
       automation_trigger: "scheduled" | "new-content" | "engagement" | "manual"
@@ -1263,7 +1282,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "editor", "viewer", "member"],
       automation_schedule: ["hourly", "daily", "weekly", "monthly"],
       automation_status: ["active", "paused", "draft"],
       automation_trigger: ["scheduled", "new-content", "engagement", "manual"],

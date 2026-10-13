@@ -14,6 +14,9 @@ const TWITTER_CLIENT_SECRET = Deno.env.get("TWITTER_CLIENT_SECRET") || "";
 
 const DIRECT_PLATFORMS = new Set(["linkedin", "twitter"]);
 
+// Must match the `p_max_attempts` default in `claim_due_posts`.
+const MAX_PUBLISH_ATTEMPTS = 5;
+
 function isPrivateOrLocalHost(h: string): boolean {
   h = h.toLowerCase();
   if (h === "localhost" || h === "::1") return true;
@@ -93,26 +96,19 @@ serve(async (req) => {
       });
     }
 
-    const nowIso = new Date().toISOString();
-
-    // Atomically claim due posts: mark them as 'generating' transient lock via publish_attempted_at.
-    const { data: due, error } = await admin
-      .from("posts")
-      .select("id, user_id, title, content, cover_image_url")
-      .eq("status", "scheduled")
-      .lte("scheduled_at", nowIso)
-      .is("publish_attempted_at", null)
-      .limit(50);
+    // Claim and stamp in one atomic statement (`FOR UPDATE SKIP LOCKED` inside
+    // `claim_due_posts`), so overlapping cron ticks cannot both take a post.
+    // Rows re-enter the claim window once the backoff since their previous
+    // attempt has elapsed, and drop out for good at the attempt cap.
+    const { data: due, error } = await admin.rpc("claim_due_posts", {
+      p_batch_size: 50,
+    });
     if (error) throw error;
     if (!due || due.length === 0) {
       return new Response(JSON.stringify({ ok: true, published: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // Lock them
-    const ids = due.map((p: any) => p.id);
-    await admin.from("posts").update({ publish_attempted_at: nowIso }).in("id", ids);
 
     const results: any[] = [];
     for (const post of due) {
@@ -191,20 +187,37 @@ serve(async (req) => {
         }
       }
 
-      if (anySuccess) {
+      if (anySuccess && !anyFailure) {
+        // Fully delivered: clear the retry bookkeeping so the post is done.
         await admin.from("posts").update({
           status: "published",
           published_at: new Date().toISOString(),
-          publish_error: anyFailure ? perPlatform.filter(p => !p.success).map(p => `${p.platform}: ${p.error}`).join("; ") : null,
+          publish_error: null,
+          publish_attempted_at: null,
+          publish_attempts: 0,
+        }).eq("id", post.id);
+      } else if (anySuccess) {
+        // Partial delivery: keep the successful platforms, leave the post out
+        // of the queue rather than re-publishing what already landed.
+        await admin.from("posts").update({
+          status: "published",
+          published_at: new Date().toISOString(),
+          publish_error: perPlatform.filter(p => !p.success).map(p => `${p.platform}: ${p.error}`).join("; "),
+          publish_attempted_at: null,
         }).eq("id", post.id);
       } else {
+        const attempts = (post as any).publish_attempts ?? 1;
+        const exhausted = attempts >= MAX_PUBLISH_ATTEMPTS;
         await admin.from("posts").update({
-          status: "failed",
-          publish_error: perPlatform.map(p => `${p.platform}: ${p.error}`).join("; "),
+          // Stay 'scheduled' while retries remain so the next cron tick picks
+          // the post back up after its backoff; park as 'failed' only at the cap.
+          status: exhausted ? "failed" : "scheduled",
+          publish_error: `attempt ${attempts}/${MAX_PUBLISH_ATTEMPTS}: ` +
+            perPlatform.map(p => `${p.platform}: ${p.error}`).join("; "),
         }).eq("id", post.id);
       }
 
-      results.push({ postId: post.id, perPlatform });
+      results.push({ postId: post.id, perPlatform, attempts: (post as any).publish_attempts });
     }
 
     return new Response(JSON.stringify({ ok: true, published: results.length, results }), {

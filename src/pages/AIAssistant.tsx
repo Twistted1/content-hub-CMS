@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { reportError } from "@/lib/errorReporting";
 import {
   Send,
   Bot,
@@ -284,7 +285,7 @@ const AIAssistant = () => {
         description: t("aiAssistant.campaignLaunchedDesc", { count: template.items?.length || 0 }),
       });
     } catch (err) {
-      console.error("Failed to process campaign:", err);
+      reportError(err, { area: "campaign-launch" });
       toast({
         title: t("aiAssistant.processFailedTitle"),
         description: t("aiAssistant.processFailedDesc"),

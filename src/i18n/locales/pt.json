@@ -279,7 +279,8 @@
       "toastVerificationFailed": "Falha na verificação",
       "toastSignedOutOthers": "Todas as outras sessões foram encerradas",
       "toastSignOutOthersFailed": "Falha ao encerrar outras sessões",
-      "toastDeleteRequiresConfirm": "A exclusão da conta requer confirmação"
+      "toastDeleteRequiresConfirm": "A exclusão da conta requer confirmação",
+      "toastLeakedPassword": "Esta senha apareceu em um vazamento de dados conhecido. Escolha uma senha diferente."
     },
     "billing": {
       "currentPlanTitle": "Plano Atual",
@@ -403,6 +404,10 @@
       "connect": "Conectar",
       "webhooksTitle": "Webhooks",
       "webhooksDesc": "Configure webhooks para receber notificações em tempo real",
+      "webhooksManage": "Gerenciar webhooks",
+      "webhooksInactive": "Inativo",
+      "webhooksActive": "Ativo",
+      "webhooksNone": "Nenhum webhook configurado ainda.",
       "enableWebhooks": "Ativar Webhooks",
       "enableWebhooksDesc": "Receber callbacks HTTP quando eventos ocorrerem",
       "webhookUrl": "URL do Webhook",
@@ -571,7 +576,9 @@
     "googleInfoTitle": "Login com Google:",
     "supabaseDashboard": "Painel do Supabase",
     "googleInfoPrefix": "Requer configuração OAuth no seu",
-    "googleInfoSuffix": ". Para login por email, crie uma conta na aba de Cadastro."
+    "googleInfoSuffix": ". Para login por email, crie uma conta na aba de Cadastro.",
+    "leakedPasswordTitle": "Senha encontrada em vazamento de dados",
+    "leakedPasswordDesc": "Esta senha apareceu em um vazamento de dados conhecido e não é segura. Escolha uma senha diferente."
   },
   "platforms": {
     "title": "Plataformas",
@@ -618,8 +625,8 @@
     "rest": "Descanso",
     "time": "Hora",
     "subtitle": "Link neural centralizado para todos os nós sociais conectados. Monitore o alcance e orquestre transmissões globais.",
-    "syncing": "SINCRONIZANDO...",
-    "syncAll": "SINCRONIZAR TUDO",
+    "syncing": "ATUALIZANDO...",
+    "syncAll": "ATUALIZAR",
     "addPlatform": "ADICIONAR PLATAFORMA",
     "statConnected": "Conectado",
     "statPlatformsSubtext": "plataformas",
@@ -647,6 +654,12 @@
     "connectingToast": "Conectando {{name}}...",
     "connectingDesc": "Você será redirecionado para autenticar sua conta.",
     "connectButton": "Conectar {{name}}",
+    "webhookDeliveryDesc": "{{name}} é entregue por webhook, não por login OAuth. Configure um destino em Pipeline de Conteúdo.",
+    "webhookSetupCta": "Configurar webhook",
+    "webhookSetupTitle": "{{name}} usa entrega por webhook",
+    "webhookSetupDesc": "Adicione uma URL de destino em Pipeline de Conteúdo > Webhooks. Postagens agendadas para {{name}} serão entregues lá.",
+    "notYetIntegrated": "Ainda não disponível",
+    "notYetIntegratedDesc": "Esta plataforma ainda não tem integração. Use um destino webhook em Pipeline de Conteúdo ou escolha uma plataforma compatível.",
     "activeUsersSuffix": "usuários ativos",
     "addCustomPlatform": "Adicionar Plataforma Personalizada",
     "addCustomPlatformDesc": "Configure um novo destino personalizado para seu conteúdo.",
@@ -654,8 +667,8 @@
     "recentActivity": "Atividade Recente",
     "recentActivityDesc": "Suas postagens criadas mais recentemente, em todas as plataformas",
     "noPostsYetActivity": "Ainda não há postagens. Crie sua primeira postagem para ver a atividade aqui.",
-    "syncCompleteTitle": "Sincronização concluída",
-    "syncCompleteDesc": "Todas as plataformas foram sincronizadas.",
+    "syncCompleteTitle": "Atualizado",
+    "syncCompleteDesc": "Conexões de plataforma e estado das postagens foram relidos. Este app não coleta análises de seguidores ou engajamento.",
     "missingFieldsTitle": "Campos obrigatórios",
     "missingFieldsDesc": "Preencha todos os campos obrigatórios e selecione pelo menos uma plataforma.",
     "postCreatedTitle": "Postagem criada",
@@ -669,7 +682,6 @@
     "publishedPartialDesc": "Publicada. {{count}} plataforma(s) falharam.",
     "publishedToDesc": "Publicada em {{platforms}}.",
     "publishFailedTitle": "Falha na publicação",
-    "postMarkedPublishedDesc": "Sua postagem foi marcada como publicada.",
     "addCustomPlatformDialogTitle": "Adicionar Plataforma Personalizada",
     "addCustomPlatformDialogDesc": "Crie um endpoint de integração personalizado para seu painel de conteúdo.",
     "platformName": "Nome da Plataforma",
@@ -712,7 +724,9 @@
     "settingContentBackup": "Backup de conteúdo",
     "settingContentBackupDesc": "Faça backup de todo o conteúdo publicado",
     "openPlatform": "Abrir {{name}}",
-    "schedule": "Agenda"
+    "schedule": "Agenda",
+    "postQueuedTitle": "Adicionado à fila de publicação",
+    "postQueuedDesc": "O agendador entregará esta publicação através das suas ligações de plataforma e marcá-la-á como publicada assim que uma plataforma a aceitar."
   },
   "projects": {
     "title": "Projetos",
@@ -1203,7 +1217,12 @@
     "statusAwaitingReview": "Aguardando Revisão",
     "statusRejected": "Rejeitado",
     "statusFailed": "Falhou",
-    "statusGenerating": "Gerando"
+    "statusGenerating": "Gerando",
+    "publishRetry": "Tentativa {{attempts}}/{{max}}",
+    "publishRetryPending": "Falha na entrega. O agendador tentará novamente automaticamente.",
+    "publishRetriesExhausted": "Falha na entrega ({{count}} tentativas)",
+    "publishFailed": "Falha na entrega",
+    "publishNoErrorDetail": "Nenhum detalhe do erro foi registrado para esta tentativa."
   },
   "review": {
     "title": "Caixa de Revisão",

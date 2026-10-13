@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { useContentPipeline } from "@/hooks/useContentPipeline";
 
 interface APIKey {
   id: string;
@@ -127,6 +128,7 @@ const connectedApps: ConnectedApp[] = [
 
 export function IntegrationsSettings() {
   const { t } = useTranslation();
+  const { webhooks } = useContentPipeline();
   const [apiKeys, setAPIKeys] = useState<APIKey[]>(initialAPIKeys);
   const [apps, setApps] = useState<ConnectedApp[]>(connectedApps);
   const [showAPIKeyDialog, setShowAPIKeyDialog] = useState(false);
@@ -362,7 +364,9 @@ export function IntegrationsSettings() {
         </CardContent>
       </Card>
 
-      {/* Webhooks */}
+      {/* Webhooks — read-only summary. Authoring lives on /pipeline: this card
+          used to render a URL input and a toggle with no handlers, so anything
+          typed here was silently discarded. */}
       <Card>
         <CardHeader>
           <CardTitle>{t("settings.integrations.webhooksTitle")}</CardTitle>
@@ -371,22 +375,29 @@ export function IntegrationsSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>{t("settings.integrations.enableWebhooks")}</Label>
-              <p className="text-sm text-muted-foreground">
-                {t("settings.integrations.enableWebhooksDesc")}
-              </p>
-            </div>
-            <Switch onCheckedChange={(checked) => toast.success(checked ? t("settings.integrations.toastWebhooksEnabled") : t("settings.integrations.toastWebhooksDisabled"))} />
-          </div>
-          <div className="space-y-2">
-            <Label>{t("settings.integrations.webhookUrl")}</Label>
-            <div className="flex gap-2">
-              <Input placeholder="https://your-server.com/webhook" />
-              <Button variant="outline">{t("settings.integrations.test")}</Button>
-            </div>
-          </div>
+          {webhooks.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {t("settings.integrations.webhooksNone")}
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {webhooks.map((wh) => (
+                <li key={wh.id} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="truncate font-medium">{wh.name}</span>
+                  <span className="truncate text-muted-foreground">{wh.url}</span>
+                  <Badge variant={wh.isActive ? "default" : "secondary"}>
+                    {wh.isActive ? t("settings.integrations.webhooksActive") : t("settings.integrations.webhooksInactive")}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Button variant="outline" asChild>
+            <a href="/pipeline">
+              {t("settings.integrations.webhooksManage")}
+              <ExternalLink className="ml-2 h-4 w-4" />
+            </a>
+          </Button>
         </CardContent>
       </Card>
 

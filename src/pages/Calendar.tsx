@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { BrandIcon } from "@/components/platforms/BrandIcon";
 import { getWebsiteCategoryForDate } from "@/utils/scheduling";
+import { localWallClockToUtcIso, utcIsoToLocalParts, toLocalDateKey } from "@/utils/scheduleTime";
 import { getPlatformLimit } from "@/utils/platformLimits";
 import { useTranslation } from "react-i18next";
 import { useUserPreferencesStore } from "@/stores/useUserPreferencesStore";
@@ -52,10 +53,10 @@ function fmtHour(t: string, format: "12h" | "24h" = "12h") {
 }
 function splitScheduledAt(raw?: string | null) {
   if (!raw) return { date: fmtKey(new Date()), startTime: "" };
-  const [datePart, timePart = ""] = raw.split("T");
-  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return { date: datePart, startTime: timePart.slice(0, 5) };
-  const d = parseISO(raw);
-  return { date: fmtKey(d), startTime: format(d, "HH:mm") };
+  // scheduled_at is a UTC instant; render it in the viewer's local timezone so
+  // the pickers show the same wall-clock the user originally chose.
+  const { date, time } = utcIsoToLocalParts(raw);
+  return { date, startTime: time };
 }
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -861,7 +862,8 @@ export default function ContentCalendar() {
   }, [current, viewMode]);
 
   const handleSaveEvent = (event: any) => {
-    const scheduledAt = event.startTime ? `${event.date}T${event.startTime}:00` : `${event.date}T09:00:00`;
+    // Build an absolute UTC instant from the local date+time the user picked.
+    const scheduledAt = localWallClockToUtcIso(event.date, event.startTime);
     const isUpdating = !event.id.startsWith("evt-");
     if (isUpdating) {
       updatePost.mutate({ 
@@ -872,7 +874,7 @@ export default function ContentCalendar() {
         status: event.status || "scheduled", 
         type: event.contentType || "text" 
       });
-      if (event.status !== "awaiting_review") schedulePost.mutate({ id: event.id, scheduledAt });
+      if (event.status !== "awaiting_review" && scheduledAt) schedulePost.mutate({ id: event.id, scheduledAt });
     } else {
       addPost.mutate({ 
         post: { 
@@ -891,7 +893,9 @@ export default function ContentCalendar() {
   const handleDeleteEvent = (id: string) => deletePost.mutate(id);
   const handleApproveEvent = (id: string) => {
     const event = events.find(e => e.id === id);
-    if (event) schedulePost.mutate({ id, scheduledAt: event.startTime ? `${event.date}T${event.startTime}:00` : `${event.date}T09:00:00` });
+    if (!event) return;
+    const scheduledAt = localWallClockToUtcIso(event.date, event.startTime);
+    if (scheduledAt) schedulePost.mutate({ id, scheduledAt });
   };
 
   // Drag-and-drop reschedule: keep original time-of-day, change date only
@@ -899,7 +903,8 @@ export default function ContentCalendar() {
     const evt = events.find(e => (e.originalId || e.id) === postId);
     if (!evt || evt.date === fmtKey(newDay)) return;
     const time = evt.startTime || "09:00";
-    schedulePost.mutate({ id: postId, scheduledAt: `${fmtKey(newDay)}T${time}:00` });
+    const scheduledAt = localWallClockToUtcIso(toLocalDateKey(newDay), time);
+    if (scheduledAt) schedulePost.mutate({ id: postId, scheduledAt });
   }, [events, schedulePost]);
 
   const filtered = searchQuery.trim()

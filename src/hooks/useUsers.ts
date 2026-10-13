@@ -115,10 +115,24 @@ export function useUsers(options: { includeInvitations?: boolean } = {}) {
       }
 
       if (updates.role) {
+        // The Users page is single-select, but `user_roles` is unique on
+        // (user_id, role) so a user can hold several roles at once. The list
+        // collapses them with a last-row-wins map, which would then flip
+        // nondeterministically between the old and new role. Clear the other
+        // rows first so the chosen role is the only one left.
+        const { error: clearError } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", id)
+          .neq("role", updates.role as any);
+        if (clearError) throw clearError;
+
         const { error } = await supabase
           .from("user_roles")
-          .update({ role: updates.role as any })
-          .eq("user_id", id);
+          .upsert(
+            { user_id: id, role: updates.role as any },
+            { onConflict: "user_id,role" }
+          );
         if (error) throw error;
       }
     },

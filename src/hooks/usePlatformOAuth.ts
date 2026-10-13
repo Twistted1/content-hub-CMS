@@ -6,6 +6,25 @@ import { toast } from "sonner";
 
 export type DirectPlatform = "linkedin" | "twitter";
 
+/**
+ * How a platform actually receives content.
+ *  - `direct`: published through the platform's official OAuth API.
+ *  - `webhook`: delivered by `publish-due-posts` to a user-configured webhook
+ *    in `webhook_configs` (Content Pipeline > Webhooks). There is no
+ *    per-platform OAuth handshake for these.
+ */
+export type ConnectionMode = "direct" | "webhook";
+
+const DIRECT_PLATFORMS = new Set<string>(["linkedin", "twitter"]);
+
+export function getConnectionMode(platformId: string): ConnectionMode {
+  return DIRECT_PLATFORMS.has(platformId.toLowerCase()) ? "direct" : "webhook";
+}
+
+export function isDirectPlatform(platformId: string): platformId is DirectPlatform {
+  return DIRECT_PLATFORMS.has(platformId.toLowerCase());
+}
+
 export interface ConnectedAccount {
   id: string;
   platform: DirectPlatform;
@@ -99,6 +118,7 @@ export function usePlatformOAuth() {
     connecting,
     connect,
     disconnect,
+    refetch: tokensQuery.refetch,
     isConnected: (platform: DirectPlatform) =>
       (tokensQuery.data || []).some(a => a.platform === platform),
   };

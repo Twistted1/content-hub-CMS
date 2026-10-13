@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { platforms as platformIdentities, platformColors } from "@/components/platforms/platformsData";
 import { getPlatformLimit } from "@/utils/platformLimits";
 import { format, parseISO, formatDistanceToNow } from "date-fns";
+import { localWallClockToUtcIso, utcIsoToLocalParts } from "@/utils/scheduleTime";
 import {
   Inbox, FileText, CalendarClock, CheckCircle2, XCircle, RotateCcw,
   ImageIcon, Clock, Sparkles, Loader2, Globe, ListChecks,
@@ -27,10 +28,8 @@ function fmtKey(d: Date) {
 
 function splitScheduledAt(raw?: string | null) {
   if (!raw) return { date: "", time: "" };
-  const [datePart, timePart = ""] = raw.split("T");
-  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return { date: datePart, time: timePart.slice(0, 5) };
-  const d = parseISO(raw);
-  return { date: fmtKey(d), time: format(d, "HH:mm") };
+  // scheduled_at is a UTC instant; show it in the reviewer's local timezone.
+  return utcIsoToLocalParts(raw);
 }
 
 function defaultScheduledAt() {
@@ -212,7 +211,11 @@ function ReviewEditorPane({ post }: { post: Post }) {
       toast.error(t("review.pickDateToApprove"));
       return;
     }
-    const scheduledAt = `${date}T${time || "09:00"}:00`;
+    const scheduledAt = localWallClockToUtcIso(date, time || "09:00");
+    if (!scheduledAt) {
+      toast.error(t("review.pickDateToApprove"));
+      return;
+    }
     runUpdate(
       {
         title,

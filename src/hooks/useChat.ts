@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { reportError } from '@/lib/errorReporting';
 
 interface Message {
   id: string;
@@ -167,7 +168,7 @@ ${JSON.stringify(CONTENT_SCHEDULE, null, 2)}`;
         }
       }
     } catch (error) {
-      console.error('Novee chat error:', error);
+      reportError(error, { area: "chat", model: "novee" });
       const reason = error instanceof Error ? error.message : 'Failed to get response from Novee';
       toast.error(reason);
 

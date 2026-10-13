@@ -25,6 +25,7 @@ import {
   AlignRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { reportError } from '@/lib/errorReporting';
 import { useRef } from 'react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -77,7 +78,7 @@ export function RichTextEditor({ content, onChange, placeholder, className, onIm
               }
             }).catch(error => {
                 toast.error(t('editor.toastImageUploadFailed'));
-                console.error(error);
+                reportError(error, { area: "editor-image-upload" });
             });
             return true;
           }
