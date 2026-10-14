@@ -50,16 +50,19 @@ serve(async (req) => {
     logStep("Found Stripe customer", { customerId });
 
     // Validate caller-supplied Origin against an allowlist to prevent open redirects.
+    // No preview-host fallback: this file previously carried a dead Lovable preview
+    // host as BOTH an allowlisted origin and the ultimate fallback, so with
+    // `SITE_URL` unset a paying customer's return from the billing portal landed on
+    // a dead page. Phase 6 fixed exactly this bug in `create-checkout` and missed
+    // this instance. Same pattern as that fix.
+    const PRODUCTION_URL = "https://content-cms-hub.vercel.app";
     const ALLOWED_ORIGINS = new Set<string>(
-      [
-        Deno.env.get("SITE_URL"),
-        "https://id-preview--31c64459-d7d6-45e8-9eeb-bedede902146.lovable.app",
-      ].filter((v): v is string => !!v),
+      [Deno.env.get("SITE_URL"), PRODUCTION_URL].filter((v): v is string => !!v),
     );
     const requestOrigin = req.headers.get("origin") ?? "";
     const origin = ALLOWED_ORIGINS.has(requestOrigin)
       ? requestOrigin
-      : (Deno.env.get("SITE_URL") || "https://id-preview--31c64459-d7d6-45e8-9eeb-bedede902146.lovable.app");
+      : (Deno.env.get("SITE_URL") || PRODUCTION_URL);
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/dashboard`,

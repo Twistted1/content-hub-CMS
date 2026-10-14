@@ -236,6 +236,33 @@ async function main() {
           typeof payload?.timestamp === "string",
         JSON.stringify(payload),
       );
+      // The unified contract. Both delivery paths must send these, because a
+      // real receiver (a Meta/website receiver) has to be able to rely on them:
+      // `delivery_id` to de-duplicate retries, and `type` because Instagram
+      // cannot publish text-only and needs to know a feed post from a Reel.
+      check(
+        "1",
+        "envelope carries a stable delivery_id for de-duplication",
+        payload?.delivery_id === `${postId1}:website`,
+        String(payload?.delivery_id),
+      );
+      check(
+        "1",
+        "envelope carries content type, tags, excerpt and scheduledAt",
+        typeof payload?.post?.type === "string" &&
+          payload.post.type.length > 0 &&
+          Array.isArray(payload?.post?.tags) &&
+          payload?.post != null &&
+          "excerpt" in payload.post &&
+          "scheduledAt" in payload.post,
+        JSON.stringify({ type: payload?.post?.type, tags: payload?.post?.tags }),
+      );
+      check(
+        "1",
+        "envelope has a top-level platform, not a nested platforms array",
+        typeof payload?.platform === "string" && !("platforms" in (payload ?? {})),
+        JSON.stringify({ platform: payload?.platform, platforms: payload?.platforms }),
+      );
       check(
         "1",
         "configured custom header was forwarded",

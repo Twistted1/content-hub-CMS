@@ -120,9 +120,52 @@ branch** (`:144-179`):
 - loads `webhook_configs` by `user_id` + `is_active` (`:122-123`)
 - matches `!w.platforms?.length || w.platforms.includes(platform)` (`:146-147`) —
   **an empty `platforms` array means every platform**
-- https-only SSRF guard (`:28-30`), 8 s abort (`:153-154`), `redirect:"error"`
-- operator-supplied headers from the `headers` JSONB (`:159`)
-- body: `{event: "post.publish", platform, post: {id, title, content, coverImageUrl}, timestamp}` (`:160-170`)
+- https-only SSRF guard, 8 s abort, `redirect:"error"`
+- operator-supplied headers from the `headers` JSONB
+- body: the shared envelope below
+
+**The delivery contract is now defined once, in
+`supabase/functions/_shared/publishDelivery.ts`**, and imported by *both*
+`publish-due-posts` and `content-pipeline`. This was fixed on 2026-10-14: the two
+paths previously sent **different** envelopes — `post.publish` with a top-level
+`platform` in one, `post.published` with a nested `platforms` array in the other —
+so a receiver written against one silently mishandled the other. Verified on the
+wire, not just in source:
+
+```json
+{
+  "event": "post.publish",
+  "delivery_id": "<post-id>:<platform>",
+  "platform": "website",
+  "post": {
+    "id": "…",
+    "title": "…",
+    "content": "… (already truncated to this platform's caption limit)",
+    "excerpt": null,
+    "tags": [],
+    "type": "text",
+    "coverImageUrl": null,
+    "scheduledAt": null
+  },
+  "timestamp": "2026-10-14T13:04:54.306Z"
+}
+```
+
+Three parts of that are new and matter for a receiver:
+
+- **`delivery_id` is a stable idempotency key** (`postId:platform`), deliberately
+  *not* random, so a retry carries the same key and the receiver can de-duplicate
+  instead of double-publishing.
+- **`type`** is included because Instagram cannot publish text-only and needs to
+  know whether a delivery is a feed post, a Reel or a story.
+- **`content` is truncated per platform** before sending. Nothing used to
+  truncate: a long article hard-failed LinkedIn (3000) and Instagram (2200) while
+  X was silently cut to 280. A cut caption now ends in `…` so it is visibly cut.
+
+The envelope and the truncation behaviour are pinned by
+`src/utils/publishPayloadParity.test.ts` (which imports the shared module
+directly) and asserted end-to-end against a live receiver by
+`npm run e2e:publish` — 23 checks.
 
 **So "publish to Website" is a push, not a pull:** the site owner must host the
 receiver that accepts this envelope and writes it into the site. There is no
@@ -189,8 +232,11 @@ is worth tightening regardless.
 - If `articles` **is** a leftover → do **A** for CMS-managed `posts`, and drop or
   archive the table deliberately.
 - Do **D** regardless: whatever else you build, the webhook path is what serves
-  the non-website platforms (Meta, etc.), and it currently has no shared secret,
-  no idempotency key, and no way to set auth headers from the UI.
+  the non-website platforms (Meta, etc.). Its **envelope is now unified and it
+  carries a stable `delivery_id`, so the idempotency half of D is done** (see
+  "Website delivery today" above). Still outstanding on that path: **no shared
+  secret or signature**, no update/unpublish events (only `post.publish`), and no
+  way to set auth headers from the UI.
 
 ---
 

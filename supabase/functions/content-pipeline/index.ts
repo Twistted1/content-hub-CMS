@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildDelivery } from "../_shared/publishDelivery.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -332,42 +333,47 @@ Return ONLY JSON.`;
               continue;
             }
             try {
-              const webhookPayload = {
-                event: "post.published",
-                post: {
-                  id: post.id,
-                  title: generatedContent.title,
-                  content: generatedContent.content,
-                  excerpt: generatedContent.excerpt,
-                  tags: generatedContent.tags,
-                  coverImageUrl: finalImageUrl,
-                  platforms: matchingPlatforms,
-                  scheduledAt: scheduledAt,
-                },
-                timestamp: new Date().toISOString(),
-              };
-
               const whHeaders: Record<string, string> = {
                 "Content-Type": "application/json",
                 ...(webhook.headers as Record<string, string> || {}),
               };
 
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 5000);
-              const whResp = await fetch(webhook.url, {
-                method: "POST",
-                headers: whHeaders,
-                body: JSON.stringify(webhookPayload),
-                redirect: "error",
-                signal: controller.signal,
-              });
-              clearTimeout(timeoutId);
+              // One delivery per platform, not one per webhook. The shared
+              // envelope carries a single top-level `platform`, per-platform
+              // truncation is applied inside `buildDelivery`, and `delivery_id`
+              // is only meaningful for a single (post, platform) pair. This
+              // previously sent ONE payload per webhook listing every matched
+              // platform in a nested `platforms` array, with the event name
+              // `post.published` — a different contract from the cron path.
+              for (const platform of matchingPlatforms) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const whResp = await fetch(webhook.url, {
+                  method: "POST",
+                  headers: whHeaders,
+                  body: JSON.stringify(buildDelivery({
+                    postId: post.id,
+                    platform,
+                    title: generatedContent.title,
+                    content: generatedContent.content,
+                    excerpt: generatedContent.excerpt,
+                    tags: generatedContent.tags,
+                    type: generatedContent.type,
+                    coverImageUrl: finalImageUrl,
+                    scheduledAt: scheduledAt ?? null,
+                  })),
+                  redirect: "error",
+                  signal: controller.signal,
+                });
+                clearTimeout(timeoutId);
 
-              webhookResults.push({
-                webhook: webhook.name,
-                status: whResp.status,
-                success: whResp.ok,
-              });
+                webhookResults.push({
+                  webhook: webhook.name,
+                  platform,
+                  status: whResp.status,
+                  success: whResp.ok,
+                });
+              }
             } catch (whErr: any) {
               webhookResults.push({
                 webhook: webhook.name,

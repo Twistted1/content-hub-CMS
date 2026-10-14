@@ -57,6 +57,9 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   schedule and generates pending posts. A parity test guards the duplicated
   website category map.
 - `supabase/functions/publish-due-posts/` — runs every minute; delivers due posts.
+- `supabase/functions/_shared/publishDelivery.ts` — the single outbound webhook
+  contract (envelope shape, per-platform truncation, `delivery_id`). Imported by
+  both delivery functions; change it here, not at call sites.
 - `supabase/functions/content-pipeline/` — OpenAI generation with cost controls.
 - `tools/publish-e2e/`, `tools/stripe-e2e/` — the two harnesses above.
 - `src/utils/scheduleMode.ts`, `src/utils/reviewTransitions.ts` — pure logic
@@ -119,9 +122,22 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   is not implemented** anywhere (`trial_period_days` does not exist).
 - **`/pipeline`'s webhook form cannot set auth headers** (name, URL and platform
   badges only), though `webhook_configs.headers` supports them — a custom-secret
-  receiver needs a direct DB write today. The webhook payload has **no idempotency
-  key and no shared secret**, and only ever fires `post.publish` (no update or
-  unpublish event).
+  receiver needs a direct DB write today. **There is still no shared secret or
+  signature on the payload, and it only ever fires `post.publish`** (no update or
+  unpublish event), so a receiver cannot verify provenance or react to an edit.
+  It does now carry a stable `delivery_id` for de-duplication.
+- **The webhook delivery contract is defined once, in
+  `supabase/functions/_shared/publishDelivery.ts`**, and imported by both
+  `publish-due-posts` (scheduled/cron path) and `content-pipeline` (immediate
+  path). They previously sent *different* envelopes — `post.publish` with a
+  top-level `platform` in one, `post.published` with a nested `platforms` array
+  in the other — so a receiver written against one silently mishandled the other.
+  Per-platform caption truncation also happens there (nothing truncated before: a
+  long article hard-failed LinkedIn/Instagram while X was silently cut to 280).
+  Change the shape in that one file, never at a call site.
+  `src/utils/publishPayloadParity.test.ts` imports it directly and pins the
+  envelope, the limits (against `src/utils/platformLimits.ts`) and the truncation
+  behaviour.
 - **Only LinkedIn and X publish directly.** `publish-due-posts/index.ts:15`
   defines `DIRECT_PLATFORMS = {linkedin, twitter}`. Every other platform needs
   a matching active row in `webhook_configs` or the post fails with

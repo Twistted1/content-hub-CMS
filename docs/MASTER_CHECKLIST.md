@@ -8,7 +8,20 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-10-14 (Phase 18). Three read-only audits answered the
+**Last verified:** 2026-10-14 (Phase 19). **The outbound webhook contract is now
+unified** — one envelope defined in `supabase/functions/_shared/publishDelivery.ts`
+and imported by both delivery paths, with a stable `delivery_id` for
+de-duplication, a content `type` (Instagram needs it), and per-platform caption
+truncation enforced at publish time for the first time. A long article used to
+hard-fail LinkedIn and Instagram while X was silently cut to 280. Verified on the
+wire against a live receiver (23/23 harness checks) and by 18 new unit tests.
+`customer-portal`'s dead Lovable fallback — the same bug Phase 6 fixed in
+`create-checkout` and missed here — is fixed too. **Requires redeploying
+`publish-due-posts`, `content-pipeline` and `customer-portal`** (all three, since
+they now share a module). Still missing on that path: a shared secret/signature,
+update/unpublish events, and auth-header UI.
+
+**Previously last verified:** 2026-10-14 (Phase 18). Three read-only audits answered the
 owner's questions about remaining code work, feeding `novusexchange.com`,
 open-sourcing and commercialization; findings are recorded in
 `docs/READINESS_GAP_ANALYSIS.md` and `docs/HEADLESS_CONSUMPTION.md` with
@@ -384,6 +397,78 @@ stray repo-owned node processes before concluding an install is broken.
 
 ---
 
+## Phase 19 — Unified webhook delivery contract (2026-10-14)
+
+Done so the Meta/Facebook/Instagram receiver can be built **once**, against a
+contract that will not move. The owner asked whether to start on Meta; the answer
+was "start the App Review paperwork, but not the receiver yet, because the
+contract is about to change". This is that change.
+
+- [x] **One envelope, defined once.** New
+      `supabase/functions/_shared/publishDelivery.ts` is imported by **both**
+      delivery paths. They previously sent *different* payloads:
+      `publish-due-posts` sent `event: "post.publish"` with a **top-level**
+      `platform` and only `{id, title, content, coverImageUrl}`, while
+      `content-pipeline` sent `event: "post.published"` with a **nested**
+      `platforms` array and extra fields. A receiver written against one silently
+      mishandled the other — the kind of bug that looks like "Meta is broken".
+- [x] **Added a stable `delivery_id`** (`postId:platform`) as an idempotency key.
+      Deliberately **not** random: a retry must carry the same key or a receiver
+      cannot tell a retry from a second post and will double-publish. This closes
+      the idempotency half of the "formalize the webhook path" item.
+- [x] **Added `type`** to the payload. Instagram cannot publish text-only and
+      needs to know whether a delivery is a feed post, a Reel or a story; a
+      receiver previously had to guess.
+- [x] **Per-platform caption truncation, enforced on the delivery path.** Nothing
+      truncated before: the same text went to every platform, so a long generated
+      article **hard-failed LinkedIn (3000) and Instagram (2200)** — burning all
+      five retries and parking the post as `failed` with a confusing provider
+      error — while X was silently cut to 280. A shortened caption now ends in
+      `…` so it reads as shortened rather than looking complete. The limits mirror
+      `src/utils/platformLimits.ts`, which was previously used **only** for UI
+      warnings and never enforced at publish time.
+- [x] **`content-pipeline` now sends one delivery per platform** rather than one
+      payload per webhook listing several platforms, because the unified envelope
+      carries a single `platform`, truncation is per-platform, and `delivery_id`
+      is only meaningful for one `(post, platform)` pair.
+- [x] **Strengthened the weaker of the two SSRF guards.**
+      `publish-due-posts`' `isPrivateOrLocalHost` missed `0.0.0.0/8`, CGNAT
+      (`100.64.0.0/10`) and every IPv6 private range. Now matches
+      `content-pipeline`'s. All of those are unroutable in public DNS, so closing
+      the gap cannot block a legitimate receiver.
+- [x] **Fixed `customer-portal`'s dead Lovable fallback.** It carried
+      `id-preview--31c64459-….lovable.app` as **both** an allowlisted origin and
+      the ultimate fallback, so with `SITE_URL` unset a paying customer's return
+      from the billing portal landed on a dead page. Phase 6 fixed exactly this
+      bug in `create-checkout` and missed this instance. Now uses the same
+      `PRODUCTION_URL` + `SITE_URL` pattern as that fix.
+- [x] **Verified on the wire, not just in source.** The receiver log shows the new
+      envelope arriving with `delivery_id`, `type`, `tags`, `excerpt` and
+      `scheduledAt` present. The `publish-e2e` harness was extended to assert
+      these, and now reports **23/23 checks**; `publishPayloadParity.test.ts`
+      imports the shared module directly (it has no Deno globals) and adds **18
+      tests** pinning the envelope, the limits and the truncation behaviour,
+      including that a space-less 10k token still fills the budget rather than
+      collapsing to an ellipsis.
+
+**Verified:** `tsc --noEmit` clean, `eslint` 0 errors (**291** warnings, +3 from
+two `(p: any)` map params added in `publish-due-posts` to match that file's
+existing untyped style), **130 passed / 1 skipped** (was 112), `vite build` clean,
+`publish-e2e` 23/23.
+
+**⚠️ Requires redeployment to take effect:** `publish-due-posts`,
+`content-pipeline` and `customer-portal`. The `_shared/` import means all three
+must be deployed from this revision — deploying only one leaves it importing a
+module the others may not match. `supabase functions deploy` each, or all at once.
+
+**Still open on this path (unchanged by this phase, and needed for a real Meta
+receiver):** no shared secret or signature on the payload, so a receiver cannot
+verify provenance; only `post.publish` is ever fired, so an edit or an unpublish
+cannot be propagated; and `/pipeline`'s form still cannot set the auth headers the
+schema supports.
+
+---
+
 ## Phase 18 — Readiness audits: open-source, commercialization, headless (2026-10-14)
 
 Three read-only audits run in response to the owner's questions about what's left
@@ -445,6 +530,9 @@ commercialization. Two produced durable documents; nothing was changed in
 - 🟠 **`/pipeline`'s webhook form cannot set auth headers**, though the schema
   supports them (`20260323154601:37`) — name/URL/platform badges only. Any
   receiver needing a shared secret needs a direct DB write today.
+  *(The envelope itself was fixed in Phase 19; the missing pieces on that path are
+  now specifically: no shared secret/signature, no update/unpublish events, and no
+  header UI.)*
 - 🟡 **Articles created in `Articles.tsx` always pass `platforms: []`**
   (`:114-121`) → zero `post_platforms` rows → the delivery loop never runs → the
   post retries to the cap and parks as `failed` **with an empty error string**
