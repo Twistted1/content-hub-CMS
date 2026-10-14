@@ -8,8 +8,27 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-10-14 (Phase 17). **LinkedIn publishing is now confirmed
-live in production** — a real post reached the owner's feed through the app,
+**Last verified:** 2026-10-14 (Phase 18). Three read-only audits answered the
+owner's questions about remaining code work, feeding `novusexchange.com`,
+open-sourcing and commercialization; findings are recorded in
+`docs/READINESS_GAP_ANALYSIS.md` and `docs/HEADLESS_CONSUMPTION.md` with
+verified-vs-reported provenance marked per item. **Four findings matter most.**
+(1) **Production exposes an anonymously readable `articles` table with 4 real
+Novus Exchange articles that this CMS neither creates nor writes** — the site's
+content and the CMS are two disconnected systems, and whether `articles` is the
+real public store is an open owner decision. (2) **Billing has zero server-side
+enforcement** — no function ever reads `subscriptions`, so a free user can spend
+the owner's AI budget. (3) **The migration set cannot rebuild the database**
+(`project_settings`/`subscribers` are never `CREATE TABLE`d), which is why the
+E2E project had to be rebuilt by introspecting production. (4) **The advertised
+14-day trial is not implemented.** Open-source release needs ~1–2 weeks
+(chiefly a `LICENSE` decision, replayable migrations, and de-hardcoding the CSP
+and cron URLs); hosted multi-customer SaaS is a 6–10 week data-model rewrite,
+while selling self-hosted/per-customer deployments is ~2–3 weeks and fits the
+existing single-tenant design.
+
+**Previously last verified:** 2026-10-14 (Phase 17). **LinkedIn publishing is now
+confirmed live in production** — a real post reached the owner's feed through the app,
 exercising the OAuth token chain end to end (owner-reported, with a screenshot;
 not independently verifiable from a session). **This does not change go-live
 status**, because LinkedIn is a *direct* platform and never needed a webhook:
@@ -362,6 +381,99 @@ a stale `vite` dev-server process from this repo (PID identified via
 `Get-CimInstance Win32_Process` filtered on the repo path) still held it. Killing
 that process and its `esbuild` child freed it; `npm ci` then succeeded. Check for
 stray repo-owned node processes before concluding an install is broken.
+
+---
+
+## Phase 18 — Readiness audits: open-source, commercialization, headless (2026-10-14)
+
+Three read-only audits run in response to the owner's questions about what's left
+code-wise, whether the CMS feeds `novusexchange.com`, open-sourcing, and
+commercialization. Two produced durable documents; nothing was changed in
+`src/` or `supabase/` by this phase.
+
+- **`docs/READINESS_GAP_ANALYSIS.md`** — open-source and commercialization
+  readiness. **Verdict: open-source is close but has hard blockers (~1–2 weeks);
+  hosted multi-customer SaaS is a data-model rewrite, not packaging (~6–10
+  weeks).** The economical path is self-hosted / per-customer deployments
+  (~2–3 weeks on top), which the existing single-tenant design already fits.
+- **`docs/HEADLESS_CONSUMPTION.md`** — can the website read CMS content.
+
+**The findings that matter most, and the ones I would act on first:**
+
+- 🔴 **Production exposes a public `articles` API that this CMS does not manage.**
+  `GET /rest/v1/articles` returns **4 real Novus Exchange articles** (Economics /
+  Geopolitics, dated Sep–Oct 2026) plus an `authors` row, anonymously, with no
+  key. But **no migration creates those tables, and no code in `src/` or
+  `supabase/functions/` reads or writes them.** The content the live site shows
+  and the content the CMS edits are **two disconnected systems**. Verified
+  directly by the owner's agent, not inferred. **This needs a decision:** is
+  `articles` the real public store to bring under migrations and have the CMS
+  write, or a leftover to drop?
+- 🔴 **Billing has zero server-side enforcement.** No edge function ever *reads*
+  `subscriptions` — only writes (`stripe-webhook:95`, `demo-login:158`). The only
+  tier gate is cosmetic and client-side (`Sidebar.tsx:140`). **Any authenticated
+  free user can call `content-pipeline`, `novee-chat` or `generate-strategy`
+  directly and spend the owner's OpenAI/Gemini budget.** This is a live cost leak
+  and the highest-value security fix outstanding.
+- 🔴 **The migration set cannot rebuild the database.** `project_settings` and
+  `subscribers` are referenced by policies and `ALTER TABLE`s but **no migration
+  `CREATE TABLE`s them** (verified: zero matches in 41 migrations), and one
+  migration queries `project_settings` as key/value while another uses wide
+  columns. `supabase db push` onto an empty project fails. This is why Phase 9
+  had to rebuild the E2E project by introspecting live prod; the workaround was
+  never applied to the repo.
+- 🔴 **A 14-day free trial is advertised but not implemented.** `en.json:1992`
+  and `:1888`, plus `Landing.tsx:231`, promise it; there is **no
+  `trial_period_days` anywhere**. False-advertising and chargeback exposure.
+- 🟠 **`customer-portal` still carries a dead Lovable preview host as both an
+  allowed origin and the fallback** (`:56`, `:62`) — with `SITE_URL` unset, a
+  paying customer's portal return lands on a dead page. Phase 6 fixed exactly
+  this bug in `create-checkout` and **missed this instance**.
+- 🟠 **Stripe price IDs are hardcoded in three files**
+  (`create-checkout:13-18`, `check-subscription:12-15`,
+  `stripe-webhook:115-118`), and `stripe-webhook`'s `resolveTier` falls through
+  to `"free"` for unrecognised prices — so a second deployment that updates two
+  of the three **silently downgrades paying customers to free**.
+- 🟠 **Two other AI call sites have no budget check at all.** The only
+  `monthly_openai_budget` use is `content-pipeline:120`; `novee-chat` and
+  `generate-strategy` call OpenAI/Gemini unguarded. And the check itself is
+  **instance-global** — `content-pipeline:110-113` sums `cost_estimate` across
+  *all* users with no `user_id` filter, so one heavy user 402s everyone.
+- 🟠 **`GEMINI_API_KEY` is required and undocumented.** `generate-strategy:38-41`
+  needs it and `Automation.tsx:183` reaches it, but it is absent from
+  `.env.example` and the README.
+- 🟠 **`/pipeline`'s webhook form cannot set auth headers**, though the schema
+  supports them (`20260323154601:37`) — name/URL/platform badges only. Any
+  receiver needing a shared secret needs a direct DB write today.
+- 🟡 **Articles created in `Articles.tsx` always pass `platforms: []`**
+  (`:114-121`) → zero `post_platforms` rows → the delivery loop never runs → the
+  post retries to the cap and parks as `failed` **with an empty error string**
+  (`publish-due-posts:208-217`).
+- 🟡 **No `LICENSE`, and none ever in git history.** `package.json` is
+  `"private": true` with no `license` field, so the code is legally
+  all-rights-reserved — **nobody may self-host or contribute.** Also missing:
+  `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`,
+  `.nvmrc`, `engines`, `.editorconfig`, issue/PR templates.
+- 🟡 **Self-hosting is blocked by hardcoded infrastructure:**
+  `vercel.json:18` pins the CSP `connect-src` to the owner's Supabase host
+  (breaking every other deployment's API calls), and the cron migrations
+  hardcode the owner's project URL (`20260601130235:51,66,81`) so a
+  self-hoster's cron would POST to the wrong project and silently never run.
+- 🟡 **`supabase/.temp/cli-latest` is tracked**, and `api.json` — a "Headless API
+  Distribution Channel" schedule — is dead config referenced by nothing.
+
+**How the headless question was left:** the publishing direction works (webhook),
+the consumption direction does not, and the `articles` decision above gates the
+choice between two clean fixes. `docs/HEADLESS_CONSUMPTION.md` lays out five
+options with effort; the recommendation is to adopt `articles` if it is the
+intended store (~1–2 days) or publish a read-only `public_published_posts` view
+if it is not (~2–4 h), and to harden the webhook path with a shared secret and
+idempotency key either way.
+
+**Not determined by any audit** (needs the dashboard): whether `articles` has RLS
+enabled or is entirely unprotected, and whether `anon` can **write** to it — no
+write was attempted. If that table is publicly writable it is a serious exposure
+and should be the first thing checked.
 
 ---
 

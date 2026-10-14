@@ -44,6 +44,11 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
 - `docs/MASTER_CHECKLIST.md` — the single source of truth for completion
   status. `docs/AUDIT.md`, `PHASE_0_TESTING.md` and `PHASE_3_READINESS_REPORT.md`
   are historical; do not treat them as current.
+- `docs/READINESS_GAP_ANALYSIS.md` — open-source and commercialization gap
+  analysis (blockers, missing files, self-hosting hazards, multi-tenancy, two
+  commercial paths with effort estimates).
+- `docs/HEADLESS_CONSUMPTION.md` — whether/how the website can read CMS content,
+  including the unmanaged public `articles` table.
 - `docs/AUDIT_REPORT.md` — full audit at revision `59cdea98`. Its
   `scheduleMode` finding is partly wrong; Phase 15 in the checklist corrects it.
 - `src/data/platforms/*.json` — per-platform publishing schedule (source of
@@ -74,6 +79,49 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   user's login fails with `500 "Database error querying schema"` instead of a
   clean ban — which reads as an outage in logs. Use a far-future finite
   timestamp (the fix adopted here: `2099-12-31`).
+- **The website's content is NOT managed by this CMS — do not assume otherwise.**
+  Production exposes `articles` + `authors` over PostgREST **anonymously**, and
+  `articles` holds real Novus Exchange articles. But **no migration creates those
+  tables and no code in `src/` or `supabase/functions/` reads or writes them** —
+  they were created in the dashboard. The CMS's own `posts` table is closed to
+  `anon` (RLS requires `auth.uid()`, and `has_role` EXECUTE is revoked from
+  `anon`, so anon gets a hard `401 permission denied for function has_role`
+  rather than an empty result). Two disconnected content systems; whether
+  `articles` is the intended store or a leftover is an **open owner decision**.
+  See `docs/HEADLESS_CONSUMPTION.md`.
+- **Billing is not enforced anywhere on the server.** No edge function ever
+  *reads* `subscriptions` — only writes. The only tier gate is cosmetic and
+  client-side (`Sidebar.tsx:140`). Any authenticated free user can call
+  `content-pipeline` / `novee-chat` / `generate-strategy` directly and spend the
+  owner's AI budget. Do not describe the app as having working plan gating.
+- **The migration set cannot rebuild the database.** `project_settings` and
+  `subscribers` are policy'd and altered but never `CREATE TABLE`d, and
+  `project_settings` is queried as key/value in one migration and as wide columns
+  in another. `supabase db push` onto an empty project fails. This is why the E2E
+  project was rebuilt by introspecting live prod (Phase 9). Also note
+  `invitations` 404s live despite a migration creating it — migrations are
+  **not** a faithful mirror of production either way.
+- **`project_settings` is one global row** (`.select('*').single()`), so all
+  config and the AI budget are instance-wide. The budget check
+  (`content-pipeline:110-115`) sums `cost_estimate` across **all** users with no
+  `user_id` filter: one heavy user 402s everyone. `novee-chat` and
+  `generate-strategy` have no budget check at all.
+- **`admin` is a global super-admin, not a tenant admin.** `has_role()` reads a
+  global `user_roles` table with no tenant column, and ~30 tables use
+  `auth.uid() = user_id OR has_role(auth.uid(),'admin')`. There is **no tenant /
+  organization / workspace concept anywhere** — the app is single-tenant. Any
+  customer granted `admin` can read and edit every other user's content, roles
+  and billing. Multi-customer SaaS requires splitting the two.
+- **Stripe price IDs are hardcoded in three files** (`create-checkout`,
+  `check-subscription`, `stripe-webhook`) and `resolveTier` falls through to
+  `"free"` for unrecognised prices — so a second deployment that updates two of
+  the three silently downgrades paying customers. The advertised **14-day trial
+  is not implemented** anywhere (`trial_period_days` does not exist).
+- **`/pipeline`'s webhook form cannot set auth headers** (name, URL and platform
+  badges only), though `webhook_configs.headers` supports them — a custom-secret
+  receiver needs a direct DB write today. The webhook payload has **no idempotency
+  key and no shared secret**, and only ever fires `post.publish` (no update or
+  unpublish event).
 - **Only LinkedIn and X publish directly.** `publish-due-posts/index.ts:15`
   defines `DIRECT_PLATFORMS = {linkedin, twitter}`. Every other platform needs
   a matching active row in `webhook_configs` or the post fails with
