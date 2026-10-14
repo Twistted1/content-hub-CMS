@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
+import type { ScheduleMode } from "@/utils/scheduleMode";
+import { normalizeScheduleMode } from "@/utils/scheduleMode";
 
 export interface PipelineRun {
   id: string;
@@ -9,7 +11,12 @@ export interface PipelineRun {
   status: string;
   topic: string;
   platforms: string[];
-  scheduleMode: string;
+  /**
+   * The mode this run was started with. `schedule-from-templates` stores
+   * `"awaiting_review"` here, so it must be part of the union — see
+   * `src/utils/scheduleMode.ts`.
+   */
+  scheduleMode: ScheduleMode;
   scheduledAt: string | null;
   steps: Array<{ step: string; ts: string; [key: string]: any }>;
   result: any;
@@ -53,7 +60,10 @@ export function useContentPipeline() {
         status: r.status,
         topic: r.topic,
         platforms: r.platforms || [],
-        scheduleMode: r.schedule_mode,
+        // `schedule_mode` is a plain text column, so a row written before the
+        // union was widened can hold anything. Resolve it rather than trusting
+        // the cast, so the UI never renders a mode it has no label for.
+        scheduleMode: normalizeScheduleMode(r.schedule_mode),
         scheduledAt: r.scheduled_at,
         steps: r.steps || [],
         result: r.result,
@@ -97,7 +107,7 @@ export function useContentPipeline() {
     mutationFn: async (params: {
       topic: string;
       platforms: string[];
-      scheduleMode: "immediate" | "scheduled" | "draft";
+      scheduleMode: ScheduleMode;
       scheduledAt?: string;
     }) => {
       const { data, error } = await supabase.functions.invoke("content-pipeline", {

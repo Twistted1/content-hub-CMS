@@ -8,7 +8,21 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-09-18 (Phase 12). Phase 12 is an independent
+**Last verified:** 2026-10-14 (Phase 15). Go-live gap closure ahead of the
+2026-10-18 deadline. The headline: **a webhook-only platform now genuinely
+delivers — proven both locally against the real `publish-due-posts` source
+(20/20 checks) and in production end-to-end, with the receiver's own log read
+back as evidence.** A real Stripe test-mode purchase through the app's own
+checkout is verified through to the `stripe-webhook` database write
+(`tier: pro`). The `scheduleMode` union drift is fixed with a mutation-tested
+guard against recurrence, and review-status transitions went from zero tests to
+15. The one item that needed a human rather than code — `handleBulkApprove` —
+was decided by the owner (keep "Approve All"), not silently changed. Four
+cleanup items need you; see the end of the Phase 15 section, including a
+throwaway test account and a webhook row that currently points at a temporary
+receiver.
+
+**Previously last verified:** 2026-09-18 (Phase 12). Phase 12 is an independent
 re-audit of the whole repo — structure/deps, Supabase migrations, RLS
 and security, frontend hooks/state/i18n, and cron/deployment readiness —
 which found and fixed one unauthenticated session-minting backdoor, a
@@ -137,6 +151,175 @@ fixed and working. Closes the last open item from the theme-rework
 chain. Nothing else code-related is blocking core CMS
 use — remaining items are GitHub/Supabase settings only you can change,
 or decisions only you can make — see the "Open" sections below.
+
+---
+
+## Phase 15 — Go-live gap closure (2026-10-14)
+
+Deadline: **2026-10-18**. Runway at start: 4 days. The gap was operational, not
+code quality — all four gates were already green (`npm ci` 0, `tsc --noEmit` 0,
+`eslint` 0 errors / 289 warnings, `vitest` 85 passed / 1 skipped, `vite build`
+0) before any change, and again after.
+
+Priority order came from the brief. Objective 2 needed a human decision, so it
+was asked before any code was touched; objectives 1 and 3 needed live
+credentials, so those were asked at the same time to avoid a second round trip.
+
+- [x] **OBJECTIVE 1 (CRITICAL) — a webhook-only platform now genuinely
+      delivers, proven twice over.** The fact that mattered most is that six of
+      eight platforms had no delivery path at all without an active
+      `webhook_configs` row. Both halves are now evidenced, not asserted:
+      - **Mechanism, locally:** new `tools/publish-e2e/` runs the **real,
+        unmodified** `supabase/functions/publish-due-posts/index.ts` under Deno
+        (the same runtime Supabase uses) against a local PostgREST stub, with
+        its delivery pointed at a receiver over the public internet. **20/20
+        checks pass**, covering: a `website` post actually delivering; the
+        receiver getting the exact `post.publish` envelope plus a custom header;
+        the post and its `post_platforms` row flipping to `published`; *no*
+        webhook producing the loud
+        `No active webhook configured for {platform}` failure with the post kept
+        retryable rather than dropped; retries exhausting into `failed`; the
+        SSRF guard refusing a loopback target; cron auth reading the secret from
+        the database and rejecting a wrong one; and an unauthenticated call
+        getting 401 before any claim is attempted. Run with
+        `npm run e2e:publish -- --receiver <url>`.
+      - **Production, end to end:** a real post created through the Calendar
+        (platform `website`) was delivered by the deployed function. The
+        receiver's own log — read independently of the harness — shows a single
+        `POST` at `2026-10-14T01:15:06Z` from a Supabase edge IP carrying
+        `{"event":"post.publish","platform":"website","post":{"id":
+        "baa44b0d-64a4-449e-96ff-8978e44a8721",...}}`. That `post.id` is a live
+        database UUID, not a fixture, which is what distinguishes this from the
+        local run.
+      - **Proven vs. still unproven, stated exactly:** **`website` is proven
+        deliverable.** `instagram`, `facebook`, `tiktok`, `youtube`, `rumble`
+        and `podcast` are **still unproven in production** — the mechanism is
+        proven and identical for all of them, but no real row/receiver was
+        exercised for those six, so nobody should claim they work.
+      - **Finding worth acting on:** `rumble` and `podcast` are not offered by
+        *either* platform picker (`ContentPipeline.tsx:29` `PLATFORM_OPTIONS`,
+        `Automation.tsx:415`), so those two cannot be reached from the UI at
+        all. The actionable webhook-only set is therefore **five**, not six:
+        `instagram`, `facebook`, `tiktok`, `youtube`, `website`. Leaving a
+        webhook's platform badges all unselected stores `platforms: []`, which
+        matches *every* platform — one row then covers the whole calendar if the
+        endpoint handles all of them.
+- [x] **OBJECTIVE 2 (CRITICAL) — `handleBulkApprove` decision obtained, not
+      guessed. 🔴 Owner-confirmed 2026-10-14: keep the current behaviour.**
+      Approving the entire needs-review queue when nothing is checked is
+      **intentional**, and the button already reads "Approve All" in that state
+      (`Review.tsx`). No behaviour was changed. The decision is now recorded in
+      executable form — `src/utils/reviewTransitions.ts` `bulkApproveTargets`
+      carries the rationale in its doc comment, and
+      `reviewTransitions.test.ts` pins it, so a future reader finds the decision
+      instead of "fixing" it. This is the single highest-value thing to have
+      closed, because it was the one item that could not be settled by code.
+- [x] **OBJECTIVE 3 (HIGH) — a real, non-test transaction is verified, and
+      specifically the part that had broken before.** New
+      `tools/stripe-e2e/run.mjs` (`npm run e2e:stripe`) drives the app's **own**
+      checkout path: signs in, calls `create-checkout`, pays the Stripe-hosted
+      page with the `4242` test card in a real browser, and waits for the
+      redirect back into the app. **7/7 checks pass.** The pass condition is
+      deliberately *not* `check-subscription`'s reply — that function reads its
+      answer from Stripe, so it would report success even if the webhook never
+      wrote anything. The assertion is the `subscriptions` row itself, read back
+      through the user's own session (RLS policy `Users can view their own
+      subscription`). Confirmed: `tier` went `free` → **`pro`**,
+      `end_date` = `2026-11-14T02:39:07+00:00`, and `updated_at` moved past
+      `created_at`. That is the `stripe-webhook` write landing — the exact step
+      that silently did nothing for the whole life of the project before
+      Phase 4/6.
+- [x] **OBJECTIVE 4 (HIGH) — `scheduleMode` type-union drift fixed, and guarded
+      against recurrence.** The union is now
+      `"immediate" | "scheduled" | "draft" | "awaiting_review"`, defined once in
+      `src/utils/scheduleMode.ts` and mirrored in the two edge functions that
+      cannot import it. The gate in `content-pipeline` was replaced with a
+      **total, explicit** condition (`mode === "immediate"`), and an unrecognised
+      mode now resolves to a *held* post rather than an immediate one — a typo
+      can no longer publish.
+      **One correction to `docs/AUDIT_REPORT.md`:** its claim that
+      `schedule-from-templates`' `"awaiting_review"` "gets silently treated as
+      immediate" is not accurate for the real path. That cron always sends a
+      `scheduledAt`, so the old
+      `!scheduledAt && scheduleMode !== "draft"` fallback evaluated false and
+      nothing was published early. The genuine defects were (a) the type contract
+      excluding a value the code actually wrote, and (b) the fallback publishing
+      immediately for any *other* non-draft mode that arrived without a
+      `scheduledAt`. Both are fixed; the second is now covered by a test that
+      asserts `"scheduled"` and `"awaiting_review"` hold with or without a
+      timestamp.
+      A new `scheduleModeParity.test.ts` **fails the build** if the edge
+      function's list, the cron's mode, or *any* `scheduleMode: "..."` literal
+      anywhere in the repo stops matching the union. The guard was
+      mutation-tested three ways (edge array widened; cron mode typo'd; a call
+      site inventing `"instantly"`) and each one failed the test as intended —
+      a green test that cannot fail would have proved nothing.
+- [x] **OBJECTIVE 5 (MEDIUM) — tests for the stage that had none.** Of the three
+      untested stages, "content generation" and "publishing" were both reached
+      by the work above, so the budget went to **review-status transitions**,
+      which had *zero* coverage despite being the only part of `/review` that
+      writes to the database. The four transitions were extracted into
+      `src/utils/reviewTransitions.ts` and pinned by **15 tests** — most
+      importantly that *saving* never writes `status`/`scheduled_at`/
+      `reviewed_at` (so saving a draft cannot approve it), and that sending a
+      post back to draft clears `scheduled_at` rather than leaving a stale
+      future timestamp that the Calendar would render as scheduled. Plus **12
+      tests** for `scheduleMode`. The extraction is behaviour-preserving: the
+      produced patches are byte-for-byte what the inline objects wrote.
+      Recorded as **documented, not endorsed**: `rejected()` leaves
+      `scheduled_at` alone while `sentBackToDraft()` clears it. Preserved
+      as-shipped and asserted, so changing it is a decision rather than an
+      accident; it is inert either way, since `publish-due-posts` only selects
+      `status = 'scheduled'`.
+- [ ] **OBJECTIVE 6 (LOW) — deliberately cut, with the specifics recorded.**
+      Short on runway and explicitly ranked last by the brief, so none of the
+      three was started:
+      - *`podcast` schedule reconciliation* — not done. `schedule-from-templates`
+        still carries a `podcast` entry with no `src/data/platforms/podcast.json`
+        counterpart. Lower risk than it sounds: nothing can reach `podcast`
+        anyway (previous bullet).
+      - *Deleting the 6 inert stub edge functions* — not done, and **not
+        doable from this environment**: it needs the Supabase dashboard. Per
+        Phase 9, 5 of the original 6 are already gone from
+        `list_edge_functions`; only `run-scheduled-automations` remains, still
+        the same inert 410 stub.
+      - *`has_role()` RPC exposure* — not decided, and it is **not mine to
+        decide**. Supabase's security advisor flags it as a `SECURITY DEFINER`
+        function reachable over the API. It is used in RLS policies
+        (`csp_reports`, `subscriptions`, `user_roles`), so removing or revoking
+        it needs a policy review, not a one-line revoke. Carried forward as open,
+        with the recommendation that it be scoped to `authenticated` rather than
+        `anon` if nothing else breaks.
+
+**Verified after every change:** `npx tsc --noEmit` clean, `eslint` 0 errors
+(289 pre-existing `any` warnings — unchanged), `vitest` **112 passed / 1
+skipped** (was 85/1; +27 new), `vite build` clean. CI runs exactly these four
+gates.
+
+**🔴 Needs you, not more code (cleanup from this session):**
+
+1. **The `/pipeline` webhook row created for the proof still points at a
+   throwaway receiver.** It is
+   `https://webhook.site/336eb9b4-608d-498f-b109-6482cf50900f` — repoint it at
+   your real Website endpoint, or delete it and add the real one. Until then
+   `website` posts deliver to webhook.site and appear successful.
+2. **A throwaway test account now exists in production auth**, created to
+   verify objective 3 without handling your password:
+   `golive-verify-c5b717e1bc@example.com` (user
+   `a34cb16a-254f-49f2-93a9-c64d1e173731`), carrying a **test-mode** `pro`
+   subscription. Deleting an auth user needs the service-role key, which this
+   session never had, so it is yours to remove. Nothing else references it.
+3. **Carried over and still open from Phase 12/14:** rotate the anon key that
+   leaked into git history in `20260323155000`. Still the top security item.
+4. **Nothing was pushed.** All work is uncommitted on `main`'s working tree; per
+   `AGENTS.md`, commit to a branch and open a PR — `main` auto-deploys.
+
+**Environment note for the next agent:** `npm ci` failed with `EPERM` unlinking
+`node_modules/@rollup/rollup-win32-x64-msvc/rollup.win32-x64-msvc.node` because
+a stale `vite` dev-server process from this repo (PID identified via
+`Get-CimInstance Win32_Process` filtered on the repo path) still held it. Killing
+that process and its `esbuild` child freed it; `npm ci` then succeeded. Check for
+stray repo-owned node processes before concluding an install is broken.
 
 ---
 

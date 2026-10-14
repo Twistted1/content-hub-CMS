@@ -19,6 +19,10 @@ import {
 } from "lucide-react";
 import { useContentPipeline, type PipelineRun, type WebhookConfig } from "@/hooks/useContentPipeline";
 import { localWallClockToUtcIso } from "@/utils/scheduleTime";
+import {
+  isSelectableScheduleMode,
+  type SelectableScheduleMode,
+} from "@/utils/scheduleMode";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
 
@@ -64,7 +68,7 @@ export default function ContentPipeline() {
 
   const [topic, setTopic] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["twitter"]);
-  const [scheduleMode, setScheduleMode] = useState<"immediate" | "scheduled" | "draft">("draft");
+  const [scheduleMode, setScheduleMode] = useState<SelectableScheduleMode>("draft");
   const [scheduledAt, setScheduledAt] = useState("");
   const [isRunning, setIsRunning] = useState(false);
 
@@ -223,7 +227,13 @@ export default function ContentPipeline() {
                   {/* Schedule Mode */}
                   <div className="space-y-2">
                     <Label>{t("pipeline.afterGeneration")}</Label>
-                    <Select value={scheduleMode} onValueChange={(v: any) => setScheduleMode(v)} disabled={isRunning}>
+                    <Select
+                      value={scheduleMode}
+                      onValueChange={(v) => {
+                        if (isSelectableScheduleMode(v)) setScheduleMode(v);
+                      }}
+                      disabled={isRunning}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>

@@ -27,12 +27,25 @@ All four run in CI (`.github/workflows/ci.yml`). E2E specs self-skip without
 `E2E_SUPABASE_SERVICE_ROLE_KEY`, so a green E2E run can mean nothing ran —
 check whether specs were skipped, not just whether the job passed.
 
+Two extra harnesses prove the paths that unit tests cannot reach. Neither runs
+in CI (both need network and Deno), so run them by hand when you touch
+publishing or billing:
+
+```bash
+npm run e2e:publish -- --receiver https://webhook.site/<uuid>  # real publish-due-posts vs a stub DB
+npm run e2e:stripe                                             # real Stripe test-mode purchase
+```
+
+`e2e:stripe` needs `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `VERIFY_EMAIL`
+and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
+
 ## Where things live
 
 - `docs/MASTER_CHECKLIST.md` — the single source of truth for completion
   status. `docs/AUDIT.md`, `PHASE_0_TESTING.md` and `PHASE_3_READINESS_REPORT.md`
   are historical; do not treat them as current.
-- `docs/AUDIT_REPORT.md` — full audit at revision `59cdea98`.
+- `docs/AUDIT_REPORT.md` — full audit at revision `59cdea98`. Its
+  `scheduleMode` finding is partly wrong; Phase 15 in the checklist corrects it.
 - `src/data/platforms/*.json` — per-platform publishing schedule (source of
   truth). Consumed by `src/utils/scheduling.ts`.
 - `supabase/functions/schedule-from-templates/` — inlines its own copy of the
@@ -40,6 +53,9 @@ check whether specs were skipped, not just whether the job passed.
   website category map.
 - `supabase/functions/publish-due-posts/` — runs every minute; delivers due posts.
 - `supabase/functions/content-pipeline/` — OpenAI generation with cost controls.
+- `tools/publish-e2e/`, `tools/stripe-e2e/` — the two harnesses above.
+- `src/utils/scheduleMode.ts`, `src/utils/reviewTransitions.ts` — pure logic
+  extracted so it can be tested; read the doc comments before changing them.
 
 ## Things that will bite you
 
@@ -47,9 +63,17 @@ check whether specs were skipped, not just whether the job passed.
   defines `DIRECT_PLATFORMS = {linkedin, twitter}`. Every other platform needs
   a matching active row in `webhook_configs` or the post fails with
   `No active webhook configured for {platform}`. A full-looking calendar does
-  not mean deliverable content.
+  not mean deliverable content. **As of 2026-10-14 only `website` is proven to
+  deliver in production**; the other webhook platforms share the same proven
+  mechanism but have never been exercised against a real receiver.
 - **Webhooks are authored on `/pipeline`** (`src/pages/ContentPipeline.tsx`).
   Settings → Integrations only *lists* them.
+- **`rumble` and `podcast` cannot be reached from the UI at all** — they are
+  missing from both `ContentPipeline.tsx`'s `PLATFORM_OPTIONS` and
+  `Automation.tsx`'s platform filter. Don't assume a schedule entry for them
+  means anything is deliverable.
+- **A webhook with an empty `platforms` array matches every platform.** Leaving
+  all the badges unselected is not "no platforms" — it is "all of them".
 - **Do not add a second schedule definition.** The schedule lives in
   `src/data/platforms/*.json`. Two copies of it caused the recurring
   duplicate/wrong-content bug (see `20260723000000_retire_legacy_pipeline.sql`).
@@ -61,10 +85,20 @@ check whether specs were skipped, not just whether the job passed.
 - **`workflow_stage` and `review_requested_at` are trigger-maintained**
   (`sync_post_workflow_stage`, migration `20260430212700`). Don't hand-write
   them. `approved_at` exists but has no writer.
-- **`handleBulkApprove`** (`src/pages/Review.tsx:456`) approves the whole
-  review queue when nothing is selected. Intentional or not, that is the
-  current behaviour.
+- **`handleBulkApprove`'s approve-all is deliberate — do not "fix" it.** The
+  logic now lives in `src/utils/reviewTransitions.ts` as `bulkApproveTargets`,
+  with the decision recorded in its doc comment and pinned by a test. The owner
+  confirmed on 2026-10-14 that approving the whole queue when nothing is checked
+  is intended; the button reads "Approve All" in that state.
+- **`scheduleMode` has four values, not three:** `immediate`, `scheduled`,
+  `draft` and `awaiting_review`. The list is duplicated in the edge functions
+  (they cannot import from `src/`) and
+  `src/utils/scheduleModeParity.test.ts` fails the build if the copies drift or
+  if any call site sends something else.
 - **Never commit `.env`.** Only `.env.example` is tracked.
+- **A stale `vite` process from this repo will make `npm ci` fail with
+  `EPERM` on a rollup native binary.** Find and kill repo-owned node processes
+  before assuming the install itself is broken.
 
 ## Environments
 

@@ -9,6 +9,12 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// Cron-generated slots are always held for human review; this function never
+// publishes. The value must be one of the modes `content-pipeline` accepts —
+// see src/utils/scheduleMode.ts, and the lockstep assertion in
+// src/utils/scheduleModeParity.test.ts.
+const CRON_SCHEDULE_MODE = "awaiting_review";
+
 // Weekly schedule per platform, inlined from src/data/platforms/*.json so the
 // edge function has no FS dependency. Times are local HH:MM (or HH:MM-HH:MM, in
 // which case we use the start). Keys "1".."4" are week-of-month buckets.
@@ -239,7 +245,7 @@ serve(async (req) => {
                     ? `${WEBSITE_CATEGORY_BY_DAY[DAY_NAMES[slot.getUTCDay()]].category}: ${WEBSITE_CATEGORY_BY_DAY[DAY_NAMES[slot.getUTCDay()]].focus}`
                     : `${platform.charAt(0).toUpperCase() + platform.slice(1)} post for ${slot.toUTCString()}`,
                   platforms: [platform],
-                  scheduleMode: "awaiting_review",
+                  scheduleMode: CRON_SCHEDULE_MODE,
                   scheduledAt: iso,
                   user_id: userId,
                 }),

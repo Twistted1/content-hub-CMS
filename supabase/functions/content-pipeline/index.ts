@@ -41,6 +41,26 @@ function isSafeWebhookUrl(raw: string): boolean {
   }
 }
 
+// The accepted `scheduleMode` values. This list is duplicated in the frontend
+// at src/utils/scheduleMode.ts (a Deno function cannot import from the browser
+// bundle) and the two are kept in lockstep by
+// src/utils/scheduleModeParity.test.ts, which fails if either side drifts or if
+// any call site sends a mode that is not listed here.
+const SCHEDULE_MODES = ["immediate", "scheduled", "draft", "awaiting_review"] as const;
+type ScheduleMode = (typeof SCHEDULE_MODES)[number];
+
+/**
+ * Absent means "immediate" (the shipped default, preserved below). An
+ * unrecognised value resolves to "scheduled" — a held post — rather than
+ * "immediate", so a typo can never cause an unreviewed publish.
+ */
+function normalizeScheduleMode(raw: unknown): ScheduleMode {
+  if (raw === undefined || raw === null || raw === "") return "immediate";
+  return (SCHEDULE_MODES as readonly string[]).includes(raw as string)
+    ? (raw as ScheduleMode)
+    : "scheduled";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -56,6 +76,9 @@ serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
     const { topic, platforms, scheduleMode, scheduledAt, user_id } = await req.json();
+    // Resolve once, so the stored value, the gate below and any future consumer
+    // all agree on what this request asked for.
+    const mode = normalizeScheduleMode(scheduleMode);
 
     const isServiceRequest = authHeader === `Bearer ${supabaseServiceKey}`;
     let authenticatedUserId: string | null = null;
@@ -120,7 +143,7 @@ serve(async (req) => {
         user_id: targetUserId,
         topic,
         platforms,
-        schedule_mode: scheduleMode || "immediate",
+        schedule_mode: mode,
         scheduled_at: scheduledAt || null,
         status: "running",
         steps: [{ step: "started", ts: new Date().toISOString() }],
@@ -274,8 +297,14 @@ Return ONLY JSON.`;
 
     await updateStep("post_created", { postId: post.id, status: postStatus, cost: estimatedCost });
 
-    // 5. PUBLISHING - Fire webhooks if immediate
-    if (scheduleMode === "immediate" || (!scheduledAt && scheduleMode !== "draft")) {
+    // 5. PUBLISHING - deliver now only when the caller explicitly asked for it.
+    // Every other mode holds the post: "scheduled"/"awaiting_review" wait for
+    // the review + scheduling flow, "draft" waits for a human. The previous
+    // guard was `scheduleMode === "immediate" || (!scheduledAt && scheduleMode
+    // !== "draft")`, which published immediately whenever a non-draft mode
+    // arrived without a `scheduledAt` — including values this function did not
+    // recognise.
+    if (mode === "immediate") {
       await updateStep("firing_webhooks");
 
       const { data: webhooks } = await adminClient
