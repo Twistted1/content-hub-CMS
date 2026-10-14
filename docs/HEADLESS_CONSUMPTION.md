@@ -74,7 +74,78 @@ nor sufficient to describe production. This is the same class of drift as the
 
 **Decision required (yours, not mine):** is `articles`/`authors`
 **(a)** the real public store, to be brought under migrations and written by the
-CMS, or **(b)** a leftover to be dropped? Everything below branches on this.
+CMS, or **(b)** a leftover to be dropped?
+
+### ✅ RESOLVED 2026-10-14 — it is (a), the real public store
+
+The owner confirmed it, and the site's own source confirms it. Reading the
+**separate** site repository (`D:\01_Workspaces\apps\content_hub\novus-exchange-v4`,
+package name `novus-exchange` — not this repo, and not modified):
+
+- **`services/articleService.ts:116`** is the only content reader:
+  `fetch(`${url}/rest/v1/${config.tableName}?select=*&order=id.asc`)` with
+  `tableName: "articles"` (`:39`). Consumed by
+  `components/ArticlesSection.tsx:49`.
+- **[V] The site never touches the CMS tables.** A repo-wide search for
+  `post_platforms`, `from('posts')` and `/rest/v1/posts` returns **zero matches**.
+  The two systems are unconnected at code level, exactly as the owner described.
+- The site's Supabase URL and anon key are **hardcoded fallbacks** in its source
+  (`articleService.ts:33-34`), which is why the anon key is by design public.
+
+So the target for "the CMS feeds my website" is a bridge into `public.articles`,
+not a read API over `posts`. **Option E** below is the answer; A/B/C are moot
+until that bridge exists.
+
+### Two traps the site's own documentation sets
+
+1. 🔴 **The handoff doc's RLS SQL would make the public content table
+   world-writable.** `HANDOFF_DOCUMENTATION.md:248-253` tells the reader to run:
+   ```sql
+   CREATE POLICY "Enable insert for authenticated users or API keys"
+   ON public.articles FOR ALL USING (true) WITH CHECK (true);
+   ```
+   Combined with the anon key hardcoded in the site's source, that policy would
+   let **anyone** insert, update and delete articles on novusexchange.com. The
+   live database does **not** have it — an `INSERT` probe returns
+   `42501 new row violates row-level security policy` (see below) — so the
+   database is currently safe and **the document is the hazard**. Do not run that
+   block. It appears only in markdown, not in any `.sql` file, so nothing will
+   apply it automatically.
+2. 🔴 **The in-browser editor cannot actually persist.** "Method 1: Direct
+   In-Browser Live Feed" promises the site updates for everyone, but
+   `articleService.ts:211-230` (`syncAllArticlesToSupabase`) POSTs with the **anon
+   key**, and `saveLocalArticles:167` swallows the failure
+   (`.catch(() => {})`). With no anon write policy, **"Save Article & Update
+   Feed" only writes that one browser's `localStorage`.** It looks like it worked
+   and is invisible to every other visitor and device.
+
+### Integration mismatches to resolve before a CMS → `articles` bridge
+
+The two schemas are not compatible as-is. Concretely, from the live table and the
+site's reader:
+
+| Need | Site requires | CMS `posts` has | Gap |
+|---|---|---|---|
+| `category` | Free text, filtered against a fixed list: `All, Illustrated Features, Brazil, Geopolitics, Economics, Tech-AI, Green-Tech, CSR` (`ArticlesSection.tsx:90-99`) | `WEBSITE_CATEGORY_BY_DAY` emits Geopolitics, Economics, Media, Technology, Security, Climate, Corporate Social Responsibility | **Only Geopolitics and Economics overlap.** 5 of 7 CMS categories would be unfilterable (visible only under "All"), and the site's Brazil/Tech-AI/Green-Tech/CSR would never be produced. |
+| `read_time` (int) | Rendered as "14 MIN READ" | Nothing | Must be computed |
+| `publish_date` **and** `date`, both TEXT | e.g. `"OCTOBER 11, 2026"` | Only `scheduled_at`/`published_at` (timestamptz) | Must be formatted, and the duplicated pair populated |
+| `author_id` (text → `authors.id`) | `sanitizeArticle` (`articleService.ts:51-58`) does **substring** matching: contains `marcio` → Marcio, else contains `novus` → Novus AI, else the *bundled seed article's* author | `user_id` (uuid) | Needs an explicit mapping. **Note the `authors` table is never queried** — display uses a hardcoded `AUTHORS` map, so a NEW author row would silently display as the wrong person. |
+| `image_url` | Cloudflare R2: `pub-a4ca64677c824a50bcedcd900f35087c.r2.dev/<dd-mm-yyyy>/<file>`; inline figures are Markdown `![](url)` inside `content` | Supabase Storage `post-images` (public) | Both are public URLs so either works, but R2 uploads need the owner's explicit OK per upload |
+| `content` | 29k–34k characters, Markdown, "Editor's note" opening line, `### CHAPTER N:` headings | Free text | Editorial convention, not a schema problem |
+| **live-ness** | **No status column — any inserted row is live immediately** | Full draft → review → scheduled flow | 🔴 **A bridge must be an explicit human action, never automatic.** A direct insert makes a draft or an AI draft publicly live on the site. |
+
+### Ordering trap
+
+Display order is **`id` ascending** and nothing re-sorts it:
+`articleService.ts:141` is the only `sort(` in the site repo, and
+`ArticlesSection.tsx` renders the list as given. `order=id.asc` (`:116`) agrees.
+So a newly inserted row with a high `id` renders **last**, and the current newest
+Supabase article (id 11) already renders *after* older bundled items. The 6
+bundled dossiers from `data/articlesData.ts` occupy ids 1–6 and are **not in the
+database at all**, so they always lead the feed. "Insert a row and it goes live"
+is true; "…and appears at the top" is not. Sorting by `publish_date` (or by a
+numeric date) on the site side is the small fix.
+
 
 ---
 
