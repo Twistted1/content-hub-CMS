@@ -59,13 +59,23 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
 
 ## Things that will bite you
 
+- **"Merged" is NOT "deployed". There is no CI step that ships edge
+  functions.** `publish-due-posts` and `demo-login` ran June-2026 source in
+  production for months while `main` held newer code, and as of 2026-10-14
+  `content-pipeline` and `schedule-from-templates` are believed stale too. Every
+  change under `supabase/functions/**` needs an explicit
+  `supabase functions deploy <name>`, and **deployed versions cannot be read
+  over the API** — so you cannot verify from here whether your change is live.
+  Say so rather than assuming. Also: new DB objects the functions depend on
+  (e.g. the `claim_due_posts` RPC) must be applied to production before or with
+  the deploy, or the function 500s on every tick.
 - **Only LinkedIn and X publish directly.** `publish-due-posts/index.ts:15`
   defines `DIRECT_PLATFORMS = {linkedin, twitter}`. Every other platform needs
   a matching active row in `webhook_configs` or the post fails with
   `No active webhook configured for {platform}`. A full-looking calendar does
-  not mean deliverable content. **As of 2026-10-14 only `website` is proven to
-  deliver in production**; the other webhook platforms share the same proven
-  mechanism but have never been exercised against a real receiver.
+  not mean deliverable content. **As of 2026-10-14 only `website` has ever been
+  proven to deliver in production**, and the row that proved it has since been
+  retired, so *no* webhook platform currently has an active row at all.
 - **Webhooks are authored on `/pipeline`** (`src/pages/ContentPipeline.tsx`).
   Settings → Integrations only *lists* them.
 - **`rumble` and `podcast` cannot be reached from the UI at all** — they are
@@ -79,9 +89,14 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   duplicate/wrong-content bug (see `20260723000000_retire_legacy_pipeline.sql`).
 - **`scheduled_at` is always a UTC instant.** Use `src/utils/scheduleTime.ts`
   to convert; never write a bare local wall-clock string.
-- **Never inline a secret into a migration or commit.** An earlier migration
-  committed a live JWT to git history. Cron auth uses `x-cron-secret` checked
-  against `get_cron_secret()` (service_role only).
+- **Never inline a secret into a migration or commit.** Cron auth uses
+  `x-cron-secret` checked against `get_cron_secret()` (service_role only).
+  *Corrected 2026-10-14:* migration `20260323155000` did commit a credential,
+  but only the **anon/publishable key**, project URL and project ID — all three
+  already public in the client bundle by design, with no service-role key or
+  real secret involved. The owner's decision is **not to rotate** it; the
+  security boundary here is RLS, not key secrecy. Earlier notes calling this
+  "the top launch blocker" are superseded — don't re-raise it.
 - **`workflow_stage` and `review_requested_at` are trigger-maintained**
   (`sync_post_workflow_stage`, migration `20260430212700`). Don't hand-write
   them. `approved_at` exists but has no writer.

@@ -8,6 +8,19 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
+**Last verified:** 2026-10-14 (Phase 16). Follow-up after the owner's status
+reply. Two things changed the picture. **Most importantly: `publish-due-posts`
+and `demo-login` had not been redeployed since June 2026 — merged code was never
+shipped — and `content-pipeline` and `schedule-from-templates` are very likely
+stale in the same way, so Phase 15's `scheduleMode` fix is committed but NOT
+live.** Both need a redeploy; they cannot be deployed from this environment.
+Also found: banning an account with `banned_until = infinity` makes its login
+fail with a 500 "Database error querying schema" rather than a clean ban
+(normal accounts are unaffected — verified), and DELETE statements hang
+project-wide, which breaks 22 user-facing delete paths. The leaked-anon-key item
+is **closed as won't-fix by the owner's decision** (only already-public values
+were exposed; the boundary is RLS) — do not re-raise it as a blocker.
+
 **Last verified:** 2026-10-14 (Phase 15). Go-live gap closure ahead of the
 2026-10-18 deadline. The headline: **a webhook-only platform now genuinely
 delivers — proven both locally against the real `publish-due-posts` source
@@ -17,10 +30,7 @@ checkout is verified through to the `stripe-webhook` database write
 (`tier: pro`). The `scheduleMode` union drift is fixed with a mutation-tested
 guard against recurrence, and review-status transitions went from zero tests to
 15. The one item that needed a human rather than code — `handleBulkApprove` —
-was decided by the owner (keep "Approve All"), not silently changed. Four
-cleanup items need you; see the end of the Phase 15 section, including a
-throwaway test account and a webhook row that currently points at a temporary
-receiver.
+was decided by the owner (keep "Approve All"), not silently changed.
 
 **Previously last verified:** 2026-09-18 (Phase 12). Phase 12 is an independent
 re-audit of the whole repo — structure/deps, Supabase migrations, RLS
@@ -296,23 +306,39 @@ credentials, so those were asked at the same time to avoid a second round trip.
 skipped** (was 85/1; +27 new), `vite build` clean. CI runs exactly these four
 gates.
 
-**🔴 Needs you, not more code (cleanup from this session):**
+**Cleanup from this session — status as of the owner's 2026-10-14 reply:**
 
-1. **The `/pipeline` webhook row created for the proof still points at a
-   throwaway receiver.** It is
-   `https://webhook.site/336eb9b4-608d-498f-b109-6482cf50900f` — repoint it at
-   your real Website endpoint, or delete it and add the real one. Until then
-   `website` posts deliver to webhook.site and appear successful.
-2. **A throwaway test account now exists in production auth**, created to
-   verify objective 3 without handling your password:
-   `golive-verify-c5b717e1bc@example.com` (user
-   `a34cb16a-254f-49f2-93a9-c64d1e173731`), carrying a **test-mode** `pro`
-   subscription. Deleting an auth user needs the service-role key, which this
-   session never had, so it is yours to remove. Nothing else references it.
-3. **Carried over and still open from Phase 12/14:** rotate the anon key that
-   leaked into git history in `20260323155000`. Still the top security item.
-4. **Nothing was pushed.** All work is uncommitted on `main`'s working tree; per
-   `AGENTS.md`, commit to a branch and open a PR — `main` auto-deploys.
+1. ✅ **Resolved.** The `/pipeline` webhook row pointing at the temporary
+   `webhook.site` receiver was deactivated (`is_active: false`) and renamed
+   `[RETIRED] …` by the owner. It is left in place rather than deleted (see the
+   item-2 note on `DELETE` below) but is fully inert: `publish-due-posts` filters
+   `is_active = true` (`index.ts:123`), so it cannot match or deliver. **Note the
+   consequence:** as of this writing there is no active `webhook_configs` row at
+   all, so *no* webhook platform currently delivers in production — see the
+   "webhook-only platform currently has no active row" item in Phase 16.
+2. ✅ **Neutralised by the owner.** `golive-verify-c5b717e1bc@example.com`
+   (user `a34cb16a-254f-49f2-93a9-c64d1e173731`) was banned and its test-mode
+   `pro` subscription downgraded to `free`. Verified from here: password login
+   for that account is now refused (created a fresh account in the same minute
+   and it logged in fine, so the refusal is account-scoped, not an outage).
+   **The refusal is an HTTP 500, not a clean ban** — see Phase 16.
+3. ✅ **Closed as "won't fix", by decision.** The owner reports the leaked value
+   was only the anon/publishable key, project URL and project ID — all three
+   already public in the client bundle by design — and no service-role key or
+   real secret was ever in `20260323155000`. Decision: **not rotating**, because
+   the security boundary here is RLS, not key secrecy. Do not re-raise this as a
+   top blocker. (Phase 14's framing of it as "the top launch blocker" is hereby
+   superseded.)
+4. ✅ **Done — pushed 2026-10-14.** Committed as `0702c45` on branch
+   `go-live/phase-15-gap-closure` and pushed to `origin`. `main` was left
+   untouched, so nothing auto-deployed. Open the PR from
+   `https://github.com/Twistted1/content-hub-CMS/pull/new/go-live/phase-15-gap-closure`.
+5. ⚠️ **New, disclosed:** a second throwaway account
+   (`authscope-<id>@example.com`) was created to *scope* the login-500 finding in
+   Phase 16 — it was necessary to prove the failure was account-specific and not
+   a production auth outage. It holds a plain `free` subscription and nothing
+   else. Ban or remove it alongside the other one if you want the auth list
+   clean.
 
 **Environment note for the next agent:** `npm ci` failed with `EPERM` unlinking
 `node_modules/@rollup/rollup-win32-x64-msvc/rollup.win32-x64-msvc.node` because
@@ -320,6 +346,91 @@ a stale `vite` dev-server process from this repo (PID identified via
 `Get-CimInstance Win32_Process` filtered on the repo path) still held it. Killing
 that process and its `esbuild` child freed it; `npm ci` then succeeded. Check for
 stray repo-owned node processes before concluding an install is broken.
+
+---
+
+## Phase 16 — Deployment gap and production anomalies (2026-10-14)
+
+The owner reported that **`publish-due-posts` and `demo-login` had not been
+redeployed since June 2026** — merged git code had never been shipped to
+Supabase — and asked whether anything else I touched has the same gap. It does,
+and this is the most consequential finding of the session.
+
+- 🔴 **`content-pipeline` and `schedule-from-templates` are very likely stale, so
+  the objective-4 fix is committed but NOT live.** Both were modified in
+  `0702c45`:
+  - `supabase/functions/content-pipeline/index.ts` — the `SCHEDULE_MODES` list,
+    `normalizeScheduleMode`, and the total `mode === "immediate"` publishing
+    gate.
+  - `supabase/functions/schedule-from-templates/index.ts` — the
+    `CRON_SCHEDULE_MODE` constant.
+  Until these are redeployed, production still runs the **pre-fix** gate, in
+  which a non-draft mode arriving without a `scheduledAt` publishes immediately
+  and an unrecognised mode is not held. **Redeploy both.** I could not do it
+  from this environment: there is no Supabase CLI, no access token, and no
+  service-role key here, and **deployed function versions cannot be read over
+  the API**, so this is an operator action with no workaround.
+  - What *can* be verified externally was: probing
+    `/functions/v1/publish-due-posts` and `/functions/v1/schedule-from-templates`
+    unauthenticated returns each **function's own** `{"error":"Unauthorized"}`,
+    not a gateway rejection — which confirms `verify_jwt = false` is live for
+    both, matching `supabase/config.toml:24-29`. `demo-login` returns `404`,
+    which is the redeployed fail-closed behaviour, not the old
+    hardcoded-credential version. `stripe-webhook` returns `400` (signature
+    verification), so it is live and reachable.
+  - **Generalise the lesson:** "merged" is not "deployed" in this project. There
+    is no CI step that deploys edge functions and no documented last-deploy
+    marker, so *every* change to `supabase/functions/**` needs an explicit
+    redeploy and nobody can tell from the repo whether it happened. A
+    `supabase functions deploy` step (or at least a recorded version per
+    function) would close this permanently — worth doing before the next
+    function change.
+- 🟠 **Banned accounts fail with HTTP 500, not a clean ban.** Logging in as the
+  banned throwaway returns
+  `{"code":500,"error_code":"unexpected_failure","msg":"Database error querying schema"}`
+  rather than Supabase's usual `400 "User is banned"`. A fresh account created in
+  the same minute logged in normally (`200`) and read its own row (`200`), so
+  **production auth is not broken for normal users** — this is specific to the
+  banned row. The likely cause is `banned_until` being set to the timestamp
+  value `infinity`, which GoTrue's Go-side time handling cannot parse, so the
+  auth schema query fails instead of returning a ban. Recommended: set
+  `banned_until` to a far-future **finite** timestamp (e.g.
+  `'9999-12-31 23:59:59+00'`) or ban through the Admin API
+  (`updateUserById(id, { ban_duration: '876000h' })`). Worth fixing because a 500
+  with an `error_id` reads as an outage in logs and error monitoring, and it will
+  be re-reported as one.
+- 🟠 **DELETE statements hang project-wide (owner-reported, not reproduced
+  here).** Reportedly even a `DELETE` matching zero rows hangs, while `UPDATE`
+  works. Impact is not cosmetic: **22 user-facing delete paths** depend on it —
+  `usePosts.deletePost` (`usePosts.ts:170`), `deleteMedia` (`:332`),
+  `useAutomations` (`:142`, `:156`), `useProjects` (`:150`, `:291`),
+  `useStrategies` (`:146`, `:175`, `:188`), `useNotes` (`:100`),
+  `useTemplates` (`:110`), `useReports` (`:119`), `useContentPipeline`
+  (`:162`), `usePlatforms` (`:92`), `usePlatformOAuth` (`:104`),
+  `Review.tsx:893` via `deletePost`, `Automation.tsx:172-176` (the
+  wipe-and-regenerate path), and `useUsers` (`:125`, `:152`, `:167`, `:169`).
+  Both `posts` and `post_platforms` carry `ON DELETE CASCADE` children and
+  `ON DELETE SET NULL` from `media`/`webhook_configs`, so a cascade is a
+  plausible contributor — but "zero rows also hangs" points away from row-level
+  work and toward a **lock** (a single stuck DELETE holds locks that every later
+  one queues behind, which would look exactly like this).
+  **Diagnose before changing any SQL:**
+  ```sql
+  SELECT pid, state, wait_event_type, wait_event, now() - query_start AS age, left(query, 120)
+  FROM pg_stat_activity WHERE datname = current_database() ORDER BY query_start;
+
+  SELECT pid, pg_blocking_pids(pid) AS blocked_by, left(query, 120)
+  FROM pg_stat_activity WHERE cardinality(pg_blocking_pids(pid)) > 0;
+  ```
+  The second query names the blocker; `pg_terminate_backend(<pid>)` on the
+  oldest stuck statement will normally clear the queue. Root cause should be
+  established before the locks are merely cleared, or it will recur.
+- ⚪ **Consequence for objective 1's production status, stated plainly:** with the
+  proof row retired, there is currently **no active `webhook_configs` row**, so
+  the production delivery proven earlier in this phase can no longer be repeated
+  until a real row exists. The mechanism remains proven (20/20, and a real
+  delivery was received and logged); the *operational* gap is open again by
+  design, pending a real endpoint. That is the honest current state.
 
 ---
 
