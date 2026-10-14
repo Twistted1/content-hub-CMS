@@ -8,7 +8,19 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-10-14 (Phase 16). Follow-up after the owner's status
+**Last verified:** 2026-10-14 (Phase 17). **LinkedIn publishing is now confirmed
+live in production** — a real post reached the owner's feed through the app,
+exercising the OAuth token chain end to end (owner-reported, with a screenshot;
+not independently verifiable from a session). **This does not change go-live
+status**, because LinkedIn is a *direct* platform and never needed a webhook:
+**no active `webhook_configs` row exists, so the six webhook platforms are still
+undeliverable in production.** That single operational step remains the gap.
+Everything else from Phases 15–16 stands: both critical objectives are done and
+evidence-backed, the `scheduleMode` fix is live (`content-pipeline` v32 /
+`schedule-from-templates` v13), and the Stripe purchase is verified through to
+the `stripe-webhook` database write.
+
+**Previously last verified:** 2026-10-14 (Phase 16). Follow-up after the owner's status
 replies. All three follow-up items are now closed, and one of my own
 conclusions was wrong and is corrected below. **The deploy gap is fixed:**
 `publish-due-posts` and `demo-login` had been running June-2026 source — merged
@@ -350,6 +362,48 @@ a stale `vite` dev-server process from this repo (PID identified via
 `Get-CimInstance Win32_Process` filtered on the repo path) still held it. Killing
 that process and its `esbuild` child freed it; `npm ci` then succeeded. Check for
 stray repo-owned node processes before concluding an install is broken.
+
+---
+
+## Phase 17 — LinkedIn publish confirmed live (2026-10-14)
+
+The owner published a real post to their own LinkedIn feed through the app
+("Testing my new publishing setup", 1 comment) and confirmed it visually.
+
+- [x] **LinkedIn is now proven deliverable in production, via the direct/OAuth
+      path.** This exercises `platform_oauth_tokens` (a real, unexpired access
+      token) plus the LinkedIn publish call in
+      `publish-post/index.ts:140` or `publish-due-posts/index.ts:51-67` — the
+      first time that chain has been confirmed against a real account rather
+      than a direct API call. Evidence is the owner's screenshot of the live
+      post; **I did not independently verify it** (no account owns that row from
+      this session, the LinkedIn API needs credentials I don't hold, and there
+      is no log access here). Recorded as owner-reported, like the deployment
+      versions above.
+- [?] **Which of the two paths it took is unconfirmed, and it matters:**
+  - `Platforms.tsx:227` `publishPostDirect` → the **`publish-post`** function,
+    immediate ("publish now").
+  - `Platforms.tsx:252` / `Articles.tsx:152` / `usePosts.publishPost` → queues
+    the post as `scheduled` with `scheduled_at = now`, so the **`publish-due-posts`
+    cron** delivers it on its next minute tick.
+  If it went through the cron, that **also** validates the redeploy of
+  `publish-due-posts` (v11) together with the newly-applied `claim_due_posts`
+  migration — i.e. the same function this phase's webhook proof exercised, on
+  the same atomically-claiming code path. If it went through `publish-post`,
+  that function's deployed version is still unverified. Worth pinning down.
+- 🔴 **This does not close the critical gap, and must not be read as doing so.**
+  LinkedIn is a **direct** platform (`DIRECT_PLATFORMS`), so it never needed a
+  `webhook_configs` row and its success is independent of the webhook path.
+  **There is still no active `webhook_configs` row, so `instagram`, `facebook`,
+  `tiktok`, `youtube`, `website` (and the UI-unreachable `rumble`/`podcast`)
+  remain undeliverable in production.** The go-live status is unchanged: the
+  mechanism is proven, the code is live, and the remaining step is operational —
+  point at least one real webhook endpoint at a platform actually in use.
+- ✅ **Effect on objective 3 (a real, non-test transaction):** objective 3 was
+  already satisfied by the Stripe test-mode purchase (7/7, `tier: pro` written
+  by the webhook). LinkedIn adds a second, independent proof of a different
+  kind — publishing rather than billing — so the "can this thing actually
+  transact with the outside world" question now has two answers instead of one.
 
 ---
 

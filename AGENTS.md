@@ -78,9 +78,22 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   defines `DIRECT_PLATFORMS = {linkedin, twitter}`. Every other platform needs
   a matching active row in `webhook_configs` or the post fails with
   `No active webhook configured for {platform}`. A full-looking calendar does
-  not mean deliverable content. **As of 2026-10-14 only `website` has ever been
-  proven to deliver in production**, and the row that proved it has since been
-  retired, so *no* webhook platform currently has an active row at all.
+  not mean deliverable content.
+- **Proven-deliverable in production, as of 2026-10-14 — keep these two paths
+  distinct, because they fail independently:**
+  - **LinkedIn (direct/OAuth path).** A real post was published to the owner's
+    feed. This exercises `platform_oauth_tokens` + the LinkedIn publish call. It
+    says nothing about the webhook platforms.
+  - **Website (webhook path).** A real delivery was received and logged. The
+    mechanism is proven for every webhook platform because they share one code
+    path — but only `website` has been exercised.
+  - **Still never exercised in production:** `instagram`, `facebook`, `tiktok`,
+    `youtube`. Do not claim these work.
+- **As of 2026-10-14 there is no active `webhook_configs` row at all**, so no
+  webhook platform currently delivers in production — the row used for the proof
+  was retired. "LinkedIn publishes fine" is therefore *not* evidence that the
+  calendar is deliverable: LinkedIn never needed a webhook row. Enabling the
+  webhook platforms is a dashboard action, not a code change.
 - **Webhooks are authored on `/pipeline`** (`src/pages/ContentPipeline.tsx`).
   Settings → Integrations only *lists* them.
 - **`rumble` and `podcast` cannot be reached from the UI at all** — they are
