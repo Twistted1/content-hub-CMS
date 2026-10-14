@@ -60,15 +60,20 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
 ## Things that will bite you
 
 - **"Merged" is NOT "deployed". There is no CI step that ships edge
-  functions.** `publish-due-posts` and `demo-login` ran June-2026 source in
-  production for months while `main` held newer code, and as of 2026-10-14
-  `content-pipeline` and `schedule-from-templates` are believed stale too. Every
-  change under `supabase/functions/**` needs an explicit
-  `supabase functions deploy <name>`, and **deployed versions cannot be read
-  over the API** — so you cannot verify from here whether your change is live.
-  Say so rather than assuming. Also: new DB objects the functions depend on
-  (e.g. the `claim_due_posts` RPC) must be applied to production before or with
-  the deploy, or the function 500s on every tick.
+  functions.** `publish-due-posts`, `demo-login`, `content-pipeline` and
+  `schedule-from-templates` all ran stale source in production for months while
+  `main` held newer code — `publish-due-posts`/`demo-login` since June 2026.
+  They were brought current on 2026-10-14 (`content-pipeline` v32,
+  `schedule-from-templates` v13). Every change under `supabase/functions/**`
+  needs an explicit `supabase functions deploy <name>`, and **deployed versions
+  cannot be read over the API** — you cannot verify from a session whether your
+  change is live, so say so rather than assuming. New DB objects the functions
+  depend on (e.g. the `claim_due_posts` RPC) must be applied to production
+  before or with the deploy, or the function 500s on every tick.
+- **Do not set `banned_until = 'infinity'`.** GoTrue can't parse it, so a banned
+  user's login fails with `500 "Database error querying schema"` instead of a
+  clean ban — which reads as an outage in logs. Use a far-future finite
+  timestamp (the fix adopted here: `2099-12-31`).
 - **Only LinkedIn and X publish directly.** `publish-due-posts/index.ts:15`
   defines `DIRECT_PLATFORMS = {linkedin, twitter}`. Every other platform needs
   a matching active row in `webhook_configs` or the post fails with

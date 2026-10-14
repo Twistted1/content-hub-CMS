@@ -9,17 +9,21 @@ what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
 **Last verified:** 2026-10-14 (Phase 16). Follow-up after the owner's status
-reply. Two things changed the picture. **Most importantly: `publish-due-posts`
-and `demo-login` had not been redeployed since June 2026 — merged code was never
-shipped — and `content-pipeline` and `schedule-from-templates` are very likely
-stale in the same way, so Phase 15's `scheduleMode` fix is committed but NOT
-live.** Both need a redeploy; they cannot be deployed from this environment.
-Also found: banning an account with `banned_until = infinity` makes its login
-fail with a 500 "Database error querying schema" rather than a clean ban
-(normal accounts are unaffected — verified), and DELETE statements hang
-project-wide, which breaks 22 user-facing delete paths. The leaked-anon-key item
-is **closed as won't-fix by the owner's decision** (only already-public values
-were exposed; the boundary is RLS) — do not re-raise it as a blocker.
+replies. All three follow-up items are now closed, and one of my own
+conclusions was wrong and is corrected below. **The deploy gap is fixed:**
+`publish-due-posts` and `demo-login` had been running June-2026 source — merged
+code was never shipped — and `content-pipeline`/`schedule-from-templates` were
+stale the same way; all four are now redeployed
+(`content-pipeline` **v32**, `schedule-from-templates` **v13**), so Phase 15's
+`scheduleMode` fix is **live**. The `banned_until = 'infinity'` diagnosis was
+confirmed right (fixed by using `2099-12-31`; `'infinity'` is unsafe there).
+**My DELETE-hang diagnosis was wrong:** the suggested lock check returned zero
+blocked rows, the hang is isolated to the owner's SQL tool, and the app's own
+delete paths are unaffected. The leaked-anon-key item is **closed as won't-fix
+by the owner's decision** (only already-public values were exposed; the boundary
+is RLS) — do not re-raise it as a blocker. One item remains genuinely open:
+**no active `webhook_configs` row exists**, so no webhook platform currently
+delivers in production, though the mechanism is proven.
 
 **Last verified:** 2026-10-14 (Phase 15). Go-live gap closure ahead of the
 2026-10-18 deadline. The headline: **a webhook-only platform now genuinely
@@ -356,75 +360,61 @@ redeployed since June 2026** — merged git code had never been shipped to
 Supabase — and asked whether anything else I touched has the same gap. It does,
 and this is the most consequential finding of the session.
 
-- 🔴 **`content-pipeline` and `schedule-from-templates` are very likely stale, so
-  the objective-4 fix is committed but NOT live.** Both were modified in
-  `0702c45`:
+- [x] **RESOLVED — `content-pipeline` and `schedule-from-templates` were stale in
+      production; both are now redeployed and the objective-4 fix is live.** The
+      owner redeployed `content-pipeline` (**v32**) and
+      `schedule-from-templates` (**v13**) with this branch's code. The two files
+      that carried the fix were:
   - `supabase/functions/content-pipeline/index.ts` — the `SCHEDULE_MODES` list,
     `normalizeScheduleMode`, and the total `mode === "immediate"` publishing
     gate.
   - `supabase/functions/schedule-from-templates/index.ts` — the
     `CRON_SCHEDULE_MODE` constant.
-  Until these are redeployed, production still runs the **pre-fix** gate, in
-  which a non-draft mode arriving without a `scheduledAt` publishes immediately
-  and an unrecognised mode is not held. **Redeploy both.** I could not do it
-  from this environment: there is no Supabase CLI, no access token, and no
-  service-role key here, and **deployed function versions cannot be read over
-  the API**, so this is an operator action with no workaround.
-  - What *can* be verified externally was: probing
+  **Deployment is confirmed by the operator, not verified by me** — see the
+  note below on why that is the honest ceiling here.
+  - What *is* externally verifiable was checked: an unauthenticated POST to
     `/functions/v1/publish-due-posts` and `/functions/v1/schedule-from-templates`
-    unauthenticated returns each **function's own** `{"error":"Unauthorized"}`,
-    not a gateway rejection — which confirms `verify_jwt = false` is live for
-    both, matching `supabase/config.toml:24-29`. `demo-login` returns `404`,
-    which is the redeployed fail-closed behaviour, not the old
-    hardcoded-credential version. `stripe-webhook` returns `400` (signature
-    verification), so it is live and reachable.
-  - **Generalise the lesson:** "merged" is not "deployed" in this project. There
-    is no CI step that deploys edge functions and no documented last-deploy
-    marker, so *every* change to `supabase/functions/**` needs an explicit
-    redeploy and nobody can tell from the repo whether it happened. A
-    `supabase functions deploy` step (or at least a recorded version per
-    function) would close this permanently — worth doing before the next
-    function change.
-- 🟠 **Banned accounts fail with HTTP 500, not a clean ban.** Logging in as the
-  banned throwaway returns
-  `{"code":500,"error_code":"unexpected_failure","msg":"Database error querying schema"}`
-  rather than Supabase's usual `400 "User is banned"`. A fresh account created in
-  the same minute logged in normally (`200`) and read its own row (`200`), so
-  **production auth is not broken for normal users** — this is specific to the
-  banned row. The likely cause is `banned_until` being set to the timestamp
-  value `infinity`, which GoTrue's Go-side time handling cannot parse, so the
-  auth schema query fails instead of returning a ban. Recommended: set
-  `banned_until` to a far-future **finite** timestamp (e.g.
-  `'9999-12-31 23:59:59+00'`) or ban through the Admin API
-  (`updateUserById(id, { ban_duration: '876000h' })`). Worth fixing because a 500
-  with an `error_id` reads as an outage in logs and error monitoring, and it will
-  be re-reported as one.
-- 🟠 **DELETE statements hang project-wide (owner-reported, not reproduced
-  here).** Reportedly even a `DELETE` matching zero rows hangs, while `UPDATE`
-  works. Impact is not cosmetic: **22 user-facing delete paths** depend on it —
-  `usePosts.deletePost` (`usePosts.ts:170`), `deleteMedia` (`:332`),
-  `useAutomations` (`:142`, `:156`), `useProjects` (`:150`, `:291`),
-  `useStrategies` (`:146`, `:175`, `:188`), `useNotes` (`:100`),
-  `useTemplates` (`:110`), `useReports` (`:119`), `useContentPipeline`
-  (`:162`), `usePlatforms` (`:92`), `usePlatformOAuth` (`:104`),
-  `Review.tsx:893` via `deletePost`, `Automation.tsx:172-176` (the
-  wipe-and-regenerate path), and `useUsers` (`:125`, `:152`, `:167`, `:169`).
-  Both `posts` and `post_platforms` carry `ON DELETE CASCADE` children and
-  `ON DELETE SET NULL` from `media`/`webhook_configs`, so a cascade is a
-  plausible contributor — but "zero rows also hangs" points away from row-level
-  work and toward a **lock** (a single stuck DELETE holds locks that every later
-  one queues behind, which would look exactly like this).
-  **Diagnose before changing any SQL:**
-  ```sql
-  SELECT pid, state, wait_event_type, wait_event, now() - query_start AS age, left(query, 120)
-  FROM pg_stat_activity WHERE datname = current_database() ORDER BY query_start;
-
-  SELECT pid, pg_blocking_pids(pid) AS blocked_by, left(query, 120)
-  FROM pg_stat_activity WHERE cardinality(pg_blocking_pids(pid)) > 0;
-  ```
-  The second query names the blocker; `pg_terminate_backend(<pid>)` on the
-  oldest stuck statement will normally clear the queue. Root cause should be
-  established before the locks are merely cleared, or it will recur.
+    returns each **function's own** `{"error":"Unauthorized"}`, not a gateway
+    rejection — confirming `verify_jwt = false` is live for both, matching
+    `supabase/config.toml:24-29`. `demo-login` returns `404` (the fail-closed
+    version, not the old credential-minting one) and `stripe-webhook` returns
+    `400` (signature check), so both are live and current.
+  - **Why the version itself cannot be proven from an agent session:** deployed
+    function source is not exposed by any API available here, and the one
+    behavioural discriminator (an unrecognised `scheduleMode` is stored raw by
+    the old code and normalised to `"scheduled"` by the new one) can only be
+    observed by sending a request that reaches the `pipeline_runs` insert —
+    which requires a valid user session *and* consumes a real OpenAI call. Not
+    worth spending a fourth throwaway account and generation credit on, so this
+    one rests on the operator's word, and the checklist says so rather than
+    implying it was machine-verified.
+- [x] **`demo-login` had also been running June-2026 source.** Redeployed by the
+    owner (**v32**), alongside the three migrations the stale functions
+    depended on: `pipeline_post_status`, `app_role_ui_values`,
+    `publish_retry_tracking`. Independently corroborated here: `demo-login` now
+    returns `404` unauthenticated, which is the Phase 12 fail-closed behaviour
+    and not something the old version did.
+- [x] **CORRECTED — the DELETE hang was not a database problem, and my lock
+      hypothesis was wrong.** The owner ran the `pg_blocking_pids` diagnostic
+      and it returned **zero rows** — nothing was blocked, which directly
+      refutes the stuck-lock explanation I offered. The hang is isolated to
+      their SQL tool; **the app's own delete paths are unaffected** (they go
+      through PostgREST, a different path). The 22 `useX.delete` call sites
+      listed in the first draft of this section are therefore **not** a
+      production concern, and no app code or SQL needs changing. Recording the
+      wrong hypothesis alongside its refutation deliberately: the lesson is that
+      "even a zero-row DELETE hangs" pointed at a lock, and that inference was
+      reasonable but still wrong — the only thing that settled it was running
+      the query.
+- [x] **RESOLVED — the ban-500 diagnosis was right.** Confirmed by the fix: the
+      owner switched all three test accounts from `banned_until = 'infinity'` to
+      a real date (`2099-12-31`) and the 500 `"Database error querying schema"`
+      goes away. **`'infinity'` is not safe as a `banned_until` value on this
+      project** — use a far-future finite timestamp instead. All three test
+      accounts (`golive-verify-…`, `authscope-…` and the owner's own) are banned,
+      their subscriptions downgraded to `free`, and nothing live references any
+      of them. The production auth path was never affected (a fresh account
+      created during the diagnosis logged in normally).
 - ⚪ **Consequence for objective 1's production status, stated plainly:** with the
   proof row retired, there is currently **no active `webhook_configs` row**, so
   the production delivery proven earlier in this phase can no longer be repeated
