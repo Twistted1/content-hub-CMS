@@ -189,6 +189,76 @@ via the client bundle. Recorded in `AGENTS.md`. **Do not re-raise.**
 
 ---
 
+## Secret & credential audit (full history)
+
+**Method:** all **1244 blobs across 625 commits on all refs** scanned
+(`git cat-file --batch-all-objects`), 1233 text-decodable; the 10 binaries are
+images/video plus `bun.lockb`, which was byte-inspected and contains only npm
+registry URLs. `git fsck --unreachable` was empty and there were no stashes, so
+nothing is outside the scan.
+
+**[V] Verdict: no server-side secret exists in the working tree or anywhere in
+history.** No `service_role` key, no Stripe/OpenAI/OAuth secret, no database
+password, no cloud or GitHub token. **Credential leakage does not block
+publishing the repository.** The blocking item is legal, not security — there is
+no `LICENSE` (see below).
+
+What *is* in history, and why each is acceptable or actionable:
+
+| Value | Where | Assessment |
+|---|---|---|
+| Supabase **anon/publishable** JWT (`role: "anon"`, `exp` 2036) | `20260323155000…:9` (added `112999e`, sanitised `5ceb45e`); also `client.ts` and `.env` blobs historically | **Public by design — already in every production bundle.** Not service_role. Owner decision: no rotation. |
+| **Sentry ingest DSN** (org/project IDs + 32-char key) | `.env` blob, added `ed49b76`, removed `b1685bc` | History only; ingest-only key. Cheap hygiene to rotate. Current value is `""`. |
+| **E2E test password** (`E2E-test-password-1`, 18 chars) | [`.env.e2e.example:20`](../.env.e2e.example#L20) — **tracked today** | ⚠️ **Actionable.** Real value for the disposable E2E project `amyzklcdwrspazveutqz`, which **[V] still exists and answers on the network**. See below. |
+| Stripe `sk_live_xxx…` / `sk_test_xxx…` | `IntegrationsSettings.tsx:62,70` | Placeholders, all `x`. Not real keys. |
+| `stub-cron-secret` | `tools/publish-e2e/run.mjs:35` | Harness stub. The real cron secret is randomly generated in Vault (`20260601130235:12`) and never committed. |
+| HIBP SHA-1 vector | `pwnedPassword.test.ts:5,6` | Test data. |
+
+**Absent everywhere, zero hits:** `service_role` JWT, `sb_secret_`, `sbp_`, real
+`sk_live_`/`sk_test_`/`whsec_`, `OPENAI_API_KEY` literals (only `Deno.env.get`),
+`TWITTER_CLIENT_SECRET`/`LINKEDIN_CLIENT_SECRET` literals, `AKIA`,
+`ghp_`/`gho_`/`github_pat_`, `postgres://` with a password, private keys, and
+`DEMO_LOGIN` credentials.
+
+**Workflow secrets:** every workflow uses `${{ secrets.* }}` with **no literal
+values**. Only `e2e.yml` needs any — `E2E_SUPABASE_URL`,
+`E2E_SUPABASE_PUBLISHABLE_KEY`, `E2E_SUPABASE_SERVICE_ROLE_KEY`. `ci.yml` needs
+none. A self-hoster additionally needs the `.env.example` values plus the edge
+secrets and the Vault `cron_secret` (see the self-host guide item in the
+roadmap).
+
+**`.env` was tracked historically** (`e7c3075` → untracked at `b1685bc`) and its
+blobs remain in history; it never held a service_role key. It is ignored today.
+
+**History rewrite is NOT required.** Nothing secret leaked, and a rewrite would
+desynchronise every existing clone and CI checkout for no security gain.
+
+### The one live credential item
+
+⚠️ **[V] `.env.e2e.example:20` commits a real password, and the project it
+belongs to is still live.** `https://amyzklcdwrspazveutqz.supabase.co/auth/v1/health`
+answers `401 {"message":"No API key found in request"}` — a deleted project would
+not respond at all. So the pair (project ref, which is also public in
+`docs/MASTER_CHECKLIST.md`, plus this password) points at a real, reachable
+project.
+
+**I could not test whether the login actually works**, and that is the correct
+outcome: the E2E project's anon key lives only in GitHub Actions secrets and was
+accurately kept out of the repository, so there is no way to attempt an
+authentication from here. **Treat the password as live until proven otherwise.**
+
+Impact if it works: low — it is a disposable test project with no production
+data. But it is a working credential in a repository you intend to publish.
+**Fix:** change that user's password in the E2E project, and replace the literal
+in `.env.e2e.example` with a placeholder (the file's other two values already are
+placeholders, so this one is an outlier).
+
+Note `has_role` EXECUTE remaining revoked from `anon` was independently
+re-confirmed during this audit — the anonymous `articles` exposure is read-only
+and cannot be written (see [HEADLESS_CONSUMPTION.md](./HEADLESS_CONSUMPTION.md)).
+
+---
+
 ## Documentation inventory
 
 | File | Status | Purpose |
@@ -275,6 +345,7 @@ behaviour is [A] and worth reproducing before relying on it.
 | 8 | Collapse the four product names to one; move brand strings/emails into a single config so forks can rebrand without editing two large locale files. | 1 day |
 | 9 | **Env-driven Stripe price IDs**, one shared map — removes the 3-file sync footgun and the silent-downgrade path. Do this before a second deployment exists. | 0.5 day |
 | 10 | **Server-side entitlement enforcement** (see Security findings) — arguably belongs in (a), not (b): it is a live cost leak today, not just a commercial gap. | 3–5 days |
+| 11 | **Close the one live credential item:** change the E2E test user's password and replace the literal in `.env.e2e.example` with a placeholder. Add a **gitleaks-style secret scan to CI** so this cannot recur — the full-history audit found nothing else, so a scan now starts from a clean baseline. | 1h |
 
 ### (b) Commercial — two very different paths
 

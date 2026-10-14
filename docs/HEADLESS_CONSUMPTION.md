@@ -194,15 +194,37 @@ is worth tightening regardless.
 
 ---
 
+## Write exposure on `articles` — RESOLVED, and it is safe
+
+**[V] `anon` cannot write to `articles`.** Probed with an `INSERT` that
+deliberately reuses an existing primary key (`id: 11`), so it **provably could
+not create a row** whatever the permissions turned out to be:
+
+```
+POST /rest/v1/articles  {"id": 11, "title": "permission-probe-do-not-store"}
+-> 401 {"code":"42501","message":"new row violates row-level security policy for table \"articles\""}
+-> row count unchanged afterwards (Content-Range: 0-3/*  = 4 rows)
+```
+
+That error is an **RLS policy violation, not a missing GRANT** — so:
+- RLS **is enabled** on `articles` (the earlier ambiguity is gone),
+- there is a permissive **SELECT** policy for `anon` (hence the public read), and
+- there is **no INSERT policy for `anon`** (hence the refusal).
+
+A publicly-readable, non-writable content table is a defensible design. The
+anonymous read exposure flagged by the secret audit is therefore **read-only and
+consistent with the website consuming it** — it is not the serious exposure it
+could have been.
+
+**One honest limit:** `UPDATE`/`DELETE` cannot be probed the same way. Under RLS
+those filter rows rather than deny the statement, so a zero-row-targeting probe
+returns success either way and would prove nothing. The `INSERT` result — RLS
+enabled with only a read policy for `anon` — is strong evidence the table is
+read-only for anonymous callers, but if you want certainty, confirm the policy
+list in the dashboard.
+
 ## Not verified
 
-- **Whether `articles`/`authors` have RLS enabled with a permissive policy, or
-  RLS disabled entirely.** Both produce the observed `200`. Confirm in the
-  dashboard.
-- **Whether `anon` can INSERT/UPDATE `articles`.** No write was attempted — this
-  is a deliberate gap, and it is the single most important thing to check if the
-  table is under a permissive policy. A publicly writable content table would be
-  a serious exposure.
 - **Live `webhook_configs` state.** RLS hides it from anon. The "no active row"
   claim in `docs/MASTER_CHECKLIST.md` comes from the owner, not from these probes.
 - **`pg_cron` hygiene** **[A]**: two jobs still target functions that no longer

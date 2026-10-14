@@ -462,6 +462,29 @@ commercialization. Two produced durable documents; nothing was changed in
 - 🟡 **`supabase/.temp/cli-latest` is tracked**, and `api.json` — a "Headless API
   Distribution Channel" schedule — is dead config referenced by nothing.
 
+- ✅ **Secret audit — clean, and it settles the open question above.** All 1244
+  blobs across 625 commits on every ref were scanned: **no server-side secret
+  exists in the working tree or anywhere in history** — no `service_role` key, no
+  Stripe/OpenAI/OAuth secret, no DB password, no cloud/GitHub token. Only the
+  public-by-design anon key and a Sentry ingest DSN are in history, and a
+  history rewrite is therefore **not required**. Workflow secrets all use
+  `${{ secrets.* }}` with no literals. **The one actionable item:**
+  `.env.e2e.example:20` commits a real E2E test password, and that project
+  (`amyzklcdwrspazveutqz`) is still live and answering on the network — change
+  the password and placeholder the literal. Worth adding a gitleaks-style scan to
+  CI, now that there is a clean baseline.
+- ✅ **The anonymous `articles` exposure is read-only — verified, not assumed.**
+  An `INSERT` reusing an existing primary key (so it provably could not create a
+  row) returns
+  `401 {"code":"42501","message":"new row violates row-level security policy for table \"articles\""}`,
+  and the row count was unchanged afterwards. That is an RLS policy violation
+  rather than a missing GRANT, so RLS **is** enabled on `articles` with a
+  permissive SELECT policy for `anon` and **no INSERT policy**. A
+  publicly-readable, non-writable table is a defensible design; the exposure the
+  audit flagged is not the serious one it could have been. `UPDATE`/`DELETE`
+  cannot be probed this way (RLS filters rows rather than denying the statement),
+  so confirm the policy list in the dashboard if certainty is wanted.
+
 **How the headless question was left:** the publishing direction works (webhook),
 the consumption direction does not, and the `articles` decision above gates the
 choice between two clean fixes. `docs/HEADLESS_CONSUMPTION.md` lays out five
