@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { buildDelivery, formatContentForPlatform } from "../_shared/publishDelivery.ts";
+import { buildDelivery, deliveryHeaders, formatContentForPlatform, SIGNING_SECRET_ENV } from "../_shared/publishDelivery.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +12,11 @@ const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const TWITTER_CLIENT_ID = Deno.env.get("TWITTER_CLIENT_ID") || "";
 const TWITTER_CLIENT_SECRET = Deno.env.get("TWITTER_CLIENT_SECRET") || "";
+
+// HMAC key for outbound webhook signatures. Unset means deliveries go out
+// unsigned — they still work, and the delivery result records `signed: false` so
+// the gap is visible rather than silent. See tools/webhook-receiver/.
+const WEBHOOK_SIGNING_SECRET = Deno.env.get(SIGNING_SECRET_ENV) || "";
 
 const DIRECT_PLATFORMS = new Set(["linkedin", "twitter"]);
 
@@ -144,6 +149,8 @@ serve(async (req) => {
       const perPlatform: any[] = [];
       let anySuccess = false;
       let anyFailure = false;
+      // Whether the webhook deliveries for this platform carried a signature.
+      let signed = false;
 
       // Load user's webhooks once
       const { data: webhooks } = await admin
@@ -183,35 +190,47 @@ serve(async (req) => {
             if (matching.length === 0) throw new Error(`No active webhook configured for ${platform}`);
 
             for (const w of matching) {
+              // One envelope shape for every webhook delivery, shared with
+              // `content-pipeline`'s immediate path so a receiver cannot be
+              // written against one and silently mishandle the other.
+              const payload = buildDelivery({
+                postId: post.id,
+                platform,
+                title: post.title,
+                content: post.content,
+                excerpt: post.excerpt,
+                tags: post.tags,
+                type: post.type,
+                coverImageUrl: post.cover_image_url,
+                scheduledAt: post.scheduled_at,
+              });
+              // Sign the exact bytes that are sent, so the receiver can verify
+              // provenance instead of trusting whatever reaches its URL.
+              const body = JSON.stringify(payload);
+              const headers = await deliveryHeaders(
+                body,
+                payload.delivery_id,
+                WEBHOOK_SIGNING_SECRET,
+                (w.headers as Record<string, string>) || {},
+              );
+
               const ctrl = new AbortController();
               const t = setTimeout(() => ctrl.abort(), 8000);
               const r = await fetch(w.url, {
                 method: "POST",
                 redirect: "error",
                 signal: ctrl.signal,
-                headers: { "Content-Type": "application/json", ...(w.headers as Record<string, string> || {}) },
-                // One envelope shape for every webhook delivery, shared with
-                // `content-pipeline`'s immediate path so a receiver cannot be
-                // written against one and silently mishandle the other.
-                body: JSON.stringify(buildDelivery({
-                  postId: post.id,
-                  platform,
-                  title: post.title,
-                  content: post.content,
-                  excerpt: post.excerpt,
-                  tags: post.tags,
-                  type: post.type,
-                  coverImageUrl: post.cover_image_url,
-                  scheduledAt: post.scheduled_at,
-                })),
+                headers,
+                body,
               });
               clearTimeout(t);
               if (!r.ok) throw new Error(`webhook ${w.name} ${r.status}`);
+              signed = !!WEBHOOK_SIGNING_SECRET;
             }
             await admin.from("post_platforms").update({
               status: "published", published_at: new Date().toISOString(), error_message: null,
             }).eq("id", pp.id);
-            perPlatform.push({ platform, success: true, via: "webhook" });
+            perPlatform.push({ platform, success: true, via: "webhook", signed });
             anySuccess = true;
           }
         } catch (e: any) {

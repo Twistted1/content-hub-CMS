@@ -62,6 +62,11 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   both delivery functions; change it here, not at call sites.
 - `supabase/functions/content-pipeline/` — OpenAI generation with cost controls.
 - `tools/publish-e2e/`, `tools/stripe-e2e/` — the two harnesses above.
+- `tools/webhook-receiver/` — a working reference receiver (signature
+  verification, replay window, de-duplication, `articles` field mapping,
+  dry-run by default). Run its self-test with
+  `node tools/webhook-receiver/selftest.mjs`. Adapt `toArticleRow` for your own
+  endpoint, or swap it for a Meta Graph API call.
 - `src/utils/scheduleMode.ts`, `src/utils/reviewTransitions.ts` — pure logic
   extracted so it can be tested; read the doc comments before changing them.
 
@@ -84,14 +89,17 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   timestamp (the fix adopted here: `2099-12-31`).
 - **The website's content is NOT managed by this CMS — do not assume otherwise.**
   Production exposes `articles` + `authors` over PostgREST **anonymously**, and
-  `articles` holds real Novus Exchange articles. But **no migration creates those
-  tables and no code in `src/` or `supabase/functions/` reads or writes them** —
-  they were created in the dashboard. The CMS's own `posts` table is closed to
-  `anon` (RLS requires `auth.uid()`, and `has_role` EXECUTE is revoked from
-  `anon`, so anon gets a hard `401 permission denied for function has_role`
-  rather than an empty result). Two disconnected content systems; whether
-  `articles` is the intended store or a leftover is an **open owner decision**.
-  See `docs/HEADLESS_CONSUMPTION.md`.
+  `articles` is the **live feed for novusexchange.com** (owner-confirmed, and
+  verified in the separate site repo: `services/articleService.ts:116` is its only
+  reader, and it never queries `posts`/`post_platforms`). But **no migration
+  creates those tables and no code in `src/` or `supabase/functions/` reads or
+  writes them** — they were created in the dashboard. The CMS's own `posts` table
+  is closed to `anon` (RLS requires `auth.uid()`, and `has_role` EXECUTE is
+  revoked from `anon`, so anon gets a hard `401 permission denied for function
+  has_role` rather than an empty result). Two disconnected content systems; a
+  bridge is planned but **`articles` has no status column, so any insert is live
+  on the public site immediately** — it must be an explicit human action, never
+  an automatic sync. See `docs/HEADLESS_CONSUMPTION.md`.
 - **Billing is not enforced anywhere on the server.** No edge function ever
   *reads* `subscriptions` — only writes. The only tier gate is cosmetic and
   client-side (`Sidebar.tsx:140`). Any authenticated free user can call
@@ -120,12 +128,21 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   `"free"` for unrecognised prices — so a second deployment that updates two of
   the three silently downgrades paying customers. The advertised **14-day trial
   is not implemented** anywhere (`trial_period_days` does not exist).
-- **`/pipeline`'s webhook form cannot set auth headers** (name, URL and platform
-  badges only), though `webhook_configs.headers` supports them — a custom-secret
-  receiver needs a direct DB write today. **There is still no shared secret or
-  signature on the payload, and it only ever fires `post.publish`** (no update or
-  unpublish event), so a receiver cannot verify provenance or react to an edit.
-  It does now carry a stable `delivery_id` for de-duplication.
+- **Webhook deliveries are signed only if `WEBHOOK_SIGNING_SECRET` is set.** With
+  it set, every delivery carries `X-Novus-Signature: sha256=<hex>` (HMAC over the
+  exact raw body), plus `X-Novus-Delivery-Id` and `X-Novus-Timestamp`. **Unset,
+  deliveries still go out but UNSIGNED** — the delivery result records
+  `signed: false` so the gap is visible, but an unsigned receiver has to trust
+  anything that reaches its URL. Verify against the **raw bytes**, never a
+  re-serialised body; `tools/webhook-receiver/server.mjs` reads the buffer first
+  for that reason. De-duplicate on `delivery_id`, which is stable across retries
+  (the CMS retries with backoff, so ignoring it publishes up to 5 times).
+- **`/pipeline`'s webhook form can set custom headers** (one `Key: Value` per
+  line) as of 2026-10-19, so a receiver needing an auth token no longer requires
+  a direct database write. Still missing on that path: **no per-webhook shared
+  secret** (signing uses one deployment-wide `WEBHOOK_SIGNING_SECRET`), and it
+  only ever fires `post.publish`, so an edit or an unpublish cannot be
+  propagated to a receiver.
 - **The webhook delivery contract is defined once, in
   `supabase/functions/_shared/publishDelivery.ts`**, and imported by both
   `publish-due-posts` (scheduled/cron path) and `content-pipeline` (immediate

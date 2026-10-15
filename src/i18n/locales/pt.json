@@ -1315,6 +1315,8 @@
     "namePlaceholder": "ex.: Zapier Hook, Minha API",
     "webhookUrl": "URL do Webhook",
     "platformsOptional": "Plataformas (deixe vazio para todas)",
+    "customHeaders": "Cabeçalhos personalizados (opcional)",
+    "customHeadersHint": "Um por linha, no formato Chave: Valor. Use para um receptor que exija um token de autenticação. Cada entrega também é assinada com o cabeçalho X-Novus-Signature — veja tools/webhook-receiver/.",
     "noWebhooksConfigured": "Nenhum webhook configurado. Adicione um para habilitar a publicação automatizada.",
     "pipelineSteps": "Etapas do Pipeline",
     "post": "Post",

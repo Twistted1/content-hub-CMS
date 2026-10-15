@@ -8,7 +8,22 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-10-14 (Phase 19). **The outbound webhook contract is now
+**Last verified:** 2026-10-19 (Phase 20). **Webhook deliveries are now
+authenticated and there is a working reference receiver.**
+`supabase/functions/_shared/publishDelivery.ts` signs every delivery with
+HMAC-SHA256 (`X-Novus-Signature`, over the exact raw body) plus a stable
+`X-Novus-Delivery-Id` and a timestamp, so a receiver can refuse anything that did
+not come from this CMS instead of trusting whatever reaches its URL.
+`tools/webhook-receiver/` is a runnable receiver that verifies the signature,
+enforces a replay window, de-duplicates on `delivery_id`, and maps a delivery
+onto the site's `articles` row **in dry-run by default** — because `articles` has
+no status column, so an insert is live on the public site immediately. Custom
+webhook headers can now be set from `/pipeline`. Verified: `publish-e2e` 26/26
+(the harness recomputes the digest over the body it received), receiver self-test
+10/10, 139 unit tests passing. **Set `WEBHOOK_SIGNING_SECRET` and redeploy
+`publish-due-posts` + `content-pipeline`,** or deliveries stay unsigned.
+
+**Previously last verified:** 2026-10-14 (Phase 19). **The outbound webhook contract is now
 unified** — one envelope defined in `supabase/functions/_shared/publishDelivery.ts`
 and imported by both delivery paths, with a stable `delivery_id` for
 de-duplication, a content `type` (Instagram needs it), and per-platform caption
@@ -394,6 +409,77 @@ a stale `vite` dev-server process from this repo (PID identified via
 `Get-CimInstance Win32_Process` filtered on the repo path) still held it. Killing
 that process and its `esbuild` child freed it; `npm ci` then succeeded. Check for
 stray repo-owned node processes before concluding an install is broken.
+
+---
+
+## Phase 20 — Webhook authenticity + a working reference receiver (2026-10-19)
+
+The owner asked me to make the call on what to build next. **Decision: harden the
+webhook path and ship a receiver.** Reasoning, recorded because the choice was
+mine: (a) the live go-live blocker is that nothing delivers without a webhook
+row, and the *hard* part of fixing that is building a receiver, not clicking a
+checkbox; (b) it is on the critical path for both the Meta work and the website
+bridge; (c) it needs **no product decision**, unlike the licence or entitlement
+enforcement. Server-side entitlement enforcement is the bigger *security* item and
+is deliberately left as its own clearly-scoped change, because "what should the
+free tier allow" is genuinely a pricing decision.
+
+- [x] **Outbound deliveries are now signed.** `signDelivery` / `deliveryHeaders`
+  in `supabase/functions/_shared/publishDelivery.ts` add
+  `X-Novus-Signature: sha256=<hex>` (HMAC-SHA256 over the **exact raw body**),
+  plus `X-Novus-Delivery-Id` and `X-Novus-Timestamp`; both delivery paths use it.
+  This closes a real hole: a receiver is a public endpoint, so without a
+  signature it must trust whatever reaches its URL — anyone who learned the URL
+  could publish through it, and a receiver forwarding to a social platform would
+  post it.
+  - Keyed by `WEBHOOK_SIGNING_SECRET`. **Unset means deliveries still go out but
+    UNSIGNED**, with the delivery result recording `signed: false`, so the gap is
+    visible rather than silent. Non-breaking, and honest about its default.
+- [x] **A working reference receiver, with a self-test.**
+  `tools/webhook-receiver/` implements what a real receiver needs and proves it:
+  signature verification over raw bytes (constant time), a replay window, and
+  **de-duplication on `delivery_id`** — which matters because the CMS retries with
+  backoff, so a receiver that ignores it publishes the same post up to five times.
+  `node tools/webhook-receiver/selftest.mjs` drives the running server over HTTP:
+  **10/10**, including that a **tampered body is rejected** (the whole point of
+  signing), that a wrong-secret signature is rejected, that a stale timestamp is
+  refused, and that a repeated `delivery_id` is acknowledged rather than
+  re-published.
+- [x] **The receiver maps a delivery onto the site's `articles` row — in dry-run.**
+  `toArticleRow` handles the four fields that are not obvious and each of which
+  fails quietly: `author_id` (the site matches it by **substring**, so an unmapped
+  id displays the *wrong person*), the duplicated `publish_date`/`date` text pair
+  in `"OCTOBER 11, 2026"` form, `read_time` (derived), and `category` (the CMS's
+  vocabulary does not match the site's filter list). **Writing is opt-in
+  (`ARTICLES_COMMIT=1`) and needs the service-role key**, because
+  `public.articles` has **no status column**: an insert is live on novusexchange.com
+  immediately, with no draft state and no undo. Dry-run by default is the
+  responsible choice for a table like that, and it makes the bridge an explicit
+  publishing action rather than a side effect of approving content.
+- [x] **Custom headers are now settable from the UI.** `/pipeline` → Webhooks
+  gained a one-`Key: Value`-per-line headers box. `webhook_configs.headers` always
+  supported this, but nothing could write it, so a receiver needing an auth token
+  required a direct database write. (Still absent: a *per-webhook* signing
+  secret — signing is deployment-wide for now.)
+- [x] **Documented two previously undocumented secrets in `.env.example`:**
+  `GEMINI_API_KEY` (required by `generate-strategy` and reachable from the
+  Automation page, but documented nowhere) and `WEBHOOK_SIGNING_SECRET`.
+
+**Verified:** `tsc --noEmit` clean, `eslint` 0 errors (**291** warnings, unchanged
+by this phase), **139 passed / 1 skipped** (was 130; +9 signing tests, one of
+which cross-checks my Web Crypto HMAC against `node:crypto` — an independent
+known-answer check rather than a restatement of my own code), `vite build` clean,
+`publish-e2e` **26/26** (the harness now recomputes the expected digest over the
+body it actually received and asserts the header matches, which is exactly what a
+receiver must do), receiver self-test **10/10**.
+
+**⚠️ Requires redeploying `publish-due-posts` and `content-pipeline`.** Set
+`WEBHOOK_SIGNING_SECRET` in Supabase → Edge Functions → Secrets first, or
+deliveries go out unsigned.
+
+**Still open on this path, deliberately:** only `post.publish` is ever fired (no
+update/unpublish events), there is no per-webhook secret, and the retry contract
+is documented only as the `delivery_id` de-duplication key.
 
 ---
 

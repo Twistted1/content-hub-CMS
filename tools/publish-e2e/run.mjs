@@ -16,6 +16,7 @@
  * needed. Exits non-zero if any assertion fails.
  */
 import { spawn } from "node:child_process";
+import { createHmac } from "node:crypto";
 import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
@@ -24,6 +25,10 @@ import { createStubSupabase } from "./stub-supabase.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "../..");
 const EDGE_FUNCTION = resolve(REPO, "supabase/functions/publish-due-posts/index.ts");
+
+// Set on the function's env so outbound deliveries are actually signed, and kept
+// here so the harness can recompute the expected digest independently.
+const SIGNING_SECRET = "e2e-webhook-signing-secret";
 
 const DENO = process.env.DENO_BIN ?? "deno";
 const STUB_PORT = Number(process.env.STUB_PORT ?? 54321);
@@ -125,6 +130,7 @@ async function main() {
         SUPABASE_URL: `http://127.0.0.1:${STUB_PORT}`,
         SUPABASE_SERVICE_ROLE_KEY: SERVICE_KEY,
         SUPABASE_ANON_KEY: "stub-anon-key",
+        WEBHOOK_SIGNING_SECRET: SIGNING_SECRET,
         TWITTER_CLIENT_ID: "stub",
         TWITTER_CLIENT_SECRET: "stub",
       },
@@ -262,6 +268,31 @@ async function main() {
         "envelope has a top-level platform, not a nested platforms array",
         typeof payload?.platform === "string" && !("platforms" in (payload ?? {})),
         JSON.stringify({ platform: payload?.platform, platforms: payload?.platforms }),
+      );
+      // Signing, verified the way a receiver must: recompute the digest over the
+      // exact bytes received and compare. A receiver that cannot do this has to
+      // trust anything that reaches its URL.
+      const sentSignature = String(got?.headers?.["x-novus-signature"] ?? "");
+      const expectedSignature = `sha256=${createHmac("sha256", SIGNING_SECRET)
+        .update(got?.content ?? "")
+        .digest("hex")}`;
+      check(
+        "1",
+        "delivery carries a valid HMAC signature over the raw body",
+        sentSignature.length > 0 && sentSignature === expectedSignature,
+        `sent=${sentSignature.slice(0, 20)}… expected=${expectedSignature.slice(0, 20)}…`,
+      );
+      check(
+        "1",
+        "delivery identifies itself for de-duplication via header too",
+        String(got?.headers?.["x-novus-delivery-id"] ?? "") === `${postId1}:website`,
+        String(got?.headers?.["x-novus-delivery-id"]),
+      );
+      check(
+        "1",
+        "delivery carries a parseable timestamp for replay protection",
+        !Number.isNaN(Date.parse(String(got?.headers?.["x-novus-timestamp"] ?? ""))),
+        String(got?.headers?.["x-novus-timestamp"]),
       );
       check(
         "1",

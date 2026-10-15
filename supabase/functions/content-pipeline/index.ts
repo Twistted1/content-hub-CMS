@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { buildDelivery } from "../_shared/publishDelivery.ts";
+import { buildDelivery, deliveryHeaders, SIGNING_SECRET_ENV } from "../_shared/publishDelivery.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,6 +8,11 @@ const corsHeaders = {
 };
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+
+// HMAC key for outbound webhook signatures. Unset means deliveries go out
+// unsigned — they still work, and the result records `signed: false` so the gap
+// is visible rather than silent. See tools/webhook-receiver/.
+const WEBHOOK_SIGNING_SECRET = Deno.env.get(SIGNING_SECRET_ENV) || "";
 
 // SSRF guard: only allow https webhooks to public hosts
 function isPrivateOrLocalHost(hostname: string): boolean {
@@ -333,11 +338,6 @@ Return ONLY JSON.`;
               continue;
             }
             try {
-              const whHeaders: Record<string, string> = {
-                "Content-Type": "application/json",
-                ...(webhook.headers as Record<string, string> || {}),
-              };
-
               // One delivery per platform, not one per webhook. The shared
               // envelope carries a single top-level `platform`, per-platform
               // truncation is applied inside `buildDelivery`, and `delivery_id`
@@ -346,22 +346,32 @@ Return ONLY JSON.`;
               // platform in a nested `platforms` array, with the event name
               // `post.published` — a different contract from the cron path.
               for (const platform of matchingPlatforms) {
+                const payload = buildDelivery({
+                  postId: post.id,
+                  platform,
+                  title: generatedContent.title,
+                  content: generatedContent.content,
+                  excerpt: generatedContent.excerpt,
+                  tags: generatedContent.tags,
+                  type: generatedContent.type,
+                  coverImageUrl: finalImageUrl,
+                  scheduledAt: scheduledAt ?? null,
+                });
+                // Sign the exact bytes sent, so the receiver can verify provenance.
+                const body = JSON.stringify(payload);
+                const whHeaders = await deliveryHeaders(
+                  body,
+                  payload.delivery_id,
+                  WEBHOOK_SIGNING_SECRET,
+                  (webhook.headers as Record<string, string>) || {},
+                );
+
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
                 const whResp = await fetch(webhook.url, {
                   method: "POST",
                   headers: whHeaders,
-                  body: JSON.stringify(buildDelivery({
-                    postId: post.id,
-                    platform,
-                    title: generatedContent.title,
-                    content: generatedContent.content,
-                    excerpt: generatedContent.excerpt,
-                    tags: generatedContent.tags,
-                    type: generatedContent.type,
-                    coverImageUrl: finalImageUrl,
-                    scheduledAt: scheduledAt ?? null,
-                  })),
+                  body,
                   redirect: "error",
                   signal: controller.signal,
                 });
@@ -372,6 +382,7 @@ Return ONLY JSON.`;
                   platform,
                   status: whResp.status,
                   success: whResp.ok,
+                  signed: !!WEBHOOK_SIGNING_SECRET,
                 });
               }
             } catch (whErr: any) {

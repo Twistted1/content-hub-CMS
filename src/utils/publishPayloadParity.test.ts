@@ -1,4 +1,8 @@
+// @vitest-environment node
+// Node env, not jsdom: the signing tests exercise `crypto.subtle` (HMAC) and
+// cross-check it against `node:crypto`, which jsdom's crypto shim does not expose.
 import { describe, it, expect } from "vitest";
+import { createHmac } from "node:crypto";
 import {
   PLATFORM_CAPTION_LIMITS,
   DEFAULT_CAPTION_LIMIT,
@@ -6,6 +10,12 @@ import {
   formatContentForPlatform,
   deliveryIdFor,
   buildDelivery,
+  signDelivery,
+  deliveryHeaders,
+  timingSafeEqual,
+  SIGNATURE_HEADER,
+  DELIVERY_ID_HEADER,
+  TIMESTAMP_HEADER,
 } from "../../supabase/functions/_shared/publishDelivery";
 import { PLATFORM_LIMITS } from "./platformLimits";
 
@@ -173,5 +183,80 @@ describe("buildDelivery — the unified envelope", () => {
     // Build once: two calls differ by a millisecond and would flake.
     const { timestamp } = buildDelivery(input);
     expect(new Date(timestamp).toISOString()).toBe(timestamp);
+  });
+});
+
+describe("delivery signing", () => {
+  const secret = "super-secret-signing-key";
+  const body = '{"event":"post.publish","platform":"website"}';
+
+  it("matches Node's HMAC-SHA256 exactly", async () => {
+    // Independent implementation, so this is a real known-answer check rather
+    // than a test that just restates my own code.
+    const expected = `sha256=${createHmac("sha256", secret).update(body, "utf8").digest("hex")}`;
+    expect(await signDelivery(secret, body)).toBe(expected);
+  });
+
+  it("uses the sha256=<hex> convention receivers already expect", async () => {
+    const sig = await signDelivery(secret, body);
+    expect(sig).toMatch(/^sha256=[0-9a-f]{64}$/);
+  });
+
+  it("is deterministic for the same secret and body, so a retry verifies", async () => {
+    expect(await signDelivery(secret, body)).toBe(await signDelivery(secret, body));
+  });
+
+  it("changes with the body and with the secret", async () => {
+    expect(await signDelivery(secret, body)).not.toBe(await signDelivery(secret, body + " "));
+    expect(await signDelivery(secret, body)).not.toBe(await signDelivery("other", body));
+  });
+
+  it("signs the exact bytes, so a re-serialised body would not verify", async () => {
+    // Receivers must verify against the raw bytes received, never a re-encoded
+    // parse — this asserts that difference is actually detectable.
+    const compact = JSON.stringify({ a: 1, b: 2 });
+    const spaced = JSON.stringify({ a: 1, b: 2 }, null, 2);
+    expect(await signDelivery(secret, compact)).not.toBe(await signDelivery(secret, spaced));
+  });
+});
+
+describe("deliveryHeaders", () => {
+  const body = '{"x":1}';
+
+  it("signs and identifies the delivery when a secret is configured", async () => {
+    const h = await deliveryHeaders(body, "post-1:website", "k");
+    expect(h[SIGNATURE_HEADER]).toBe(await signDelivery("k", body));
+    expect(h[DELIVERY_ID_HEADER]).toBe("post-1:website");
+    expect(h["Content-Type"]).toBe("application/json");
+    expect(new Date(h[TIMESTAMP_HEADER]).toISOString()).toBe(h[TIMESTAMP_HEADER]);
+  });
+
+  it("sends unsigned rather than failing when no secret is configured", async () => {
+    const h = await deliveryHeaders(body, "post-1:website", undefined);
+    expect(h[SIGNATURE_HEADER]).toBeUndefined();
+    // Still identifiable, so a receiver can at least de-duplicate.
+    expect(h[DELIVERY_ID_HEADER]).toBe("post-1:website");
+  });
+
+  it("lets an operator add headers but never override the signature or id", async () => {
+    const h = await deliveryHeaders(body, "post-1:website", "k", {
+      "X-Custom": "yes",
+      [SIGNATURE_HEADER]: "forged",
+      [DELIVERY_ID_HEADER]: "forged",
+    });
+    expect(h["X-Custom"]).toBe("yes");
+    expect(h[SIGNATURE_HEADER]).toBe(await signDelivery("k", body));
+    expect(h[SIGNATURE_HEADER]).not.toBe("forged");
+    expect(h[DELIVERY_ID_HEADER]).toBe("post-1:website");
+  });
+});
+
+describe("timingSafeEqual", () => {
+  it("accepts identical strings and rejects everything else", () => {
+    expect(timingSafeEqual("sha256=abc", "sha256=abc")).toBe(true);
+    expect(timingSafeEqual("sha256=abc", "sha256=abd")).toBe(false);
+    expect(timingSafeEqual("sha256=abc", "sha256=abcd")).toBe(false);
+    expect(timingSafeEqual("", "a")).toBe(false);
+    expect(timingSafeEqual("", "")).toBe(true);
   });
 });

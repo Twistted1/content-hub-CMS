@@ -132,3 +132,80 @@ export function buildDelivery(input: DeliveryInput): DeliveryPayload {
     timestamp: new Date().toISOString(),
   };
 }
+
+/* ── Authenticity ─────────────────────────────────────────────────────────
+ *
+ * A receiver is a public HTTPS endpoint. Without a signature it must trust that
+ * anything arriving on that URL came from this CMS — so anyone who learns the URL
+ * (or guesses it) can publish arbitrary content through it, and a receiver that
+ * forwards to a social platform would happily post it.
+ *
+ * Deliveries are therefore signed with HMAC-SHA256 over the exact raw body,
+ * keyed by `WEBHOOK_SIGNING_SECRET`. The receiver recomputes the digest from the
+ * bytes it received and compares in constant time. Implementation lives in
+ * `tools/webhook-receiver/` as a working, tested reference.
+ *
+ * Behaviour when the secret is not configured: deliveries are still sent, but
+ * unsigned, and the delivery result records `signed: false` so the omission is
+ * visible rather than silent. That keeps an existing setup working; it does not
+ * make an unsigned receiver safe.
+ */
+
+export const SIGNATURE_HEADER = "X-Novus-Signature";
+export const DELIVERY_ID_HEADER = "X-Novus-Delivery-Id";
+export const TIMESTAMP_HEADER = "X-Novus-Timestamp";
+
+/** The env var both edge functions read the signing key from. */
+export const SIGNING_SECRET_ENV = "WEBHOOK_SIGNING_SECRET";
+
+/** `sha256=<hex>`, matching the convention Stripe and GitHub use. */
+export async function signDelivery(secret: string, body: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
+  const hex = Array.from(new Uint8Array(mac))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `sha256=${hex}`;
+}
+
+/**
+ * Constant-time comparison, for a receiver verifying a signature. Kept here so
+ * the sender and the reference receiver share one implementation rather than
+ * each rolling their own — a length-dependent early return leaks the prefix.
+ */
+export function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+/**
+ * Headers for one delivery. `operatorHeaders` are the per-webhook headers the
+ * user configured; they are applied first so a misconfigured row cannot silently
+ * override the signature or the delivery id.
+ */
+export async function deliveryHeaders(
+  body: string,
+  deliveryId: string,
+  signingSecret: string | undefined,
+  operatorHeaders: Record<string, string> = {},
+): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...operatorHeaders,
+    [DELIVERY_ID_HEADER]: deliveryId,
+    [TIMESTAMP_HEADER]: new Date().toISOString(),
+  };
+  if (signingSecret) {
+    headers[SIGNATURE_HEADER] = await signDelivery(signingSecret, body);
+  }
+  return headers;
+}
+
