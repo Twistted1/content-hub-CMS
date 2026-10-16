@@ -45,4 +45,4 @@ test_import_project.json
 deno.lock
 
 # Scratch files used to pass multi-line commit messages to git
-.msg*.txt
+/.m*.txt
