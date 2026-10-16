@@ -473,9 +473,24 @@ known-answer check rather than a restatement of my own code), `vite build` clean
 body it actually received and asserts the header matches, which is exactly what a
 receiver must do), receiver self-test **10/10**.
 
-**⚠️ Requires redeploying `publish-due-posts` and `content-pipeline`.** Set
-`WEBHOOK_SIGNING_SECRET` in Supabase → Edge Functions → Secrets first, or
-deliveries go out unsigned.
+- [x] **Redeployed 2026-10-19 and confirmed to boot.** `publish-due-posts` and
+  `content-pipeline` were redeployed by the owner. The one risk I could not
+  verify beforehand was whether the deploy would resolve the new relative
+  `../_shared/publishDelivery.ts` import — a bundler failure would mean the
+  function never starts. **Verified externally:** an unauthenticated POST to
+  `/functions/v1/publish-due-posts` returns `401 {"error":"Unauthorized"}`, i.e.
+  the function reaches its **own** `authorize()` rather than failing to boot, so
+  the module graph including `_shared` loaded. `content-pipeline` returns 401 at
+  the gateway as expected (`verify_jwt = true`). `verify_jwt = false` is still
+  live for `publish-due-posts`, matching `config.toml`.
+  - **Limit of this evidence, stated plainly:** the pre-Phase-19 version returned
+    an identical 401, so this proves the function **boots**, not which version is
+    deployed. Nothing observable before authentication distinguishes them. The
+    only way to confirm the *new* code is live is a real delivery showing the
+    signature header — which needs an active `webhook_configs` row and a due
+    post. **That remains unverified.**
+  - Also re-checked after the deploy: the site's live feed is unaffected —
+    `GET /rest/v1/articles` still `200`, `Content-Range: 0-3/*`.
 
 **Still open on this path, deliberately:** only `post.publish` is ever fired (no
 update/unpublish events), there is no per-webhook secret, and the retry contract
