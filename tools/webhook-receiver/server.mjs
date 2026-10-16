@@ -31,6 +31,9 @@
  * Env:
  *   WEBHOOK_SIGNING_SECRET     required; the same value set on the Supabase function
  *   PORT                       default 8787
+ *   HOST                       default 127.0.0.1 (loopback-only); set to 0.0.0.0
+ *                              when deploying behind a cloud platform's proxy
+ *                              (Railway, Fly, etc.) or it will be unreachable
  *   ALLOW_UNSIGNED=1           accept unsigned deliveries (dev only; logs loudly)
  *   REPLAY_WINDOW_SECONDS      default 300
  *   ARTICLES_TABLE             default "articles"
@@ -43,6 +46,11 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
 const PORT = Number(process.env.PORT ?? 8787);
+// Defaults to loopback-only so a bare local run never exposes the receiver
+// on the network by accident. A cloud host's edge proxy (Railway, Fly, etc.)
+// connects over the container's own network interface, not loopback, so
+// deploying there requires HOST=0.0.0.0 — set explicitly, not assumed.
+const HOST = process.env.HOST ?? "127.0.0.1";
 const SECRET = process.env.WEBHOOK_SIGNING_SECRET ?? "";
 const ALLOW_UNSIGNED = process.env.ALLOW_UNSIGNED === "1";
 const REPLAY_WINDOW_SECONDS = Number(process.env.REPLAY_WINDOW_SECONDS ?? 300);
@@ -247,9 +255,9 @@ const server = createServer(async (req, res) => {
 // concatenation: on Windows the real URL is `file:///D:/...` (three slashes) and
 // a hand-built `file://D:/...` silently never matches, so the server never binds.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  server.listen(PORT, "127.0.0.1", () => {
+  server.listen(PORT, HOST, () => {
     console.log(
-      `webhook receiver on http://127.0.0.1:${PORT}  mode=${
+      `webhook receiver on http://${HOST}:${PORT}  mode=${
         COMMIT ? "COMMIT (writes live rows)" : "DRY-RUN (prints only)"
       }  signed=${!!SECRET}`,
     );

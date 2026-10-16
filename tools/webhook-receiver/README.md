@@ -33,6 +33,7 @@ node tools/webhook-receiver/selftest.mjs
 |---|---|---|
 | `WEBHOOK_SIGNING_SECRET` | — | **Required.** Same value as on the edge function. Refuses to start without it. |
 | `PORT` | `8787` | Listen port |
+| `HOST` | `127.0.0.1` | Bind address. Loopback-only by default; set to `0.0.0.0` when deploying behind a cloud platform's proxy (Railway, Fly, etc.), or the proxy cannot reach the process and every request fails with "Application failed to respond". |
 | `ALLOW_UNSIGNED` | off | Accept unsigned deliveries. Dev only; logs loudly. |
 | `REPLAY_WINDOW_SECONDS` | `300` | How stale a delivery may be |
 | `ARTICLES_COMMIT` | off | **Dry-run unless set.** See below. |
