@@ -9,14 +9,39 @@
  * against one shared instance-wide limit — so any authenticated free account
  * could call these directly and spend the owner's budget, and a single heavy
  * user could exhaust it for everyone else. This enforces two limits together:
- * the existing instance-wide ceiling (total spend protection) plus a new
- * per-user monthly cap (stops one account draining it alone), both read from
- * `project_settings` and both adjustable there — this module does not decide
- * the dollar amounts, only enforces whatever is configured.
+ * the existing instance-wide ceiling (total spend protection, from
+ * `project_settings.monthly_openai_budget`) plus a per-user monthly cap that
+ * now varies by subscription tier (stops one account draining it alone, and
+ * makes the paid plans mean something beyond the client-side sidebar gate).
  *
  * `ai_usage_log` is the shared source of truth for "spend so far"; a caller
  * writes one row per successful call via `recordAiUsage`.
  */
+
+/**
+ * Per-tier internal cost ceiling, in dollars of actual OpenAI/Gemini spend —
+ * NOT the Stripe subscription price. A customer never sees this number; it
+ * only stops abuse. Decided 2026-10-16 against real per-call costs (~$0.05 for
+ * a content-pipeline post with an image, ~$0.01 for a chat/strategy call), so
+ * free = ~20 image posts/month, starter = ~100, pro = ~300.
+ *
+ * `enterprise` exists in the `subscription_tier` enum but has no Stripe price
+ * wired up anywhere yet (`create-checkout`/`stripe-webhook` never produce it);
+ * treated the same as `pro` until that changes.
+ *
+ * Replaces the old flat `project_settings.per_user_monthly_budget` column as
+ * the per-user limit's source — that column is no longer read here. It is left
+ * in place rather than dropped (schema churn for a column that costs nothing
+ * sitting unused), but a value stored there no longer has any effect.
+ */
+export const TIER_MONTHLY_AI_BUDGET: Record<SubscriptionTier, number> = {
+  free: 1,
+  starter: 5,
+  pro: 15,
+  enterprise: 15,
+};
+
+export type SubscriptionTier = "free" | "starter" | "pro" | "enterprise";
 
 export interface BudgetCheck {
   allowed: boolean;
@@ -25,6 +50,8 @@ export interface BudgetCheck {
   instanceLimit: number;
   userSpend: number;
   userLimit: number;
+  /** The tier `userLimit` was derived from. */
+  tier: SubscriptionTier;
   /**
    * True when the usage figures could not be read, so `instanceSpend`/`userSpend`
    * are not trustworthy. Still allowed — see `checkAiBudget` for why — but a
@@ -32,6 +59,35 @@ export interface BudgetCheck {
    * as "the user is under budget".
    */
   degraded?: boolean;
+}
+
+/**
+ * Resolve a user's current tier from `public.subscriptions`. A missing row,
+ * a read error, or a stored tier whose `end_date` has already passed (the
+ * cancellation webhook has not caught up yet) all resolve to "free" — the
+ * conservative default errs toward under-granting budget, never over.
+ */
+async function resolveTier(admin: any, userId: string): Promise<SubscriptionTier> {
+  const { data, error } = await admin
+    .from("subscriptions")
+    .select("tier, end_date")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error(
+      "[aiBudget] could not read subscriptions for tier, defaulting to free-tier budget:",
+      error.message ?? error,
+    );
+    return "free";
+  }
+  if (!data || data.tier === "free") return "free";
+
+  const stillActive = !data.end_date || new Date(data.end_date) > new Date();
+  if (!stillActive) return "free";
+
+  const tier = data.tier as SubscriptionTier;
+  return tier in TIER_MONTHLY_AI_BUDGET ? tier : "free";
 }
 
 function startOfMonthIso(): string {
@@ -58,21 +114,22 @@ function startOfMonthIso(): string {
 export async function checkAiBudget(admin: any, userId: string): Promise<BudgetCheck> {
   const since = startOfMonthIso();
 
-  const { data: settings, error: settingsError } = await admin
-    .from("project_settings")
-    .select("monthly_openai_budget, per_user_monthly_budget")
-    .single();
+  const [tier, settingsResult] = await Promise.all([
+    resolveTier(admin, userId),
+    admin.from("project_settings").select("monthly_openai_budget").single(),
+  ]);
+  const { data: settings, error: settingsError } = settingsResult;
   if (settingsError) {
-    // Not fatal: the defaults below are the same ones the code used before this
-    // column existed. Logged because it means the limits are NOT the configured
-    // ones, which is worth knowing when someone asks why a cap did not apply.
+    // Not fatal: the default below is the same one the code used before this
+    // column existed. Logged because it means the limit is NOT the configured
+    // one, which is worth knowing when someone asks why a cap did not apply.
     console.error(
       "[aiBudget] could not read project_settings limits, falling back to defaults:",
       settingsError.message ?? settingsError,
     );
   }
   const instanceLimit = Number(settings?.monthly_openai_budget ?? 50);
-  const userLimit = Number(settings?.per_user_monthly_budget ?? 5);
+  const userLimit = TIER_MONTHLY_AI_BUDGET[tier];
 
   const { data: rows, error: usageError } = await admin
     .from("ai_usage_log")
@@ -91,6 +148,7 @@ export async function checkAiBudget(admin: any, userId: string): Promise<BudgetC
       instanceLimit,
       userSpend: 0,
       userLimit,
+      tier,
       degraded: true,
     };
   }
@@ -104,12 +162,12 @@ export async function checkAiBudget(admin: any, userId: string): Promise<BudgetC
   }
 
   if (instanceSpend >= instanceLimit) {
-    return { allowed: false, reason: "instance_budget_exceeded", instanceSpend, instanceLimit, userSpend, userLimit };
+    return { allowed: false, reason: "instance_budget_exceeded", instanceSpend, instanceLimit, userSpend, userLimit, tier };
   }
   if (userSpend >= userLimit) {
-    return { allowed: false, reason: "user_budget_exceeded", instanceSpend, instanceLimit, userSpend, userLimit };
+    return { allowed: false, reason: "user_budget_exceeded", instanceSpend, instanceLimit, userSpend, userLimit, tier };
   }
-  return { allowed: true, instanceSpend, instanceLimit, userSpend, userLimit };
+  return { allowed: true, instanceSpend, instanceLimit, userSpend, userLimit, tier };
 }
 
 /**
@@ -145,10 +203,14 @@ export async function recordAiUsage(
 
 /** Standard 402 response body/shape, consistent across all three call sites. */
 export function budgetExceededResponse(check: BudgetCheck) {
-  const message =
-    check.reason === "instance_budget_exceeded"
-      ? "This project's monthly AI budget has been reached. Try again next month, or ask the project owner to raise the limit."
-      : "You've reached your personal monthly AI usage limit for this project. Try again next month, or ask the project owner to raise it.";
+  let message: string;
+  if (check.reason === "instance_budget_exceeded") {
+    message = "This project's monthly AI budget has been reached. Try again next month, or ask the project owner to raise the limit.";
+  } else if (check.tier === "pro" || check.tier === "enterprise") {
+    message = "You've reached your plan's monthly AI usage limit. Try again next month, or ask the project owner to raise it.";
+  } else {
+    message = "You've reached your plan's monthly AI usage limit. Upgrade your plan for a higher limit, or try again next month.";
+  }
   return {
     error: "Monthly Budget Exceeded",
     reason: check.reason,
@@ -157,5 +219,6 @@ export function budgetExceededResponse(check: BudgetCheck) {
     instanceLimit: check.instanceLimit,
     userSpend: check.userSpend,
     userLimit: check.userLimit,
+    tier: check.tier,
   };
 }

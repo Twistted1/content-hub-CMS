@@ -100,32 +100,52 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   bridge is planned but **`articles` has no status column, so any insert is live
   on the public site immediately** — it must be an explicit human action, never
   an automatic sync. See `docs/HEADLESS_CONSUMPTION.md`.
-- **AI *spend* is now enforced; plan/tier gating still is not.** Corrected
-  2026-10-19 — this bullet used to say enforcement was entirely absent.
-  - **Enforced:** `supabase/functions/_shared/aiBudget.ts`, called before every
-    paid call in `content-pipeline`, `novee-chat` and `generate-strategy`. It
-    applies an instance-wide monthly ceiling (`project_settings.monthly_openai_budget`,
-    default 50) **and a per-user monthly cap**
-    (`project_settings.per_user_monthly_budget`, default 5), reading spend from
-    `ai_usage_log`. So one account can no longer drain the shared budget.
-  - **Not enforced:** no edge function reads `subscriptions`, so the *plan* is
-    still decorative — the only tier gate is client-side
-    (`Sidebar.tsx:140`). A free user can call these functions; they will hit the
-    per-user spend cap rather than being refused by entitlement.
-  - **`ai_usage_log` and `per_user_monthly_budget` were created in the dashboard,
-    not by a migration** — the same drift as `articles`/`authors`. Migration
-    `20261019000001_add_ai_usage_log.sql` now creates both, because on a fresh
-    environment their absence made the check silently always pass. `aiBudget.ts`
-    also logs read/write failures loudly and flags `degraded: true` on the result
-    rather than swallowing them (fail-open deliberately, like the HIBP check —
-    but never silently).
-- **The migration set cannot rebuild the database.** `project_settings` and
-  `subscribers` are policy'd and altered but never `CREATE TABLE`d, and
-  `project_settings` is queried as key/value in one migration and as wide columns
-  in another. `supabase db push` onto an empty project fails. This is why the E2E
-  project was rebuilt by introspecting live prod (Phase 9). Also note
-  `invitations` 404s live despite a migration creating it — migrations are
-  **not** a faithful mirror of production either way.
+- **AI spend is enforced AND tier-aware, as of 2026-10-16.** Was: a flat
+  per-user cap regardless of plan, and before that, enforcement was absent
+  entirely. Both earlier versions of this bullet are superseded.
+  - `supabase/functions/_shared/aiBudget.ts`, called before every paid call in
+    `content-pipeline`, `novee-chat` and `generate-strategy`. Applies an
+    instance-wide monthly ceiling (`project_settings.monthly_openai_budget`,
+    default 50) **and a per-user monthly cap that now varies by the caller's
+    row in `public.subscriptions`**: free $1, starter $5, pro/enterprise $15
+    (`TIER_MONTHLY_AI_BUDGET` in that file — an internal OpenAI/Gemini cost
+    ceiling, not the Stripe price the customer pays). A missing subscription
+    row, a read error, or a stored tier whose `end_date` has passed all
+    resolve to free — conservative by construction. `enterprise` exists in the
+    `subscription_tier` enum but has no Stripe price wired up anywhere yet;
+    treated the same as `pro`.
+  - This was "the plan is decorative" until now — the only other gate is
+    client-side (`Sidebar.tsx:140`). A free user can still call these
+    functions, but is now actually refused at $1/month by entitlement, not
+    just eventually rate-limited by a cap that didn't know about tiers.
+  - `ai_usage_log` and `per_user_monthly_budget` were created in the
+    dashboard, not by a migration — the same drift as `articles`/`authors`.
+    Migration `20261019000001_add_ai_usage_log.sql` creates both, because on a
+    fresh environment their absence made the check silently always pass.
+    `aiBudget.ts` logs read/write failures loudly and flags `degraded: true`
+    on the result rather than swallowing them (fail-open deliberately, like
+    the HIBP check — but never silently). The `per_user_monthly_budget`
+    column itself is no longer read for enforcement (superseded by the tier
+    map above) but is left in the schema rather than dropped.
+- **The migration set could not rebuild the database — the direct cause is now
+  fixed, but this is not fully re-proven end to end.** `project_settings` and
+  `subscribers` were policy'd and altered but never `CREATE TABLE`d, which is
+  what made every later migration that touches either table (starting
+  `20260323170000`) fail against an empty project. Migration
+  `20260123000000_baseline_project_settings_subscribers.sql` (dated before all
+  others) now creates both, with the column shapes introspected from
+  production on 2026-10-16 and RLS enabled, no policies (later migrations
+  already add those by name). Verified by applying it — and the separate
+  `ai_usage_log` migration — to the `content-hub-cms-e2e-test` project; **not**
+  verified by a full `supabase db push` from a truly empty project through the
+  entire migration chain, so treat that as fixed-but-unconfirmed rather than
+  closed. Two early cron-setup migrations (`20260323170000`, `20260429071001`)
+  still query `project_settings` with a key/value shape and a wide-column shape
+  respectively, neither of which matches the real table — harmless at migration
+  *apply* time (the SQL is cron-job text, not parsed until pg_cron fires it),
+  but the cron bodies themselves are latent dead code. Also note `invitations`
+  404s live despite a migration creating it — migrations are **not** a
+  faithful mirror of production either way.
 - **`project_settings` is one global row** (`.select('*').single()`), so all
   config is instance-wide. The AI budget check now applies **both** an
   instance-wide ceiling and a per-user cap (see the enforcement bullet below), so

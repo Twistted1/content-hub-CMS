@@ -9,17 +9,27 @@ import { checkAiBudget, recordAiUsage, budgetExceededResponse } from "./aiBudget
  */
 
 function mockAdmin({
-  settingsRow = { monthly_openai_budget: 50, per_user_monthly_budget: 5 },
+  settingsRow = { monthly_openai_budget: 50 },
   usageRows = [] as Array<{ user_id: string; cost_estimate: number }>,
+  // undefined = no subscriptions row for anyone (resolves to "free", same as a
+  // never-subscribed user) — matches checkAiBudget's conservative default.
+  subscriptionRow = undefined as { tier: string; end_date: string | null } | undefined,
 } = {}) {
   const insert = vi.fn().mockResolvedValue({ data: null, error: null });
   const from = vi.fn((table: string) => {
     if (table === "project_settings") {
-      return { select: () => ({ single: async () => ({ data: settingsRow }) }) };
+      return { select: () => ({ single: async () => ({ data: settingsRow, error: null }) }) };
+    }
+    if (table === "subscriptions") {
+      return {
+        select: () => ({
+          eq: () => ({ maybeSingle: async () => ({ data: subscriptionRow ?? null, error: null }) }),
+        }),
+      };
     }
     if (table === "ai_usage_log") {
       return {
-        select: () => ({ gte: async () => ({ data: usageRows }) }),
+        select: () => ({ gte: async () => ({ data: usageRows, error: null }) }),
         insert,
       };
     }
@@ -88,7 +98,51 @@ describe("checkAiBudget", () => {
     const admin = mockAdmin({ settingsRow: undefined as any });
     const check = await checkAiBudget(admin, "user-a");
     expect(check.instanceLimit).toBe(50);
+    expect(check.userLimit).toBe(1); // free-tier default when there's no subscription row either
+    expect(check.allowed).toBe(true);
+  });
+});
+
+describe("checkAiBudget — tier-based per-user limit", () => {
+  it("defaults an unsubscribed user to the free-tier limit ($1)", async () => {
+    const check = await checkAiBudget(mockAdmin(), "user-a");
+    expect(check.tier).toBe("free");
+    expect(check.userLimit).toBe(1);
+  });
+
+  it("gives a starter subscriber the starter limit ($5)", async () => {
+    const admin = mockAdmin({
+      subscriptionRow: { tier: "starter", end_date: new Date(Date.now() + 86_400_000).toISOString() },
+    });
+    const check = await checkAiBudget(admin, "user-a");
+    expect(check.tier).toBe("starter");
     expect(check.userLimit).toBe(5);
+  });
+
+  it("gives a pro subscriber the pro limit ($15)", async () => {
+    const admin = mockAdmin({
+      subscriptionRow: { tier: "pro", end_date: new Date(Date.now() + 86_400_000).toISOString() },
+    });
+    const check = await checkAiBudget(admin, "user-a");
+    expect(check.tier).toBe("pro");
+    expect(check.userLimit).toBe(15);
+  });
+
+  it("treats a pro subscription whose end_date has already passed as free (webhook hasn't caught up yet)", async () => {
+    const admin = mockAdmin({
+      subscriptionRow: { tier: "pro", end_date: new Date(Date.now() - 86_400_000).toISOString() },
+    });
+    const check = await checkAiBudget(admin, "user-a");
+    expect(check.tier).toBe("free");
+    expect(check.userLimit).toBe(1);
+  });
+
+  it("a starter subscriber is not blocked by spend that exceeds the free limit but not their own", async () => {
+    const admin = mockAdmin({
+      subscriptionRow: { tier: "starter", end_date: null },
+      usageRows: [{ user_id: "user-a", cost_estimate: 2 }], // over free's $1, under starter's $5
+    });
+    const check = await checkAiBudget(admin, "user-a");
     expect(check.allowed).toBe(true);
   });
 });
@@ -126,8 +180,13 @@ describe("degraded enforcement (the silent-no-op failure mode)", () => {
       if (table === "project_settings") {
         return {
           select: () => ({
-            single: async () => ({ data: { monthly_openai_budget: 50, per_user_monthly_budget: 5 }, error: null }),
+            single: async () => ({ data: { monthly_openai_budget: 50 }, error: null }),
           }),
+        };
+      }
+      if (table === "subscriptions") {
+        return {
+          select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
         };
       }
       if (table === "ai_usage_log") {
@@ -173,14 +232,27 @@ describe("budgetExceededResponse", () => {
   it("gives a distinct message for the instance-wide limit vs. the per-user limit", () => {
     const instanceMsg = budgetExceededResponse({
       allowed: false, reason: "instance_budget_exceeded",
-      instanceSpend: 50, instanceLimit: 50, userSpend: 1, userLimit: 5,
+      instanceSpend: 50, instanceLimit: 50, userSpend: 1, userLimit: 5, tier: "starter",
     }).message;
     const userMsg = budgetExceededResponse({
       allowed: false, reason: "user_budget_exceeded",
-      instanceSpend: 10, instanceLimit: 50, userSpend: 5, userLimit: 5,
+      instanceSpend: 10, instanceLimit: 50, userSpend: 5, userLimit: 5, tier: "starter",
     }).message;
     expect(instanceMsg).not.toBe(userMsg);
     expect(instanceMsg).toMatch(/project.*owner/i);
-    expect(userMsg).toMatch(/personal/i);
+    expect(userMsg).toMatch(/plan/i);
+  });
+
+  it("suggests upgrading for a free or starter user, but not a pro user already at the top tier", () => {
+    const starterMsg = budgetExceededResponse({
+      allowed: false, reason: "user_budget_exceeded",
+      instanceSpend: 10, instanceLimit: 50, userSpend: 5, userLimit: 5, tier: "starter",
+    }).message;
+    const proMsg = budgetExceededResponse({
+      allowed: false, reason: "user_budget_exceeded",
+      instanceSpend: 10, instanceLimit: 50, userSpend: 15, userLimit: 15, tier: "pro",
+    }).message;
+    expect(starterMsg).toMatch(/upgrade/i);
+    expect(proMsg).not.toMatch(/upgrade/i);
   });
 });
