@@ -190,7 +190,7 @@ Three notes:
 | Post shows "Retry n/5" | the delivery failed; the reason is in `publish_error` | fix, then it retries on backoff (2m doubling to 60m, 5 attempts) |
 | Post parked as `failed` | attempts exhausted | it will not retry; reschedule it |
 | Two identical deliveries | the CMS retries with backoff after a timeout it did not see succeed | expected — the receiver de-duplicates on `delivery_id`. Do not remove that |
-| `500` from the receiver after a successful verify | insert rejected by the database | almost always a column mismatch, e.g. a NOT NULL the DDL omits. Check the receiver's logged error, and see `tools/sql-options/` |
+| `500` from the receiver after a successful verify | insert rejected by the database | almost always a column mismatch, e.g. a NOT NULL the shape omits. Check the receiver's logged error, then compare against the baseline in `supabase/migrations/20260123000001_baseline_articles_authors.sql`, and confirm the live columns with `information_schema.columns` |
 
 **Rollback is one click:** deactivate the webhook row on `/pipeline`. Deliveries
 then fail with `No active webhook configured`, the posts retry, and nothing else
