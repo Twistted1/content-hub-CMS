@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildDelivery, deliveryHeaders, SIGNING_SECRET_ENV } from "../_shared/publishDelivery.ts";
+import { checkAiBudget, recordAiUsage, budgetExceededResponse } from "../_shared/aiBudget.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -107,29 +108,12 @@ serve(async (req) => {
     const targetUserId = isServiceRequest ? user_id : authenticatedUserId;
     if (!targetUserId) throw new Error("Missing target user");
 
-    // --- Frugal Architect Logic: Pre-Flight Budget Check ---
-    const calculateMonthlySpend = async (supabase: any) => {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
-      const { data } = await supabase
-        .from('posts')
-        .select('cost_estimate')
-        .gte('created_at', startOfMonth.toISOString());
-
-      const total = data?.reduce((acc: number, post: any) => acc + (Number(post.cost_estimate) || 0), 0) || 0;
-      const { data: settings } = await supabase.from('project_settings').select('*').single();
-
-      return {
-        currentSpend: total,
-        budgetLimit: settings?.monthly_openai_budget || 50
-      };
-    };
-
-    const budgetStatus = await calculateMonthlySpend(adminClient);
-    if (budgetStatus.currentSpend >= budgetStatus.budgetLimit) {
-      return new Response(JSON.stringify({ error: "Monthly Budget Exceeded", currentSpend: budgetStatus.currentSpend }), {
+    // Pre-flight budget check: both the instance-wide total and this user's
+    // own monthly cap, so a single account cannot exhaust the shared budget
+    // alone (see _shared/aiBudget.ts for why).
+    const budgetCheck = await checkAiBudget(adminClient, targetUserId);
+    if (!budgetCheck.allowed) {
+      return new Response(JSON.stringify(budgetExceededResponse(budgetCheck)), {
         status: 402, // Payment Required / Over budget
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -267,6 +251,10 @@ Return ONLY JSON.`;
     } catch (imgErr: any) {
       console.error("Image gen error:", imgErr);
     }
+
+    // Record spend now that it's final (text + image, if any), so the budget
+    // check above sees it on the next call regardless of what happens below.
+    await recordAiUsage(adminClient, targetUserId, "content-pipeline", estimatedCost);
 
     // 4. THE GATEKEEPER - Enforce status: awaiting_review
     await updateStep("creating_post");

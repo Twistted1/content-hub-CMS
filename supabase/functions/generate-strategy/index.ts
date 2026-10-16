@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2"
+import { checkAiBudget, recordAiUsage, budgetExceededResponse } from "../_shared/aiBudget.ts"
+
+// Flat per-call estimate, same hardcoded-guess convention used elsewhere in
+// this codebase. Gemini 2.5 Flash is materially cheaper than GPT-4o, but this
+// errs conservative (overestimates) rather than underestimate a budget check.
+const ESTIMATED_COST_PER_CALL = 0.01
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,6 +36,21 @@ serve(async (req) => {
     if (userError || !userData?.user?.id) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Budget check needs project_settings (admin-only RLS) and writes to
+    // ai_usage_log (no anon/authenticated insert policy), so it runs under
+    // the service role rather than the caller's own session.
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    )
+    const budgetCheck = await checkAiBudget(admin, userData.user.id)
+    if (!budgetCheck.allowed) {
+      return new Response(JSON.stringify(budgetExceededResponse(budgetCheck)), {
+        status: 402,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -122,6 +143,8 @@ Note: the 'content_strategy' array MUST contain exactly 7 objects, one for each 
     textContent = textContent.trim().replace(/^```json\s*/, '').replace(/\s*```$/, '');
 
     const contentStrategy = JSON.parse(textContent);
+
+    await recordAiUsage(admin, userData.user.id, "generate-strategy", ESTIMATED_COST_PER_CALL)
 
     return new Response(JSON.stringify(contentStrategy), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
