@@ -1886,10 +1886,6 @@
         "answer": "Sim, você pode fazer upgrade ou downgrade do seu plano a qualquer momento. As alterações têm efeito imediato e faremos o rateio proporcional da cobrança."
       },
       {
-        "question": "O que acontece quando meu teste termina?",
-        "answer": "Após seu teste de 14 dias, você será movido para o plano Gratuito, a menos que escolha fazer upgrade. Não é necessário cartão de crédito para começar."
-      },
-      {
         "question": "Vocês oferecem descontos para cobrança anual?",
         "answer": "Sim! Economize ~20% ao escolher a cobrança anual nos planos Inicial ou Pro."
       },
@@ -1910,7 +1906,7 @@
     "heroTitlePrefix": "O CMS Completo para",
     "heroTitleHighlight": "Criadores Modernos",
     "heroSubtitle": "Gerencie, agende e otimize seu conteúdo em todas as plataformas com automação de IA e análises em tempo real.",
-    "startFreeTrial": "Iniciar Teste Grátis",
+    "startFree": "Começar Gratuitamente",
     "featuresTitle": "Tudo que Você Precisa para Ter Sucesso",
     "featuresSubtitle": "Da criação de conteúdo às análises, a Content Hub oferece todas as ferramentas necessárias para crescer seu público e otimizar seu fluxo de trabalho.",
     "features": [
@@ -1985,13 +1981,13 @@
           "Fluxos de automação personalizados",
           "Suporte prioritário"
         ],
-        "cta": "Iniciar Teste Grátis"
+        "cta": "Assinar o Pro"
       }
     },
     "ctaTitle": "Pronto para Transformar sua Estratégia de Conteúdo?",
-    "ctaSubtitle": "Junte-se a milhares de criadores e empresas que confiam na Content Hub para gerenciar seu conteúdo. Comece seu teste grátis hoje — sem necessidade de cartão de crédito.",
+    "ctaSubtitle": "Junte-se a milhares de criadores e empresas que confiam na Content Hub para gerenciar seu conteúdo. Comece gratuitamente hoje — sem necessidade de cartão de crédito.",
     "getStartedFree": "Começar Gratuitamente",
-    "trial14day": "Teste grátis de 14 dias",
+    "freePlanAvailable": "Plano gratuito disponível",
     "noCreditCard": "Sem necessidade de cartão de crédito",
     "cancelAnytime": "Cancele quando quiser"
   },

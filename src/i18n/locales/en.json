@@ -1886,10 +1886,6 @@
         "answer": "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate your billing."
       },
       {
-        "question": "What happens when my trial ends?",
-        "answer": "After your 14-day trial, you'll be moved to the Free plan unless you choose to upgrade. No credit card required to start."
-      },
-      {
         "question": "Do you offer discounts for annual billing?",
         "answer": "Yes! Save ~20% when you choose annual billing on Starter or Pro."
       },
@@ -1910,7 +1906,7 @@
     "heroTitlePrefix": "The All-in-One CMS for",
     "heroTitleHighlight": "Modern Creators",
     "heroSubtitle": "Manage, schedule, and optimize your content across all platforms with AI-powered automation and real-time analytics.",
-    "startFreeTrial": "Start Free Trial",
+    "startFree": "Get Started for Free",
     "featuresTitle": "Everything You Need to Succeed",
     "featuresSubtitle": "From content creation to analytics, Content Hub provides all the tools you need to grow your audience and streamline your workflow.",
     "features": [
@@ -1985,13 +1981,13 @@
           "Custom automation workflows",
           "Priority support"
         ],
-        "cta": "Start Free Trial"
+        "cta": "Go Pro"
       }
     },
     "ctaTitle": "Ready to Transform Your Content Strategy?",
-    "ctaSubtitle": "Join thousands of creators and businesses who trust Content Hub to manage their content. Start your free trial today — no credit card required.",
+    "ctaSubtitle": "Join thousands of creators and businesses who trust Content Hub to manage their content. Get started for free today — no credit card required.",
     "getStartedFree": "Get Started for Free",
-    "trial14day": "14-day free trial",
+    "freePlanAvailable": "Free plan available",
     "noCreditCard": "No credit card required",
     "cancelAnytime": "Cancel anytime"
   },
