@@ -183,8 +183,17 @@ const server = createServer(async (req, res) => {
     res.end(body);
   };
 
-  if (req.method === "GET" && req.url === "/health") {
-    return send(200, { ok: true, commit: COMMIT, signed: !!SECRET });
+  // Health check. Answered on BOTH `/` and `/health`, because cloud platforms
+  // default their probe to `/` and a 405 there reads as a failed deploy.
+  //
+  // Deliberately does NOT report whether signing is configured. `signed: false`
+  // is precisely the misconfiguration that makes this endpoint accept forged
+  // deliveries, so advertising it would hand an attacker the one fact worth
+  // knowing. The startup log states the mode instead, which is not public.
+  // `commit` is included because it is not a secret — writing still requires the
+  // service-role key — and it is the first thing an operator wants to confirm.
+  if (req.method === "GET" && (req.url === "/" || req.url === "/health")) {
+    return send(200, { ok: true, commit: COMMIT });
   }
   if (req.method !== "POST") return send(405, { error: "POST only" });
 

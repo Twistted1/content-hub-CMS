@@ -14,6 +14,12 @@ signs every delivery with HMAC-SHA256 so you can refuse everything else.
 
 ## Run it
 
+> **Deploying this for real?** Follow **[DEPLOY.md](./DEPLOY.md)** instead — it is
+> the end-to-end runbook (deploy → verify reachable → match the signing secret →
+> add the webhook row → watch a real delivery in dry-run), and it carries the
+> failure modes actually hit in practice. A `Dockerfile` in this directory bakes
+> in `HOST=0.0.0.0` so a container deploy cannot get the bind address wrong.
+
 ```bash
 # DRY-RUN (default) — verifies, de-duplicates, and prints the row it would insert
 WEBHOOK_SIGNING_SECRET=<the same value set on your Supabase function> \
@@ -27,7 +33,17 @@ ARTICLES_COMMIT=1 node tools/webhook-receiver/server.mjs
 
 # Prove the whole thing works, before pointing anything at it
 node tools/webhook-receiver/selftest.mjs
+
+# Container deploy (HOST=0.0.0.0 is set inside the image)
+docker build -t webhook-receiver tools/webhook-receiver
+docker run -p 8787:8787 -e WEBHOOK_SIGNING_SECRET=... webhook-receiver
 ```
+
+Health check: `GET /` or `GET /health` → `{"ok":true,"commit":false}`. Both paths
+answer, because cloud platforms default their probe to `/`. The response
+deliberately does **not** report whether signing is configured — `signed: false`
+is exactly the misconfiguration that would make this endpoint accept forged
+deliveries, so it is not advertised. Check the startup log for the mode instead.
 
 | Env | Default | Meaning |
 |---|---|---|
