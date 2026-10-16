@@ -62,6 +62,51 @@ the migration set contained a conflict (`automations` is `CREATE TABLE`'d twice
 with different column sets). That workaround was applied to the test project and
 never to the repository, so the underlying defect is still here.
 
+#### The complete gap list (2026-10-16)
+
+Live tables taken from the generated types, compared against every
+`CREATE TABLE` in `supabase/migrations/`:
+
+| Live but **never created by a migration** | Notes |
+|---|---|
+| `articles` | the website's live feed — public read, **no status column** |
+| `authors` | FK target for `articles.author_id` |
+| `project_settings` | global config; the key/value-vs-wide-column contradiction above |
+| `subscribers` | newsletter signup |
+
+| Created by a migration but **absent from the live schema** | Notes |
+|---|---|
+| `invitations` | a migration creates it (`20260222000002:19`) yet it **404s** live — never applied, or dropped. The reverse drift. |
+| `ai_usage_log` | correctly absent: new in `20261019000001`, and `types.ts` predates it |
+
+#### ⚠️ Two traps that will cost a day if missed
+
+**1. `types.ts` is stale — do not transcribe from it.** It has no
+`per_user_monthly_budget`, yet the column exists in production. Proved by probe:
+a missing column returns `42703` (confirmed against `articles.slug`), whereas
+`GET /rest/v1/project_settings?select=per_user_monthly_budget` returns `200 []`.
+Introspect `information_schema.columns` for real definitions. The same technique
+in reverse — a missing **table** returns `404 PGRST205` — is how every row of the
+tables above can be re-verified from a browser or a session.
+
+**2. Appending a `CREATE TABLE` at the end will NOT fix replayability.** Supabase
+applies migrations in **filename order**, so on a fresh database the run aborts at
+the *first* migration that touches a missing table — long before a new file at the
+end is reached. A trailing "create the missing tables" migration never executes.
+
+- **Recommended:** name the new migration to sort **first** (e.g.
+  `20260101000000_create_baseline_tables.sql`), with every statement as
+  `CREATE TABLE IF NOT EXISTS` so it is a no-op in production. This is the only
+  change needed to make a fresh replay possible.
+- Alternative: make every referencing statement existence-guarded. More edits,
+  more places to get wrong.
+
+**Also irreconcilable as written:** `20260323170000:31` reads
+`project_settings WHERE key = 'supabase_url'`, but the live table is a single wide
+row with an `id` uuid primary key and **no `key` column**. That migration cannot
+run even once the table exists, so the key/value version must be reconciled, not
+merely satisfied.
+
 **Nothing else on this list matters until this is fixed** — every other
 self-hosting step depends on being able to build the schema.
 

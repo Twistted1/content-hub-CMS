@@ -8,7 +8,39 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-10-19 (Phase 20). **Webhook deliveries are now
+**Last verified:** 2026-10-16 (Phase 22). **The last unknown on the webhook path
+is closed: a signed delivery was received from production.** A `website` post
+delivered to a receiver I controlled carrying `X-Novus-Signature: sha256=ac708a80…`,
+which proves at once that the Phase 19/20 code is deployed **and** that
+`WEBHOOK_SIGNING_SECRET` is set — nothing observable before authentication could
+establish either. The body also carried the new `delivery_id`, `type: "article"`,
+`excerpt`, `tags` and `scheduledAt`, so the unified contract is live and the
+fields Instagram needs do flow through. My proof rows were deleted and verified
+gone. **New finding while cleaning up: any authenticated user can read every
+`published` post across all users** — status-specific (drafts/scheduled/review all
+return 0 rows), not privilege escalation, and **no migration in the repo creates
+that policy**, so it was added out-of-band like `articles`. Harmless for one
+tenant; a **cross-tenant content leak needing no admin rights** on the SaaS path,
+so it is a decision as much as a bug. Two throwaway accounts need banning and one
+account's orphan rows need deleting (SQL in Phase 22).
+
+**Previously last verified:** 2026-10-19 (Phase 21). A second agent worked this branch on
+2026-10-16; I reviewed its three commits rather than assuming they were fine,
+rebased my work on top (nothing overwritten), and confirmed its most consequential
+change actually works: **AI spend limits are enforced on all three paid-API call
+sites**, with a per-user cap as well as the instance ceiling — which corrects
+Phase 18's "billing has zero server-side enforcement" for *spend* (plan/tier
+gating from `subscriptions` is still absent). I verified the table and column it
+depends on exist in production by probing them (a missing table gives `404
+PGRST205`, a missing column `42703`; neither appeared), then fixed the latent bug
+that check exposed: **both existed only in the dashboard and in no migration**, so
+any fresh environment would have silently lost the enforcement entirely. New
+migration `20261019000001_add_ai_usage_log.sql` plus loud error handling and a
+`degraded` flag in `aiBudget.ts`. Also recorded: their fix to my webhook receiver
+was correct and **my receiver had a real deployment flaw** (it bound `127.0.0.1`,
+unreachable behind a cloud proxy).
+
+**Previously last verified:** 2026-10-19 (Phase 20). **Webhook deliveries are now
 authenticated and there is a working reference receiver.**
 `supabase/functions/_shared/publishDelivery.ts` signs every delivery with
 HMAC-SHA256 (`X-Novus-Signature`, over the exact raw body) plus a stable
@@ -412,6 +444,177 @@ stray repo-owned node processes before concluding an install is broken.
 
 ---
 
+## Phase 22 — Signed delivery PROVEN in production, plus a live RLS finding (2026-10-16)
+
+The owner took items 1 (tier gating) and 2 (`project_settings` replayability) and
+asked me to close item 3 — the last unknown on the webhook path: whether the
+*new* code was actually live, which nothing observable before authentication could
+settle.
+
+- [x] **PROVEN: a signed delivery reached a real receiver from production.**
+      Method: a throwaway account, an active `webhook_configs` row pointing at a
+      receiver I controlled, and a due `website` post, then read the receiver's
+      log. The delivery arrived carrying:
+  - **`X-Novus-Signature: sha256=ac708a80…`** — this single header closes **both**
+    remaining unknowns at once: the *new* code is deployed (the pre-Phase-19
+    version emitted no signature) **and** `WEBHOOK_SIGNING_SECRET` is set.
+  - `X-Novus-Delivery-Id: c5958772-…:website`, matching the body's `delivery_id` —
+    the unified contract and the de-duplication key are live.
+  - `"type": "article"` propagated from the row, plus `excerpt`, `tags` and
+    `scheduledAt` — so the new envelope fields really do flow through, which
+    Instagram specifically needs.
+  - `X-Harness: signed-proof` — my merge of operator headers still works and did
+    not clobber the signature.
+  - **Limit, stated plainly:** I cannot verify the signature's *value* without the
+    secret, which I deliberately did not request. Presence + correct `sha256=<64
+    hex>` shape + an algorithm already cross-checked against `node:crypto` in
+    unit tests and end-to-end (including a rejected tampered body) in the receiver
+    self-test is the honest ceiling.
+- [x] **Cleaned up after myself.** The `webhook_configs`, `posts` and
+      `post_platforms` rows were deleted with the same session (HTTP 204 each),
+      verified by re-reading: 0, 0 and 1 remaining respectively — the 1 leftover
+      `posts` row is not mine (see below). Creating the account's credentials were
+      saved this time, precisely so cleanup was possible: a first attempt died
+      mid-script having saved nothing, which is why there is an orphan to clear
+      (below).
+- 🔴 **New finding — any authenticated user can read every `published` post,
+      across all users.** While verifying cleanup I noticed my brand-new
+      throwaway token could read 2 posts it did not own. Investigated rather than
+      assumed:
+  - Not privilege escalation: `user_roles` returned exactly one row for my own
+    user with role `user`; `subscriptions` one own row; the admin-only
+    `project_settings` returned `[]`. RLS scoping is correct everywhere else.
+  - The exposure is **status-specific**: `draft`, `awaiting_review`, `scheduled`,
+    `failed` and `rejected` all return **0 rows**, while `published` returns the
+    other users' rows. So there is a permissive
+    `posts` SELECT policy keyed on `status = 'published'`.
+  - **Neither migration in the repository creates it.** Both the original
+    (`20260126144110:56-58`) and the Phase-12 rewrite (`20260503150231:8-10`)
+    grant owner-or-admin only, and the rewrite never dropped the original — but
+    neither mentions `published`. So it was added out-of-band in the dashboard,
+    the same drift pattern as `articles`/`ai_usage_log`.
+  - **Impact depends entirely on the tenancy plan, so this is a decision, not
+    just a bug.** With one operator and one tenant it is nearly harmless. On the
+    multi-tenant SaaS path it is a **cross-tenant content leak that needs no admin
+    rights** — broader than the global-super-admin issue already recorded. And if
+    it was added to let the website read published content, a blanket policy on
+    `posts` is the wrong shape: it exposes the whole row (including `user_id` and
+    review metadata) to every signed-in user, where a dedicated view or read-only
+    endpoint would expose only the fields the site needs — which is Option A
+    already recommended in `docs/HEADLESS_CONSUMPTION.md`.
+  - **Confirm the mechanism with:**
+    `select polname, cmd, roles, qual from pg_policies where schemaname='public' and tablename='posts';`
+    I could not read `pg_policies` from here, so the *behaviour* is verified and
+    the *policy text* is inferred.
+
+**Verified:** the production delivery above; `tsc`/`eslint`/tests/build unchanged
+from Phase 21 (no source changes this phase).
+
+**Needs you (small, and all of it is cleanup from my verification):**
+
+```sql
+-- 1. Remove the rows left by the FIRST throwaway account. Its password was never
+--    saved (my script died before writing it), so I could not delete these
+--    myself. One webhook_configs row points at a throwaway webhook.site receiver.
+delete from public.post_platforms
+ where post_id in (select id from public.posts where user_id = '3be9e900-c219-4057-88bd-9f489228459d');
+delete from public.posts          where user_id = '3be9e900-c219-4057-88bd-9f489228459d';
+delete from public.webhook_configs where user_id = '3be9e900-c219-4057-88bd-9f489228459d';
+
+-- 2. The second account is already clean (all three tables verified 0 rows).
+```
+
+Then **ban both** throwaways, as before, using `2099-12-31` rather than
+`'infinity'`: `golive-sign-8325@example.com`
+(`3be9e900-c219-4057-88bd-9f489228459d`) and `golive-sign2-62084@example.com`
+(`34489d0c-2402-46b1-87ad-1a5555ed22bb`).
+
+**Also handed to item 2 (from the same investigation):** the exact replayability
+gap list, and the warning that `types.ts` is **stale** — it has no
+`per_user_monthly_budget` even though the column exists in production (proved by
+probe: a missing column returns `42703`, and this returned `200`). See
+`docs/READINESS_GAP_ANALYSIS.md`.
+
+---
+
+## Phase 21 — Peer review of the spend-limit work, and closing its schema gap (2026-10-19)
+
+A second agent worked this branch on 2026-10-16 and pushed three commits:
+`969a0fb` (AI spend limits on all three paid-API call sites), `b490ecc` (a
+`package.json` so the receiver can deploy standalone), and `2785fdb` (**a fix to
+my receiver**). Rather than assume they were fine, I reviewed them and rebased my
+own work on top — nothing was overwritten.
+
+- [x] **Their spend-limit implementation is sound, and it closes the biggest
+      finding in Phase 18.** `supabase/functions/_shared/aiBudget.ts` is now the
+      single enforcement point, called before every paid call in
+      `content-pipeline`, `novee-chat` and `generate-strategy`, with
+      `recordAiUsage` after each. It applies **both** an instance-wide ceiling and
+      a **per-user monthly cap**, which fixes the "one heavy user 402s everyone"
+      flaw *and* the two call sites that previously had no check at all. The old
+      duplicate instance-global check in `content-pipeline` was removed rather
+      than left alongside it. Their 8 tests are picked up by vitest and pass.
+  - **Correcting my own Phase 18 wording:** it said "billing has zero server-side
+    enforcement — any authenticated free user can spend the owner's AI budget."
+    That is no longer true of *spend*. What remains true is that **no edge
+    function reads `subscriptions`**, so the *plan* is still decorative: a free
+    user can call these functions and will hit the per-user spend cap rather than
+    being refused by entitlement. `AGENTS.md` now says exactly that.
+- [x] **Verified their dependency exists in production rather than assuming.**
+      The commit adds no migration, and the code reads a table (`ai_usage_log`)
+      and a column (`per_user_monthly_budget`) that appear in no migration either
+      — so the whole enforcement could have been silently no-op'ing. Probed live:
+  - `GET /rest/v1/ai_usage_log?select=id` → **401 `42501 permission denied for
+    function has_role`** — an RLS-policy error, so the table exists. A missing
+    table returns `404 PGRST205`, confirmed by a control probe.
+  - `GET /rest/v1/project_settings?select=per_user_monthly_budget` → **200 `[]`**,
+    identical to the known-good `monthly_openai_budget` control. A missing column
+    returns `42703`, confirmed earlier against `articles.slug`.
+  - **Conclusion: both exist, so the enforcement is real, not a no-op.** Both were
+    created in the dashboard.
+- [x] **Fixed the latent bug that verification exposed.** Because those objects
+      exist *only* in production and in no migration, any fresh environment (a
+      self-host, the disposable E2E project, an OSS clone) would have the code and
+      not the table — and the failure mode is the dangerous kind: `checkAiBudget`
+      would read no rows and therefore **always allow**, `recordAiUsage`'s insert
+      would fail, and **the only spend protection in the product would silently
+      cease to exist while every test still passed.** New migration
+      `20261019000001_add_ai_usage_log.sql` creates the table (RLS on, own-row
+      read for users, admin read via `has_role((select auth.uid()), …)`, and **no
+      insert policy** for `anon`/`authenticated` since only the service role
+      writes) and adds `per_user_monthly_budget`, guarded by an
+      `information_schema` check — because `project_settings` still has no
+      `CREATE TABLE` here, and an unguarded `ALTER` would abort the whole
+      migration run on a fresh database.
+- [x] **Made the silent-failure paths loud.** `aiBudget.ts` now checks the error
+      on both reads and on the insert, logs a message naming the failure and the
+      migration to apply, and sets `degraded: true` on the result when spend could
+      not be read. It still **fails open** on a read error — deliberately, for the
+      same reason this project chose fail-open for the HaveIBeenPwned check: a
+      dependency blip must not become a product outage, and this is a cost control
+      rather than an authorisation boundary. What changed is that an unenforced
+      limit is now *visible* instead of silent. **4 new tests** cover it (that
+      file: 12).
+- [x] **Their fix to my receiver was correct, and I had shipped a real flaw.**
+      `server.mjs` bound `127.0.0.1` unconditionally — right for a local default,
+      but it makes the process unreachable behind a cloud platform's edge proxy.
+      They hit exactly that on Railway ("Application failed to respond" while the
+      process logged healthy) and added a `HOST` env var that still defaults to
+      loopback, so a cloud deploy opts in to `0.0.0.0` explicitly. That is the
+      right shape, and my receiver would not have worked deployed as written.
+      Recorded because it is the class of defect my own testing could not catch:
+      everything I ran was on localhost.
+
+**Verified:** `tsc --noEmit` clean, `eslint` 0 errors (**292** warnings),
+**151 passed / 1 skipped** (was 139 — their 8 plus my 4), `vite build` clean.
+
+**Open, unchanged by this phase:** no tier/plan gating from `subscriptions`; the
+two AI budget settings are still instance-wide with no tenant dimension; and
+`project_settings`' missing `CREATE TABLE` remains the top self-hosting blocker —
+the new migration routes around it but does not fix it.
+
+---
+
 ## Phase 20 — Webhook authenticity + a working reference receiver (2026-10-19)
 
 The owner asked me to make the call on what to build next. **Decision: harden the
@@ -473,9 +676,24 @@ known-answer check rather than a restatement of my own code), `vite build` clean
 body it actually received and asserts the header matches, which is exactly what a
 receiver must do), receiver self-test **10/10**.
 
-**⚠️ Requires redeploying `publish-due-posts` and `content-pipeline`.** Set
-`WEBHOOK_SIGNING_SECRET` in Supabase → Edge Functions → Secrets first, or
-deliveries go out unsigned.
+- [x] **Redeployed 2026-10-19 and confirmed to boot.** `publish-due-posts` and
+  `content-pipeline` were redeployed by the owner. The one risk I could not
+  verify beforehand was whether the deploy would resolve the new relative
+  `../_shared/publishDelivery.ts` import — a bundler failure would mean the
+  function never starts. **Verified externally:** an unauthenticated POST to
+  `/functions/v1/publish-due-posts` returns `401 {"error":"Unauthorized"}`, i.e.
+  the function reaches its **own** `authorize()` rather than failing to boot, so
+  the module graph including `_shared` loaded. `content-pipeline` returns 401 at
+  the gateway as expected (`verify_jwt = true`). `verify_jwt = false` is still
+  live for `publish-due-posts`, matching `config.toml`.
+  - **Limit of this evidence, stated plainly:** the pre-Phase-19 version returned
+    an identical 401, so this proves the function **boots**, not which version is
+    deployed. Nothing observable before authentication distinguishes them. The
+    only way to confirm the *new* code is live is a real delivery showing the
+    signature header — which needs an active `webhook_configs` row and a due
+    post. **That remains unverified.**
+  - Also re-checked after the deploy: the site's live feed is unaffected —
+    `GET /rest/v1/articles` still `200`, `Content-Range: 0-3/*`.
 
 **Still open on this path, deliberately:** only `post.publish` is ever fired (no
 update/unpublish events), there is no per-webhook secret, and the retry contract
