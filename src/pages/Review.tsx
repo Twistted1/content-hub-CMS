@@ -14,6 +14,13 @@ import { getPlatformLimit } from "@/utils/platformLimits";
 import { format, parseISO, formatDistanceToNow } from "date-fns";
 import { localWallClockToUtcIso, utcIsoToLocalParts } from "@/utils/scheduleTime";
 import {
+  approvedForSchedule,
+  savedWithoutStatusChange,
+  sentBackToDraft,
+  rejected,
+  bulkApproveTargets,
+} from "@/utils/reviewTransitions";
+import {
   Inbox, FileText, CalendarClock, CheckCircle2, XCircle, RotateCcw,
   ImageIcon, Clock, Sparkles, Loader2, Globe, ListChecks,
 } from "lucide-react";
@@ -189,19 +196,19 @@ function ReviewEditorPane({ post }: { post: Post }) {
   };
 
   const handleSaveChanges = () => {
-    runUpdate({ title, content, cover_image_url: coverImageUrl || null }, t("review.postUpdated"));
+    runUpdate(savedWithoutStatusChange({ title, content, coverImageUrl }), t("review.postUpdated"));
   };
 
   const handleSendToDraft = () => {
     runUpdate(
-      { title, content, cover_image_url: coverImageUrl || null, status: "draft", scheduled_at: null },
+      sentBackToDraft({ title, content, coverImageUrl }),
       t("review.postSentToDraft")
     );
   };
 
   const handleReject = () => {
     runUpdate(
-      { title, content, cover_image_url: coverImageUrl || null, status: "rejected", reviewed_at: new Date().toISOString() },
+      rejected({ title, content, coverImageUrl }),
       t("review.postRejected")
     );
   };
@@ -217,14 +224,7 @@ function ReviewEditorPane({ post }: { post: Post }) {
       return;
     }
     runUpdate(
-      {
-        title,
-        content,
-        cover_image_url: coverImageUrl || null,
-        status: "scheduled",
-        scheduled_at: scheduledAt,
-        reviewed_at: new Date().toISOString(),
-      },
+      approvedForSchedule({ title, content, coverImageUrl }, scheduledAt),
       t("review.postApproved")
     );
   };
@@ -454,7 +454,9 @@ export default function Review() {
   };
 
   const handleBulkApprove = async () => {
-    const ids = checkedIds.size > 0 ? Array.from(checkedIds) : needsReview.map((p) => p.id);
+    // Approve-all-when-nothing-is-checked is intentional and owner-confirmed;
+    // see `bulkApproveTargets` for the decision record.
+    const ids = bulkApproveTargets(checkedIds, needsReview.map((p) => p.id));
     if (ids.length === 0) return;
     setBulkApproving(true);
     const nowIso = new Date().toISOString();

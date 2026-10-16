@@ -8,7 +8,126 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-09-18 (Phase 12). Phase 12 is an independent
+**Last verified:** 2026-10-16 (Phase 22). **The last unknown on the webhook path
+is closed: a signed delivery was received from production.** A `website` post
+delivered to a receiver I controlled carrying `X-Novus-Signature: sha256=ac708a80…`,
+which proves at once that the Phase 19/20 code is deployed **and** that
+`WEBHOOK_SIGNING_SECRET` is set — nothing observable before authentication could
+establish either. The body also carried the new `delivery_id`, `type: "article"`,
+`excerpt`, `tags` and `scheduledAt`, so the unified contract is live and the
+fields Instagram needs do flow through. My proof rows were deleted and verified
+gone. **New finding while cleaning up: any authenticated user can read every
+`published` post across all users** — status-specific (drafts/scheduled/review all
+return 0 rows), not privilege escalation, and **no migration in the repo creates
+that policy**, so it was added out-of-band like `articles`. Harmless for one
+tenant; a **cross-tenant content leak needing no admin rights** on the SaaS path,
+so it is a decision as much as a bug. Two throwaway accounts need banning and one
+account's orphan rows need deleting (SQL in Phase 22).
+
+**Previously last verified:** 2026-10-19 (Phase 21). A second agent worked this branch on
+2026-10-16; I reviewed its three commits rather than assuming they were fine,
+rebased my work on top (nothing overwritten), and confirmed its most consequential
+change actually works: **AI spend limits are enforced on all three paid-API call
+sites**, with a per-user cap as well as the instance ceiling — which corrects
+Phase 18's "billing has zero server-side enforcement" for *spend* (plan/tier
+gating from `subscriptions` is still absent). I verified the table and column it
+depends on exist in production by probing them (a missing table gives `404
+PGRST205`, a missing column `42703`; neither appeared), then fixed the latent bug
+that check exposed: **both existed only in the dashboard and in no migration**, so
+any fresh environment would have silently lost the enforcement entirely. New
+migration `20261019000001_add_ai_usage_log.sql` plus loud error handling and a
+`degraded` flag in `aiBudget.ts`. Also recorded: their fix to my webhook receiver
+was correct and **my receiver had a real deployment flaw** (it bound `127.0.0.1`,
+unreachable behind a cloud proxy).
+
+**Previously last verified:** 2026-10-19 (Phase 20). **Webhook deliveries are now
+authenticated and there is a working reference receiver.**
+`supabase/functions/_shared/publishDelivery.ts` signs every delivery with
+HMAC-SHA256 (`X-Novus-Signature`, over the exact raw body) plus a stable
+`X-Novus-Delivery-Id` and a timestamp, so a receiver can refuse anything that did
+not come from this CMS instead of trusting whatever reaches its URL.
+`tools/webhook-receiver/` is a runnable receiver that verifies the signature,
+enforces a replay window, de-duplicates on `delivery_id`, and maps a delivery
+onto the site's `articles` row **in dry-run by default** — because `articles` has
+no status column, so an insert is live on the public site immediately. Custom
+webhook headers can now be set from `/pipeline`. Verified: `publish-e2e` 26/26
+(the harness recomputes the digest over the body it received), receiver self-test
+10/10, 139 unit tests passing. **Set `WEBHOOK_SIGNING_SECRET` and redeploy
+`publish-due-posts` + `content-pipeline`,** or deliveries stay unsigned.
+
+**Previously last verified:** 2026-10-14 (Phase 19). **The outbound webhook contract is now
+unified** — one envelope defined in `supabase/functions/_shared/publishDelivery.ts`
+and imported by both delivery paths, with a stable `delivery_id` for
+de-duplication, a content `type` (Instagram needs it), and per-platform caption
+truncation enforced at publish time for the first time. A long article used to
+hard-fail LinkedIn and Instagram while X was silently cut to 280. Verified on the
+wire against a live receiver (23/23 harness checks) and by 18 new unit tests.
+`customer-portal`'s dead Lovable fallback — the same bug Phase 6 fixed in
+`create-checkout` and missed here — is fixed too. **Requires redeploying
+`publish-due-posts`, `content-pipeline` and `customer-portal`** (all three, since
+they now share a module). Still missing on that path: a shared secret/signature,
+update/unpublish events, and auth-header UI.
+
+**Previously last verified:** 2026-10-14 (Phase 18). Three read-only audits answered the
+owner's questions about remaining code work, feeding `novusexchange.com`,
+open-sourcing and commercialization; findings are recorded in
+`docs/READINESS_GAP_ANALYSIS.md` and `docs/HEADLESS_CONSUMPTION.md` with
+verified-vs-reported provenance marked per item. **Four findings matter most.**
+(1) **Production exposes an anonymously readable `articles` table with 4 real
+Novus Exchange articles that this CMS neither creates nor writes** — the site's
+content and the CMS are two disconnected systems, and whether `articles` is the
+real public store is an open owner decision. (2) **Billing has zero server-side
+enforcement** — no function ever reads `subscriptions`, so a free user can spend
+the owner's AI budget. (3) **The migration set cannot rebuild the database**
+(`project_settings`/`subscribers` are never `CREATE TABLE`d), which is why the
+E2E project had to be rebuilt by introspecting production. (4) **The advertised
+14-day trial is not implemented.** Open-source release needs ~1–2 weeks
+(chiefly a `LICENSE` decision, replayable migrations, and de-hardcoding the CSP
+and cron URLs); hosted multi-customer SaaS is a 6–10 week data-model rewrite,
+while selling self-hosted/per-customer deployments is ~2–3 weeks and fits the
+existing single-tenant design.
+
+**Previously last verified:** 2026-10-14 (Phase 17). **LinkedIn publishing is now
+confirmed live in production** — a real post reached the owner's feed through the app,
+exercising the OAuth token chain end to end (owner-reported, with a screenshot;
+not independently verifiable from a session). **This does not change go-live
+status**, because LinkedIn is a *direct* platform and never needed a webhook:
+**no active `webhook_configs` row exists, so the six webhook platforms are still
+undeliverable in production.** That single operational step remains the gap.
+Everything else from Phases 15–16 stands: both critical objectives are done and
+evidence-backed, the `scheduleMode` fix is live (`content-pipeline` v32 /
+`schedule-from-templates` v13), and the Stripe purchase is verified through to
+the `stripe-webhook` database write.
+
+**Previously last verified:** 2026-10-14 (Phase 16). Follow-up after the owner's status
+replies. All three follow-up items are now closed, and one of my own
+conclusions was wrong and is corrected below. **The deploy gap is fixed:**
+`publish-due-posts` and `demo-login` had been running June-2026 source — merged
+code was never shipped — and `content-pipeline`/`schedule-from-templates` were
+stale the same way; all four are now redeployed
+(`content-pipeline` **v32**, `schedule-from-templates` **v13**), so Phase 15's
+`scheduleMode` fix is **live**. The `banned_until = 'infinity'` diagnosis was
+confirmed right (fixed by using `2099-12-31`; `'infinity'` is unsafe there).
+**My DELETE-hang diagnosis was wrong:** the suggested lock check returned zero
+blocked rows, the hang is isolated to the owner's SQL tool, and the app's own
+delete paths are unaffected. The leaked-anon-key item is **closed as won't-fix
+by the owner's decision** (only already-public values were exposed; the boundary
+is RLS) — do not re-raise it as a blocker. One item remains genuinely open:
+**no active `webhook_configs` row exists**, so no webhook platform currently
+delivers in production, though the mechanism is proven.
+
+**Last verified:** 2026-10-14 (Phase 15). Go-live gap closure ahead of the
+2026-10-18 deadline. The headline: **a webhook-only platform now genuinely
+delivers — proven both locally against the real `publish-due-posts` source
+(20/20 checks) and in production end-to-end, with the receiver's own log read
+back as evidence.** A real Stripe test-mode purchase through the app's own
+checkout is verified through to the `stripe-webhook` database write
+(`tier: pro`). The `scheduleMode` union drift is fixed with a mutation-tested
+guard against recurrence, and review-status transitions went from zero tests to
+15. The one item that needed a human rather than code — `handleBulkApprove` —
+was decided by the owner (keep "Approve All"), not silently changed.
+
+**Previously last verified:** 2026-09-18 (Phase 12). Phase 12 is an independent
 re-audit of the whole repo — structure/deps, Supabase migrations, RLS
 and security, frontend hooks/state/i18n, and cron/deployment readiness —
 which found and fixed one unauthenticated session-minting backdoor, a
@@ -137,6 +256,752 @@ fixed and working. Closes the last open item from the theme-rework
 chain. Nothing else code-related is blocking core CMS
 use — remaining items are GitHub/Supabase settings only you can change,
 or decisions only you can make — see the "Open" sections below.
+
+---
+
+## Phase 15 — Go-live gap closure (2026-10-14)
+
+Deadline: **2026-10-18**. Runway at start: 4 days. The gap was operational, not
+code quality — all four gates were already green (`npm ci` 0, `tsc --noEmit` 0,
+`eslint` 0 errors / 289 warnings, `vitest` 85 passed / 1 skipped, `vite build`
+0) before any change, and again after.
+
+Priority order came from the brief. Objective 2 needed a human decision, so it
+was asked before any code was touched; objectives 1 and 3 needed live
+credentials, so those were asked at the same time to avoid a second round trip.
+
+- [x] **OBJECTIVE 1 (CRITICAL) — a webhook-only platform now genuinely
+      delivers, proven twice over.** The fact that mattered most is that six of
+      eight platforms had no delivery path at all without an active
+      `webhook_configs` row. Both halves are now evidenced, not asserted:
+      - **Mechanism, locally:** new `tools/publish-e2e/` runs the **real,
+        unmodified** `supabase/functions/publish-due-posts/index.ts` under Deno
+        (the same runtime Supabase uses) against a local PostgREST stub, with
+        its delivery pointed at a receiver over the public internet. **20/20
+        checks pass**, covering: a `website` post actually delivering; the
+        receiver getting the exact `post.publish` envelope plus a custom header;
+        the post and its `post_platforms` row flipping to `published`; *no*
+        webhook producing the loud
+        `No active webhook configured for {platform}` failure with the post kept
+        retryable rather than dropped; retries exhausting into `failed`; the
+        SSRF guard refusing a loopback target; cron auth reading the secret from
+        the database and rejecting a wrong one; and an unauthenticated call
+        getting 401 before any claim is attempted. Run with
+        `npm run e2e:publish -- --receiver <url>`.
+      - **Production, end to end:** a real post created through the Calendar
+        (platform `website`) was delivered by the deployed function. The
+        receiver's own log — read independently of the harness — shows a single
+        `POST` at `2026-10-14T01:15:06Z` from a Supabase edge IP carrying
+        `{"event":"post.publish","platform":"website","post":{"id":
+        "baa44b0d-64a4-449e-96ff-8978e44a8721",...}}`. That `post.id` is a live
+        database UUID, not a fixture, which is what distinguishes this from the
+        local run.
+      - **Proven vs. still unproven, stated exactly:** **`website` is proven
+        deliverable.** `instagram`, `facebook`, `tiktok`, `youtube`, `rumble`
+        and `podcast` are **still unproven in production** — the mechanism is
+        proven and identical for all of them, but no real row/receiver was
+        exercised for those six, so nobody should claim they work.
+      - **Finding worth acting on:** `rumble` and `podcast` are not offered by
+        *either* platform picker (`ContentPipeline.tsx:29` `PLATFORM_OPTIONS`,
+        `Automation.tsx:415`), so those two cannot be reached from the UI at
+        all. The actionable webhook-only set is therefore **five**, not six:
+        `instagram`, `facebook`, `tiktok`, `youtube`, `website`. Leaving a
+        webhook's platform badges all unselected stores `platforms: []`, which
+        matches *every* platform — one row then covers the whole calendar if the
+        endpoint handles all of them.
+- [x] **OBJECTIVE 2 (CRITICAL) — `handleBulkApprove` decision obtained, not
+      guessed. 🔴 Owner-confirmed 2026-10-14: keep the current behaviour.**
+      Approving the entire needs-review queue when nothing is checked is
+      **intentional**, and the button already reads "Approve All" in that state
+      (`Review.tsx`). No behaviour was changed. The decision is now recorded in
+      executable form — `src/utils/reviewTransitions.ts` `bulkApproveTargets`
+      carries the rationale in its doc comment, and
+      `reviewTransitions.test.ts` pins it, so a future reader finds the decision
+      instead of "fixing" it. This is the single highest-value thing to have
+      closed, because it was the one item that could not be settled by code.
+- [x] **OBJECTIVE 3 (HIGH) — a real, non-test transaction is verified, and
+      specifically the part that had broken before.** New
+      `tools/stripe-e2e/run.mjs` (`npm run e2e:stripe`) drives the app's **own**
+      checkout path: signs in, calls `create-checkout`, pays the Stripe-hosted
+      page with the `4242` test card in a real browser, and waits for the
+      redirect back into the app. **7/7 checks pass.** The pass condition is
+      deliberately *not* `check-subscription`'s reply — that function reads its
+      answer from Stripe, so it would report success even if the webhook never
+      wrote anything. The assertion is the `subscriptions` row itself, read back
+      through the user's own session (RLS policy `Users can view their own
+      subscription`). Confirmed: `tier` went `free` → **`pro`**,
+      `end_date` = `2026-11-14T02:39:07+00:00`, and `updated_at` moved past
+      `created_at`. That is the `stripe-webhook` write landing — the exact step
+      that silently did nothing for the whole life of the project before
+      Phase 4/6.
+- [x] **OBJECTIVE 4 (HIGH) — `scheduleMode` type-union drift fixed, and guarded
+      against recurrence.** The union is now
+      `"immediate" | "scheduled" | "draft" | "awaiting_review"`, defined once in
+      `src/utils/scheduleMode.ts` and mirrored in the two edge functions that
+      cannot import it. The gate in `content-pipeline` was replaced with a
+      **total, explicit** condition (`mode === "immediate"`), and an unrecognised
+      mode now resolves to a *held* post rather than an immediate one — a typo
+      can no longer publish.
+      **One correction to `docs/AUDIT_REPORT.md`:** its claim that
+      `schedule-from-templates`' `"awaiting_review"` "gets silently treated as
+      immediate" is not accurate for the real path. That cron always sends a
+      `scheduledAt`, so the old
+      `!scheduledAt && scheduleMode !== "draft"` fallback evaluated false and
+      nothing was published early. The genuine defects were (a) the type contract
+      excluding a value the code actually wrote, and (b) the fallback publishing
+      immediately for any *other* non-draft mode that arrived without a
+      `scheduledAt`. Both are fixed; the second is now covered by a test that
+      asserts `"scheduled"` and `"awaiting_review"` hold with or without a
+      timestamp.
+      A new `scheduleModeParity.test.ts` **fails the build** if the edge
+      function's list, the cron's mode, or *any* `scheduleMode: "..."` literal
+      anywhere in the repo stops matching the union. The guard was
+      mutation-tested three ways (edge array widened; cron mode typo'd; a call
+      site inventing `"instantly"`) and each one failed the test as intended —
+      a green test that cannot fail would have proved nothing.
+- [x] **OBJECTIVE 5 (MEDIUM) — tests for the stage that had none.** Of the three
+      untested stages, "content generation" and "publishing" were both reached
+      by the work above, so the budget went to **review-status transitions**,
+      which had *zero* coverage despite being the only part of `/review` that
+      writes to the database. The four transitions were extracted into
+      `src/utils/reviewTransitions.ts` and pinned by **15 tests** — most
+      importantly that *saving* never writes `status`/`scheduled_at`/
+      `reviewed_at` (so saving a draft cannot approve it), and that sending a
+      post back to draft clears `scheduled_at` rather than leaving a stale
+      future timestamp that the Calendar would render as scheduled. Plus **12
+      tests** for `scheduleMode`. The extraction is behaviour-preserving: the
+      produced patches are byte-for-byte what the inline objects wrote.
+      Recorded as **documented, not endorsed**: `rejected()` leaves
+      `scheduled_at` alone while `sentBackToDraft()` clears it. Preserved
+      as-shipped and asserted, so changing it is a decision rather than an
+      accident; it is inert either way, since `publish-due-posts` only selects
+      `status = 'scheduled'`.
+- [ ] **OBJECTIVE 6 (LOW) — deliberately cut, with the specifics recorded.**
+      Short on runway and explicitly ranked last by the brief, so none of the
+      three was started:
+      - *`podcast` schedule reconciliation* — not done. `schedule-from-templates`
+        still carries a `podcast` entry with no `src/data/platforms/podcast.json`
+        counterpart. Lower risk than it sounds: nothing can reach `podcast`
+        anyway (previous bullet).
+      - *Deleting the 6 inert stub edge functions* — not done, and **not
+        doable from this environment**: it needs the Supabase dashboard. Per
+        Phase 9, 5 of the original 6 are already gone from
+        `list_edge_functions`; only `run-scheduled-automations` remains, still
+        the same inert 410 stub.
+      - *`has_role()` RPC exposure* — not decided, and it is **not mine to
+        decide**. Supabase's security advisor flags it as a `SECURITY DEFINER`
+        function reachable over the API. It is used in RLS policies
+        (`csp_reports`, `subscriptions`, `user_roles`), so removing or revoking
+        it needs a policy review, not a one-line revoke. Carried forward as open,
+        with the recommendation that it be scoped to `authenticated` rather than
+        `anon` if nothing else breaks.
+
+**Verified after every change:** `npx tsc --noEmit` clean, `eslint` 0 errors
+(289 pre-existing `any` warnings — unchanged), `vitest` **112 passed / 1
+skipped** (was 85/1; +27 new), `vite build` clean. CI runs exactly these four
+gates.
+
+**Cleanup from this session — status as of the owner's 2026-10-14 reply:**
+
+1. ✅ **Resolved.** The `/pipeline` webhook row pointing at the temporary
+   `webhook.site` receiver was deactivated (`is_active: false`) and renamed
+   `[RETIRED] …` by the owner. It is left in place rather than deleted (see the
+   item-2 note on `DELETE` below) but is fully inert: `publish-due-posts` filters
+   `is_active = true` (`index.ts:123`), so it cannot match or deliver. **Note the
+   consequence:** as of this writing there is no active `webhook_configs` row at
+   all, so *no* webhook platform currently delivers in production — see the
+   "webhook-only platform currently has no active row" item in Phase 16.
+2. ✅ **Neutralised by the owner.** `golive-verify-c5b717e1bc@example.com`
+   (user `a34cb16a-254f-49f2-93a9-c64d1e173731`) was banned and its test-mode
+   `pro` subscription downgraded to `free`. Verified from here: password login
+   for that account is now refused (created a fresh account in the same minute
+   and it logged in fine, so the refusal is account-scoped, not an outage).
+   **The refusal is an HTTP 500, not a clean ban** — see Phase 16.
+3. ✅ **Closed as "won't fix", by decision.** The owner reports the leaked value
+   was only the anon/publishable key, project URL and project ID — all three
+   already public in the client bundle by design — and no service-role key or
+   real secret was ever in `20260323155000`. Decision: **not rotating**, because
+   the security boundary here is RLS, not key secrecy. Do not re-raise this as a
+   top blocker. (Phase 14's framing of it as "the top launch blocker" is hereby
+   superseded.)
+4. ✅ **Done — pushed 2026-10-14.** Committed as `0702c45` on branch
+   `go-live/phase-15-gap-closure` and pushed to `origin`. `main` was left
+   untouched, so nothing auto-deployed. Open the PR from
+   `https://github.com/Twistted1/content-hub-CMS/pull/new/go-live/phase-15-gap-closure`.
+5. ⚠️ **New, disclosed:** a second throwaway account
+   (`authscope-<id>@example.com`) was created to *scope* the login-500 finding in
+   Phase 16 — it was necessary to prove the failure was account-specific and not
+   a production auth outage. It holds a plain `free` subscription and nothing
+   else. Ban or remove it alongside the other one if you want the auth list
+   clean.
+
+**Environment note for the next agent:** `npm ci` failed with `EPERM` unlinking
+`node_modules/@rollup/rollup-win32-x64-msvc/rollup.win32-x64-msvc.node` because
+a stale `vite` dev-server process from this repo (PID identified via
+`Get-CimInstance Win32_Process` filtered on the repo path) still held it. Killing
+that process and its `esbuild` child freed it; `npm ci` then succeeded. Check for
+stray repo-owned node processes before concluding an install is broken.
+
+---
+
+## Phase 22 — Signed delivery PROVEN in production, plus a live RLS finding (2026-10-16)
+
+The owner took items 1 (tier gating) and 2 (`project_settings` replayability) and
+asked me to close item 3 — the last unknown on the webhook path: whether the
+*new* code was actually live, which nothing observable before authentication could
+settle.
+
+- [x] **PROVEN: a signed delivery reached a real receiver from production.**
+      Method: a throwaway account, an active `webhook_configs` row pointing at a
+      receiver I controlled, and a due `website` post, then read the receiver's
+      log. The delivery arrived carrying:
+  - **`X-Novus-Signature: sha256=ac708a80…`** — this single header closes **both**
+    remaining unknowns at once: the *new* code is deployed (the pre-Phase-19
+    version emitted no signature) **and** `WEBHOOK_SIGNING_SECRET` is set.
+  - `X-Novus-Delivery-Id: c5958772-…:website`, matching the body's `delivery_id` —
+    the unified contract and the de-duplication key are live.
+  - `"type": "article"` propagated from the row, plus `excerpt`, `tags` and
+    `scheduledAt` — so the new envelope fields really do flow through, which
+    Instagram specifically needs.
+  - `X-Harness: signed-proof` — my merge of operator headers still works and did
+    not clobber the signature.
+  - **Limit, stated plainly:** I cannot verify the signature's *value* without the
+    secret, which I deliberately did not request. Presence + correct `sha256=<64
+    hex>` shape + an algorithm already cross-checked against `node:crypto` in
+    unit tests and end-to-end (including a rejected tampered body) in the receiver
+    self-test is the honest ceiling.
+- [x] **Cleaned up after myself.** The `webhook_configs`, `posts` and
+      `post_platforms` rows were deleted with the same session (HTTP 204 each),
+      verified by re-reading: 0, 0 and 1 remaining respectively — the 1 leftover
+      `posts` row is not mine (see below). Creating the account's credentials were
+      saved this time, precisely so cleanup was possible: a first attempt died
+      mid-script having saved nothing, which is why there is an orphan to clear
+      (below).
+- 🔴 **New finding — any authenticated user can read every `published` post,
+      across all users.** While verifying cleanup I noticed my brand-new
+      throwaway token could read 2 posts it did not own. Investigated rather than
+      assumed:
+  - Not privilege escalation: `user_roles` returned exactly one row for my own
+    user with role `user`; `subscriptions` one own row; the admin-only
+    `project_settings` returned `[]`. RLS scoping is correct everywhere else.
+  - The exposure is **status-specific**: `draft`, `awaiting_review`, `scheduled`,
+    `failed` and `rejected` all return **0 rows**, while `published` returns the
+    other users' rows. So there is a permissive
+    `posts` SELECT policy keyed on `status = 'published'`.
+  - **Neither migration in the repository creates it.** Both the original
+    (`20260126144110:56-58`) and the Phase-12 rewrite (`20260503150231:8-10`)
+    grant owner-or-admin only, and the rewrite never dropped the original — but
+    neither mentions `published`. So it was added out-of-band in the dashboard,
+    the same drift pattern as `articles`/`ai_usage_log`.
+  - **Impact depends entirely on the tenancy plan, so this is a decision, not
+    just a bug.** With one operator and one tenant it is nearly harmless. On the
+    multi-tenant SaaS path it is a **cross-tenant content leak that needs no admin
+    rights** — broader than the global-super-admin issue already recorded. And if
+    it was added to let the website read published content, a blanket policy on
+    `posts` is the wrong shape: it exposes the whole row (including `user_id` and
+    review metadata) to every signed-in user, where a dedicated view or read-only
+    endpoint would expose only the fields the site needs — which is Option A
+    already recommended in `docs/HEADLESS_CONSUMPTION.md`.
+  - **Confirm the mechanism with:**
+    `select polname, cmd, roles, qual from pg_policies where schemaname='public' and tablename='posts';`
+    I could not read `pg_policies` from here, so the *behaviour* is verified and
+    the *policy text* is inferred.
+
+**Verified:** the production delivery above; `tsc`/`eslint`/tests/build unchanged
+from Phase 21 (no source changes this phase).
+
+**Needs you (small, and all of it is cleanup from my verification):**
+
+```sql
+-- 1. Remove the rows left by the FIRST throwaway account. Its password was never
+--    saved (my script died before writing it), so I could not delete these
+--    myself. One webhook_configs row points at a throwaway webhook.site receiver.
+delete from public.post_platforms
+ where post_id in (select id from public.posts where user_id = '3be9e900-c219-4057-88bd-9f489228459d');
+delete from public.posts          where user_id = '3be9e900-c219-4057-88bd-9f489228459d';
+delete from public.webhook_configs where user_id = '3be9e900-c219-4057-88bd-9f489228459d';
+
+-- 2. The second account is already clean (all three tables verified 0 rows).
+```
+
+Then **ban both** throwaways, as before, using `2099-12-31` rather than
+`'infinity'`: `golive-sign-8325@example.com`
+(`3be9e900-c219-4057-88bd-9f489228459d`) and `golive-sign2-62084@example.com`
+(`34489d0c-2402-46b1-87ad-1a5555ed22bb`).
+
+**Also handed to item 2 (from the same investigation):** the exact replayability
+gap list, and the warning that `types.ts` is **stale** — it has no
+`per_user_monthly_budget` even though the column exists in production (proved by
+probe: a missing column returns `42703`, and this returned `200`). See
+`docs/READINESS_GAP_ANALYSIS.md`.
+
+---
+
+## Phase 21 — Peer review of the spend-limit work, and closing its schema gap (2026-10-19)
+
+A second agent worked this branch on 2026-10-16 and pushed three commits:
+`969a0fb` (AI spend limits on all three paid-API call sites), `b490ecc` (a
+`package.json` so the receiver can deploy standalone), and `2785fdb` (**a fix to
+my receiver**). Rather than assume they were fine, I reviewed them and rebased my
+own work on top — nothing was overwritten.
+
+- [x] **Their spend-limit implementation is sound, and it closes the biggest
+      finding in Phase 18.** `supabase/functions/_shared/aiBudget.ts` is now the
+      single enforcement point, called before every paid call in
+      `content-pipeline`, `novee-chat` and `generate-strategy`, with
+      `recordAiUsage` after each. It applies **both** an instance-wide ceiling and
+      a **per-user monthly cap**, which fixes the "one heavy user 402s everyone"
+      flaw *and* the two call sites that previously had no check at all. The old
+      duplicate instance-global check in `content-pipeline` was removed rather
+      than left alongside it. Their 8 tests are picked up by vitest and pass.
+  - **Correcting my own Phase 18 wording:** it said "billing has zero server-side
+    enforcement — any authenticated free user can spend the owner's AI budget."
+    That is no longer true of *spend*. What remains true is that **no edge
+    function reads `subscriptions`**, so the *plan* is still decorative: a free
+    user can call these functions and will hit the per-user spend cap rather than
+    being refused by entitlement. `AGENTS.md` now says exactly that.
+- [x] **Verified their dependency exists in production rather than assuming.**
+      The commit adds no migration, and the code reads a table (`ai_usage_log`)
+      and a column (`per_user_monthly_budget`) that appear in no migration either
+      — so the whole enforcement could have been silently no-op'ing. Probed live:
+  - `GET /rest/v1/ai_usage_log?select=id` → **401 `42501 permission denied for
+    function has_role`** — an RLS-policy error, so the table exists. A missing
+    table returns `404 PGRST205`, confirmed by a control probe.
+  - `GET /rest/v1/project_settings?select=per_user_monthly_budget` → **200 `[]`**,
+    identical to the known-good `monthly_openai_budget` control. A missing column
+    returns `42703`, confirmed earlier against `articles.slug`.
+  - **Conclusion: both exist, so the enforcement is real, not a no-op.** Both were
+    created in the dashboard.
+- [x] **Fixed the latent bug that verification exposed.** Because those objects
+      exist *only* in production and in no migration, any fresh environment (a
+      self-host, the disposable E2E project, an OSS clone) would have the code and
+      not the table — and the failure mode is the dangerous kind: `checkAiBudget`
+      would read no rows and therefore **always allow**, `recordAiUsage`'s insert
+      would fail, and **the only spend protection in the product would silently
+      cease to exist while every test still passed.** New migration
+      `20261019000001_add_ai_usage_log.sql` creates the table (RLS on, own-row
+      read for users, admin read via `has_role((select auth.uid()), …)`, and **no
+      insert policy** for `anon`/`authenticated` since only the service role
+      writes) and adds `per_user_monthly_budget`, guarded by an
+      `information_schema` check — because `project_settings` still has no
+      `CREATE TABLE` here, and an unguarded `ALTER` would abort the whole
+      migration run on a fresh database.
+- [x] **Made the silent-failure paths loud.** `aiBudget.ts` now checks the error
+      on both reads and on the insert, logs a message naming the failure and the
+      migration to apply, and sets `degraded: true` on the result when spend could
+      not be read. It still **fails open** on a read error — deliberately, for the
+      same reason this project chose fail-open for the HaveIBeenPwned check: a
+      dependency blip must not become a product outage, and this is a cost control
+      rather than an authorisation boundary. What changed is that an unenforced
+      limit is now *visible* instead of silent. **4 new tests** cover it (that
+      file: 12).
+- [x] **Their fix to my receiver was correct, and I had shipped a real flaw.**
+      `server.mjs` bound `127.0.0.1` unconditionally — right for a local default,
+      but it makes the process unreachable behind a cloud platform's edge proxy.
+      They hit exactly that on Railway ("Application failed to respond" while the
+      process logged healthy) and added a `HOST` env var that still defaults to
+      loopback, so a cloud deploy opts in to `0.0.0.0` explicitly. That is the
+      right shape, and my receiver would not have worked deployed as written.
+      Recorded because it is the class of defect my own testing could not catch:
+      everything I ran was on localhost.
+
+**Verified:** `tsc --noEmit` clean, `eslint` 0 errors (**292** warnings),
+**151 passed / 1 skipped** (was 139 — their 8 plus my 4), `vite build` clean.
+
+**Open, unchanged by this phase:** no tier/plan gating from `subscriptions`; the
+two AI budget settings are still instance-wide with no tenant dimension; and
+`project_settings`' missing `CREATE TABLE` remains the top self-hosting blocker —
+the new migration routes around it but does not fix it.
+
+---
+
+## Phase 20 — Webhook authenticity + a working reference receiver (2026-10-19)
+
+The owner asked me to make the call on what to build next. **Decision: harden the
+webhook path and ship a receiver.** Reasoning, recorded because the choice was
+mine: (a) the live go-live blocker is that nothing delivers without a webhook
+row, and the *hard* part of fixing that is building a receiver, not clicking a
+checkbox; (b) it is on the critical path for both the Meta work and the website
+bridge; (c) it needs **no product decision**, unlike the licence or entitlement
+enforcement. Server-side entitlement enforcement is the bigger *security* item and
+is deliberately left as its own clearly-scoped change, because "what should the
+free tier allow" is genuinely a pricing decision.
+
+- [x] **Outbound deliveries are now signed.** `signDelivery` / `deliveryHeaders`
+  in `supabase/functions/_shared/publishDelivery.ts` add
+  `X-Novus-Signature: sha256=<hex>` (HMAC-SHA256 over the **exact raw body**),
+  plus `X-Novus-Delivery-Id` and `X-Novus-Timestamp`; both delivery paths use it.
+  This closes a real hole: a receiver is a public endpoint, so without a
+  signature it must trust whatever reaches its URL — anyone who learned the URL
+  could publish through it, and a receiver forwarding to a social platform would
+  post it.
+  - Keyed by `WEBHOOK_SIGNING_SECRET`. **Unset means deliveries still go out but
+    UNSIGNED**, with the delivery result recording `signed: false`, so the gap is
+    visible rather than silent. Non-breaking, and honest about its default.
+- [x] **A working reference receiver, with a self-test.**
+  `tools/webhook-receiver/` implements what a real receiver needs and proves it:
+  signature verification over raw bytes (constant time), a replay window, and
+  **de-duplication on `delivery_id`** — which matters because the CMS retries with
+  backoff, so a receiver that ignores it publishes the same post up to five times.
+  `node tools/webhook-receiver/selftest.mjs` drives the running server over HTTP:
+  **10/10**, including that a **tampered body is rejected** (the whole point of
+  signing), that a wrong-secret signature is rejected, that a stale timestamp is
+  refused, and that a repeated `delivery_id` is acknowledged rather than
+  re-published.
+- [x] **The receiver maps a delivery onto the site's `articles` row — in dry-run.**
+  `toArticleRow` handles the four fields that are not obvious and each of which
+  fails quietly: `author_id` (the site matches it by **substring**, so an unmapped
+  id displays the *wrong person*), the duplicated `publish_date`/`date` text pair
+  in `"OCTOBER 11, 2026"` form, `read_time` (derived), and `category` (the CMS's
+  vocabulary does not match the site's filter list). **Writing is opt-in
+  (`ARTICLES_COMMIT=1`) and needs the service-role key**, because
+  `public.articles` has **no status column**: an insert is live on novusexchange.com
+  immediately, with no draft state and no undo. Dry-run by default is the
+  responsible choice for a table like that, and it makes the bridge an explicit
+  publishing action rather than a side effect of approving content.
+- [x] **Custom headers are now settable from the UI.** `/pipeline` → Webhooks
+  gained a one-`Key: Value`-per-line headers box. `webhook_configs.headers` always
+  supported this, but nothing could write it, so a receiver needing an auth token
+  required a direct database write. (Still absent: a *per-webhook* signing
+  secret — signing is deployment-wide for now.)
+- [x] **Documented two previously undocumented secrets in `.env.example`:**
+  `GEMINI_API_KEY` (required by `generate-strategy` and reachable from the
+  Automation page, but documented nowhere) and `WEBHOOK_SIGNING_SECRET`.
+
+**Verified:** `tsc --noEmit` clean, `eslint` 0 errors (**291** warnings, unchanged
+by this phase), **139 passed / 1 skipped** (was 130; +9 signing tests, one of
+which cross-checks my Web Crypto HMAC against `node:crypto` — an independent
+known-answer check rather than a restatement of my own code), `vite build` clean,
+`publish-e2e` **26/26** (the harness now recomputes the expected digest over the
+body it actually received and asserts the header matches, which is exactly what a
+receiver must do), receiver self-test **10/10**.
+
+- [x] **Redeployed 2026-10-19 and confirmed to boot.** `publish-due-posts` and
+  `content-pipeline` were redeployed by the owner. The one risk I could not
+  verify beforehand was whether the deploy would resolve the new relative
+  `../_shared/publishDelivery.ts` import — a bundler failure would mean the
+  function never starts. **Verified externally:** an unauthenticated POST to
+  `/functions/v1/publish-due-posts` returns `401 {"error":"Unauthorized"}`, i.e.
+  the function reaches its **own** `authorize()` rather than failing to boot, so
+  the module graph including `_shared` loaded. `content-pipeline` returns 401 at
+  the gateway as expected (`verify_jwt = true`). `verify_jwt = false` is still
+  live for `publish-due-posts`, matching `config.toml`.
+  - **Limit of this evidence, stated plainly:** the pre-Phase-19 version returned
+    an identical 401, so this proves the function **boots**, not which version is
+    deployed. Nothing observable before authentication distinguishes them. The
+    only way to confirm the *new* code is live is a real delivery showing the
+    signature header — which needs an active `webhook_configs` row and a due
+    post. **That remains unverified.**
+  - Also re-checked after the deploy: the site's live feed is unaffected —
+    `GET /rest/v1/articles` still `200`, `Content-Range: 0-3/*`.
+
+**Still open on this path, deliberately:** only `post.publish` is ever fired (no
+update/unpublish events), there is no per-webhook secret, and the retry contract
+is documented only as the `delivery_id` de-duplication key.
+
+---
+
+## Phase 19 — Unified webhook delivery contract (2026-10-14)
+
+Done so the Meta/Facebook/Instagram receiver can be built **once**, against a
+contract that will not move. The owner asked whether to start on Meta; the answer
+was "start the App Review paperwork, but not the receiver yet, because the
+contract is about to change". This is that change.
+
+- [x] **One envelope, defined once.** New
+      `supabase/functions/_shared/publishDelivery.ts` is imported by **both**
+      delivery paths. They previously sent *different* payloads:
+      `publish-due-posts` sent `event: "post.publish"` with a **top-level**
+      `platform` and only `{id, title, content, coverImageUrl}`, while
+      `content-pipeline` sent `event: "post.published"` with a **nested**
+      `platforms` array and extra fields. A receiver written against one silently
+      mishandled the other — the kind of bug that looks like "Meta is broken".
+- [x] **Added a stable `delivery_id`** (`postId:platform`) as an idempotency key.
+      Deliberately **not** random: a retry must carry the same key or a receiver
+      cannot tell a retry from a second post and will double-publish. This closes
+      the idempotency half of the "formalize the webhook path" item.
+- [x] **Added `type`** to the payload. Instagram cannot publish text-only and
+      needs to know whether a delivery is a feed post, a Reel or a story; a
+      receiver previously had to guess.
+- [x] **Per-platform caption truncation, enforced on the delivery path.** Nothing
+      truncated before: the same text went to every platform, so a long generated
+      article **hard-failed LinkedIn (3000) and Instagram (2200)** — burning all
+      five retries and parking the post as `failed` with a confusing provider
+      error — while X was silently cut to 280. A shortened caption now ends in
+      `…` so it reads as shortened rather than looking complete. The limits mirror
+      `src/utils/platformLimits.ts`, which was previously used **only** for UI
+      warnings and never enforced at publish time.
+- [x] **`content-pipeline` now sends one delivery per platform** rather than one
+      payload per webhook listing several platforms, because the unified envelope
+      carries a single `platform`, truncation is per-platform, and `delivery_id`
+      is only meaningful for one `(post, platform)` pair.
+- [x] **Strengthened the weaker of the two SSRF guards.**
+      `publish-due-posts`' `isPrivateOrLocalHost` missed `0.0.0.0/8`, CGNAT
+      (`100.64.0.0/10`) and every IPv6 private range. Now matches
+      `content-pipeline`'s. All of those are unroutable in public DNS, so closing
+      the gap cannot block a legitimate receiver.
+- [x] **Fixed `customer-portal`'s dead Lovable fallback.** It carried
+      `id-preview--31c64459-….lovable.app` as **both** an allowlisted origin and
+      the ultimate fallback, so with `SITE_URL` unset a paying customer's return
+      from the billing portal landed on a dead page. Phase 6 fixed exactly this
+      bug in `create-checkout` and missed this instance. Now uses the same
+      `PRODUCTION_URL` + `SITE_URL` pattern as that fix.
+- [x] **Verified on the wire, not just in source.** The receiver log shows the new
+      envelope arriving with `delivery_id`, `type`, `tags`, `excerpt` and
+      `scheduledAt` present. The `publish-e2e` harness was extended to assert
+      these, and now reports **23/23 checks**; `publishPayloadParity.test.ts`
+      imports the shared module directly (it has no Deno globals) and adds **18
+      tests** pinning the envelope, the limits and the truncation behaviour,
+      including that a space-less 10k token still fills the budget rather than
+      collapsing to an ellipsis.
+
+**Verified:** `tsc --noEmit` clean, `eslint` 0 errors (**291** warnings, +3 from
+two `(p: any)` map params added in `publish-due-posts` to match that file's
+existing untyped style), **130 passed / 1 skipped** (was 112), `vite build` clean,
+`publish-e2e` 23/23.
+
+**⚠️ Requires redeployment to take effect:** `publish-due-posts`,
+`content-pipeline` and `customer-portal`. The `_shared/` import means all three
+must be deployed from this revision — deploying only one leaves it importing a
+module the others may not match. `supabase functions deploy` each, or all at once.
+
+**Still open on this path (unchanged by this phase, and needed for a real Meta
+receiver):** no shared secret or signature on the payload, so a receiver cannot
+verify provenance; only `post.publish` is ever fired, so an edit or an unpublish
+cannot be propagated; and `/pipeline`'s form still cannot set the auth headers the
+schema supports.
+
+---
+
+## Phase 18 — Readiness audits: open-source, commercialization, headless (2026-10-14)
+
+Three read-only audits run in response to the owner's questions about what's left
+code-wise, whether the CMS feeds `novusexchange.com`, open-sourcing, and
+commercialization. Two produced durable documents; nothing was changed in
+`src/` or `supabase/` by this phase.
+
+- **`docs/READINESS_GAP_ANALYSIS.md`** — open-source and commercialization
+  readiness. **Verdict: open-source is close but has hard blockers (~1–2 weeks);
+  hosted multi-customer SaaS is a data-model rewrite, not packaging (~6–10
+  weeks).** The economical path is self-hosted / per-customer deployments
+  (~2–3 weeks on top), which the existing single-tenant design already fits.
+- **`docs/HEADLESS_CONSUMPTION.md`** — can the website read CMS content.
+
+**The findings that matter most, and the ones I would act on first:**
+
+- 🔴 **Production exposes a public `articles` API that this CMS does not manage.**
+  `GET /rest/v1/articles` returns **4 real Novus Exchange articles** (Economics /
+  Geopolitics, dated Sep–Oct 2026) plus an `authors` row, anonymously, with no
+  key. But **no migration creates those tables, and no code in `src/` or
+  `supabase/functions/` reads or writes them.** The content the live site shows
+  and the content the CMS edits are **two disconnected systems**. Verified
+  directly by the owner's agent, not inferred. **This needs a decision:** is
+  `articles` the real public store to bring under migrations and have the CMS
+  write, or a leftover to drop?
+- 🔴 **Billing has zero server-side enforcement.** No edge function ever *reads*
+  `subscriptions` — only writes (`stripe-webhook:95`, `demo-login:158`). The only
+  tier gate is cosmetic and client-side (`Sidebar.tsx:140`). **Any authenticated
+  free user can call `content-pipeline`, `novee-chat` or `generate-strategy`
+  directly and spend the owner's OpenAI/Gemini budget.** This is a live cost leak
+  and the highest-value security fix outstanding.
+- 🔴 **The migration set cannot rebuild the database.** `project_settings` and
+  `subscribers` are referenced by policies and `ALTER TABLE`s but **no migration
+  `CREATE TABLE`s them** (verified: zero matches in 41 migrations), and one
+  migration queries `project_settings` as key/value while another uses wide
+  columns. `supabase db push` onto an empty project fails. This is why Phase 9
+  had to rebuild the E2E project by introspecting live prod; the workaround was
+  never applied to the repo.
+- 🔴 **A 14-day free trial is advertised but not implemented.** `en.json:1992`
+  and `:1888`, plus `Landing.tsx:231`, promise it; there is **no
+  `trial_period_days` anywhere**. False-advertising and chargeback exposure.
+- 🟠 **`customer-portal` still carries a dead Lovable preview host as both an
+  allowed origin and the fallback** (`:56`, `:62`) — with `SITE_URL` unset, a
+  paying customer's portal return lands on a dead page. Phase 6 fixed exactly
+  this bug in `create-checkout` and **missed this instance**.
+- 🟠 **Stripe price IDs are hardcoded in three files**
+  (`create-checkout:13-18`, `check-subscription:12-15`,
+  `stripe-webhook:115-118`), and `stripe-webhook`'s `resolveTier` falls through
+  to `"free"` for unrecognised prices — so a second deployment that updates two
+  of the three **silently downgrades paying customers to free**.
+- 🟠 **Two other AI call sites have no budget check at all.** The only
+  `monthly_openai_budget` use is `content-pipeline:120`; `novee-chat` and
+  `generate-strategy` call OpenAI/Gemini unguarded. And the check itself is
+  **instance-global** — `content-pipeline:110-113` sums `cost_estimate` across
+  *all* users with no `user_id` filter, so one heavy user 402s everyone.
+- 🟠 **`GEMINI_API_KEY` is required and undocumented.** `generate-strategy:38-41`
+  needs it and `Automation.tsx:183` reaches it, but it is absent from
+  `.env.example` and the README.
+- 🟠 **`/pipeline`'s webhook form cannot set auth headers**, though the schema
+  supports them (`20260323154601:37`) — name/URL/platform badges only. Any
+  receiver needing a shared secret needs a direct DB write today.
+  *(The envelope itself was fixed in Phase 19; the missing pieces on that path are
+  now specifically: no shared secret/signature, no update/unpublish events, and no
+  header UI.)*
+- 🟡 **Articles created in `Articles.tsx` always pass `platforms: []`**
+  (`:114-121`) → zero `post_platforms` rows → the delivery loop never runs → the
+  post retries to the cap and parks as `failed` **with an empty error string**
+  (`publish-due-posts:208-217`).
+- 🟡 **No `LICENSE`, and none ever in git history.** `package.json` is
+  `"private": true` with no `license` field, so the code is legally
+  all-rights-reserved — **nobody may self-host or contribute.** Also missing:
+  `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`,
+  `.nvmrc`, `engines`, `.editorconfig`, issue/PR templates.
+- 🟡 **Self-hosting is blocked by hardcoded infrastructure:**
+  `vercel.json:18` pins the CSP `connect-src` to the owner's Supabase host
+  (breaking every other deployment's API calls), and the cron migrations
+  hardcode the owner's project URL (`20260601130235:51,66,81`) so a
+  self-hoster's cron would POST to the wrong project and silently never run.
+- 🟡 **`supabase/.temp/cli-latest` is tracked**, and `api.json` — a "Headless API
+  Distribution Channel" schedule — is dead config referenced by nothing.
+
+- ✅ **Secret audit — clean, and it settles the open question above.** All 1244
+  blobs across 625 commits on every ref were scanned: **no server-side secret
+  exists in the working tree or anywhere in history** — no `service_role` key, no
+  Stripe/OpenAI/OAuth secret, no DB password, no cloud/GitHub token. Only the
+  public-by-design anon key and a Sentry ingest DSN are in history, and a
+  history rewrite is therefore **not required**. Workflow secrets all use
+  `${{ secrets.* }}` with no literals. **The one actionable item:**
+  `.env.e2e.example:20` commits a real E2E test password, and that project
+  (`amyzklcdwrspazveutqz`) is still live and answering on the network — change
+  the password and placeholder the literal. Worth adding a gitleaks-style scan to
+  CI, now that there is a clean baseline.
+- ✅ **The anonymous `articles` exposure is read-only — verified, not assumed.**
+  An `INSERT` reusing an existing primary key (so it provably could not create a
+  row) returns
+  `401 {"code":"42501","message":"new row violates row-level security policy for table \"articles\""}`,
+  and the row count was unchanged afterwards. That is an RLS policy violation
+  rather than a missing GRANT, so RLS **is** enabled on `articles` with a
+  permissive SELECT policy for `anon` and **no INSERT policy**. A
+  publicly-readable, non-writable table is a defensible design; the exposure the
+  audit flagged is not the serious one it could have been. `UPDATE`/`DELETE`
+  cannot be probed this way (RLS filters rows rather than denying the statement),
+  so confirm the policy list in the dashboard if certainty is wanted.
+
+**How the headless question was left:** the publishing direction works (webhook),
+the consumption direction does not, and the `articles` decision above gates the
+choice between two clean fixes. `docs/HEADLESS_CONSUMPTION.md` lays out five
+options with effort; the recommendation is to adopt `articles` if it is the
+intended store (~1–2 days) or publish a read-only `public_published_posts` view
+if it is not (~2–4 h), and to harden the webhook path with a shared secret and
+idempotency key either way.
+
+**Not determined by any audit** (needs the dashboard): whether `articles` has RLS
+enabled or is entirely unprotected, and whether `anon` can **write** to it — no
+write was attempted. If that table is publicly writable it is a serious exposure
+and should be the first thing checked.
+
+---
+
+## Phase 17 — LinkedIn publish confirmed live (2026-10-14)
+
+The owner published a real post to their own LinkedIn feed through the app
+("Testing my new publishing setup", 1 comment) and confirmed it visually.
+
+- [x] **LinkedIn is now proven deliverable in production, via the direct/OAuth
+      path.** This exercises `platform_oauth_tokens` (a real, unexpired access
+      token) plus the LinkedIn publish call in
+      `publish-post/index.ts:140` or `publish-due-posts/index.ts:51-67` — the
+      first time that chain has been confirmed against a real account rather
+      than a direct API call. Evidence is the owner's screenshot of the live
+      post; **I did not independently verify it** (no account owns that row from
+      this session, the LinkedIn API needs credentials I don't hold, and there
+      is no log access here). Recorded as owner-reported, like the deployment
+      versions above.
+- [?] **Which of the two paths it took is unconfirmed, and it matters:**
+  - `Platforms.tsx:227` `publishPostDirect` → the **`publish-post`** function,
+    immediate ("publish now").
+  - `Platforms.tsx:252` / `Articles.tsx:152` / `usePosts.publishPost` → queues
+    the post as `scheduled` with `scheduled_at = now`, so the **`publish-due-posts`
+    cron** delivers it on its next minute tick.
+  If it went through the cron, that **also** validates the redeploy of
+  `publish-due-posts` (v11) together with the newly-applied `claim_due_posts`
+  migration — i.e. the same function this phase's webhook proof exercised, on
+  the same atomically-claiming code path. If it went through `publish-post`,
+  that function's deployed version is still unverified. Worth pinning down.
+- 🔴 **This does not close the critical gap, and must not be read as doing so.**
+  LinkedIn is a **direct** platform (`DIRECT_PLATFORMS`), so it never needed a
+  `webhook_configs` row and its success is independent of the webhook path.
+  **There is still no active `webhook_configs` row, so `instagram`, `facebook`,
+  `tiktok`, `youtube`, `website` (and the UI-unreachable `rumble`/`podcast`)
+  remain undeliverable in production.** The go-live status is unchanged: the
+  mechanism is proven, the code is live, and the remaining step is operational —
+  point at least one real webhook endpoint at a platform actually in use.
+- ✅ **Effect on objective 3 (a real, non-test transaction):** objective 3 was
+  already satisfied by the Stripe test-mode purchase (7/7, `tier: pro` written
+  by the webhook). LinkedIn adds a second, independent proof of a different
+  kind — publishing rather than billing — so the "can this thing actually
+  transact with the outside world" question now has two answers instead of one.
+
+---
+
+## Phase 16 — Deployment gap and production anomalies (2026-10-14)
+
+The owner reported that **`publish-due-posts` and `demo-login` had not been
+redeployed since June 2026** — merged git code had never been shipped to
+Supabase — and asked whether anything else I touched has the same gap. It does,
+and this is the most consequential finding of the session.
+
+- [x] **RESOLVED — `content-pipeline` and `schedule-from-templates` were stale in
+      production; both are now redeployed and the objective-4 fix is live.** The
+      owner redeployed `content-pipeline` (**v32**) and
+      `schedule-from-templates` (**v13**) with this branch's code. The two files
+      that carried the fix were:
+  - `supabase/functions/content-pipeline/index.ts` — the `SCHEDULE_MODES` list,
+    `normalizeScheduleMode`, and the total `mode === "immediate"` publishing
+    gate.
+  - `supabase/functions/schedule-from-templates/index.ts` — the
+    `CRON_SCHEDULE_MODE` constant.
+  **Deployment is confirmed by the operator, not verified by me** — see the
+  note below on why that is the honest ceiling here.
+  - What *is* externally verifiable was checked: an unauthenticated POST to
+    `/functions/v1/publish-due-posts` and `/functions/v1/schedule-from-templates`
+    returns each **function's own** `{"error":"Unauthorized"}`, not a gateway
+    rejection — confirming `verify_jwt = false` is live for both, matching
+    `supabase/config.toml:24-29`. `demo-login` returns `404` (the fail-closed
+    version, not the old credential-minting one) and `stripe-webhook` returns
+    `400` (signature check), so both are live and current.
+  - **Why the version itself cannot be proven from an agent session:** deployed
+    function source is not exposed by any API available here, and the one
+    behavioural discriminator (an unrecognised `scheduleMode` is stored raw by
+    the old code and normalised to `"scheduled"` by the new one) can only be
+    observed by sending a request that reaches the `pipeline_runs` insert —
+    which requires a valid user session *and* consumes a real OpenAI call. Not
+    worth spending a fourth throwaway account and generation credit on, so this
+    one rests on the operator's word, and the checklist says so rather than
+    implying it was machine-verified.
+- [x] **`demo-login` had also been running June-2026 source.** Redeployed by the
+    owner (**v32**), alongside the three migrations the stale functions
+    depended on: `pipeline_post_status`, `app_role_ui_values`,
+    `publish_retry_tracking`. Independently corroborated here: `demo-login` now
+    returns `404` unauthenticated, which is the Phase 12 fail-closed behaviour
+    and not something the old version did.
+- [x] **CORRECTED — the DELETE hang was not a database problem, and my lock
+      hypothesis was wrong.** The owner ran the `pg_blocking_pids` diagnostic
+      and it returned **zero rows** — nothing was blocked, which directly
+      refutes the stuck-lock explanation I offered. The hang is isolated to
+      their SQL tool; **the app's own delete paths are unaffected** (they go
+      through PostgREST, a different path). The 22 `useX.delete` call sites
+      listed in the first draft of this section are therefore **not** a
+      production concern, and no app code or SQL needs changing. Recording the
+      wrong hypothesis alongside its refutation deliberately: the lesson is that
+      "even a zero-row DELETE hangs" pointed at a lock, and that inference was
+      reasonable but still wrong — the only thing that settled it was running
+      the query.
+- [x] **RESOLVED — the ban-500 diagnosis was right.** Confirmed by the fix: the
+      owner switched all three test accounts from `banned_until = 'infinity'` to
+      a real date (`2099-12-31`) and the 500 `"Database error querying schema"`
+      goes away. **`'infinity'` is not safe as a `banned_until` value on this
+      project** — use a far-future finite timestamp instead. All three test
+      accounts (`golive-verify-…`, `authscope-…` and the owner's own) are banned,
+      their subscriptions downgraded to `free`, and nothing live references any
+      of them. The production auth path was never affected (a fresh account
+      created during the diagnosis logged in normally).
+- ⚪ **Consequence for objective 1's production status, stated plainly:** with the
+  proof row retired, there is currently **no active `webhook_configs` row**, so
+  the production delivery proven earlier in this phase can no longer be repeated
+  until a real row exists. The mechanism remains proven (20/20, and a real
+  delivery was received and logged); the *operational* gap is open again by
+  design, pending a real endpoint. That is the honest current state.
 
 ---
 

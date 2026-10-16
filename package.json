@@ -13,7 +13,9 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui"
+    "e2e:ui": "playwright test --ui",
+    "e2e:publish": "node tools/publish-e2e/run.mjs",
+    "e2e:stripe": "node tools/stripe-e2e/run.mjs"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",

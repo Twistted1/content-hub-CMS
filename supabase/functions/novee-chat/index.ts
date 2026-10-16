@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { checkAiBudget, recordAiUsage, budgetExceededResponse } from "../_shared/aiBudget.ts";
+
+// Flat per-message cost estimate, same convention content-pipeline already
+// uses (a hardcoded guess, not real token accounting — gpt-4o-mini is cheap
+// enough that exact accounting isn't worth the complexity of buffering a
+// streamed response just to count tokens after the fact).
+const ESTIMATED_COST_PER_MESSAGE = 0.01;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -71,6 +78,21 @@ serve(async (req) => {
     const { data: userData, error: authError } = await supabase.auth.getUser(token);
     if (authError || !userData?.user) {
       return errRes(401, "invalid_session", "Unauthorized");
+    }
+
+    // Budget check needs project_settings (admin-only RLS) and writes to
+    // ai_usage_log (no anon/authenticated insert policy), so it runs under
+    // the service role rather than the caller's own session.
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const budgetCheck = await checkAiBudget(admin, userData.user.id);
+    if (!budgetCheck.allowed) {
+      return new Response(JSON.stringify(budgetExceededResponse(budgetCheck)), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const { messages } = await req.json();
@@ -155,6 +177,10 @@ serve(async (req) => {
         detail: errorText.slice(0, 300),
       });
     }
+
+    // Record spend now: the response streams straight through below without
+    // being buffered here, so there's no post-hoc point to record it at.
+    await recordAiUsage(admin, userData.user.id, "novee-chat", ESTIMATED_COST_PER_MESSAGE);
 
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },

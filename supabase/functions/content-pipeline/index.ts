@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildDelivery, deliveryHeaders, SIGNING_SECRET_ENV } from "../_shared/publishDelivery.ts";
+import { checkAiBudget, recordAiUsage, budgetExceededResponse } from "../_shared/aiBudget.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,6 +9,11 @@ const corsHeaders = {
 };
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+
+// HMAC key for outbound webhook signatures. Unset means deliveries go out
+// unsigned — they still work, and the result records `signed: false` so the gap
+// is visible rather than silent. See tools/webhook-receiver/.
+const WEBHOOK_SIGNING_SECRET = Deno.env.get(SIGNING_SECRET_ENV) || "";
 
 // SSRF guard: only allow https webhooks to public hosts
 function isPrivateOrLocalHost(hostname: string): boolean {
@@ -41,6 +48,26 @@ function isSafeWebhookUrl(raw: string): boolean {
   }
 }
 
+// The accepted `scheduleMode` values. This list is duplicated in the frontend
+// at src/utils/scheduleMode.ts (a Deno function cannot import from the browser
+// bundle) and the two are kept in lockstep by
+// src/utils/scheduleModeParity.test.ts, which fails if either side drifts or if
+// any call site sends a mode that is not listed here.
+const SCHEDULE_MODES = ["immediate", "scheduled", "draft", "awaiting_review"] as const;
+type ScheduleMode = (typeof SCHEDULE_MODES)[number];
+
+/**
+ * Absent means "immediate" (the shipped default, preserved below). An
+ * unrecognised value resolves to "scheduled" — a held post — rather than
+ * "immediate", so a typo can never cause an unreviewed publish.
+ */
+function normalizeScheduleMode(raw: unknown): ScheduleMode {
+  if (raw === undefined || raw === null || raw === "") return "immediate";
+  return (SCHEDULE_MODES as readonly string[]).includes(raw as string)
+    ? (raw as ScheduleMode)
+    : "scheduled";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -56,6 +83,9 @@ serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
     const { topic, platforms, scheduleMode, scheduledAt, user_id } = await req.json();
+    // Resolve once, so the stored value, the gate below and any future consumer
+    // all agree on what this request asked for.
+    const mode = normalizeScheduleMode(scheduleMode);
 
     const isServiceRequest = authHeader === `Bearer ${supabaseServiceKey}`;
     let authenticatedUserId: string | null = null;
@@ -78,29 +108,12 @@ serve(async (req) => {
     const targetUserId = isServiceRequest ? user_id : authenticatedUserId;
     if (!targetUserId) throw new Error("Missing target user");
 
-    // --- Frugal Architect Logic: Pre-Flight Budget Check ---
-    const calculateMonthlySpend = async (supabase: any) => {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
-      const { data } = await supabase
-        .from('posts')
-        .select('cost_estimate')
-        .gte('created_at', startOfMonth.toISOString());
-
-      const total = data?.reduce((acc: number, post: any) => acc + (Number(post.cost_estimate) || 0), 0) || 0;
-      const { data: settings } = await supabase.from('project_settings').select('*').single();
-
-      return {
-        currentSpend: total,
-        budgetLimit: settings?.monthly_openai_budget || 50
-      };
-    };
-
-    const budgetStatus = await calculateMonthlySpend(adminClient);
-    if (budgetStatus.currentSpend >= budgetStatus.budgetLimit) {
-      return new Response(JSON.stringify({ error: "Monthly Budget Exceeded", currentSpend: budgetStatus.currentSpend }), {
+    // Pre-flight budget check: both the instance-wide total and this user's
+    // own monthly cap, so a single account cannot exhaust the shared budget
+    // alone (see _shared/aiBudget.ts for why).
+    const budgetCheck = await checkAiBudget(adminClient, targetUserId);
+    if (!budgetCheck.allowed) {
+      return new Response(JSON.stringify(budgetExceededResponse(budgetCheck)), {
         status: 402, // Payment Required / Over budget
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -120,7 +133,7 @@ serve(async (req) => {
         user_id: targetUserId,
         topic,
         platforms,
-        schedule_mode: scheduleMode || "immediate",
+        schedule_mode: mode,
         scheduled_at: scheduledAt || null,
         status: "running",
         steps: [{ step: "started", ts: new Date().toISOString() }],
@@ -239,6 +252,10 @@ Return ONLY JSON.`;
       console.error("Image gen error:", imgErr);
     }
 
+    // Record spend now that it's final (text + image, if any), so the budget
+    // check above sees it on the next call regardless of what happens below.
+    await recordAiUsage(adminClient, targetUserId, "content-pipeline", estimatedCost);
+
     // 4. THE GATEKEEPER - Enforce status: awaiting_review
     await updateStep("creating_post");
 
@@ -274,8 +291,14 @@ Return ONLY JSON.`;
 
     await updateStep("post_created", { postId: post.id, status: postStatus, cost: estimatedCost });
 
-    // 5. PUBLISHING - Fire webhooks if immediate
-    if (scheduleMode === "immediate" || (!scheduledAt && scheduleMode !== "draft")) {
+    // 5. PUBLISHING - deliver now only when the caller explicitly asked for it.
+    // Every other mode holds the post: "scheduled"/"awaiting_review" wait for
+    // the review + scheduling flow, "draft" waits for a human. The previous
+    // guard was `scheduleMode === "immediate" || (!scheduledAt && scheduleMode
+    // !== "draft")`, which published immediately whenever a non-draft mode
+    // arrived without a `scheduledAt` — including values this function did not
+    // recognise.
+    if (mode === "immediate") {
       await updateStep("firing_webhooks");
 
       const { data: webhooks } = await adminClient
@@ -303,42 +326,53 @@ Return ONLY JSON.`;
               continue;
             }
             try {
-              const webhookPayload = {
-                event: "post.published",
-                post: {
-                  id: post.id,
+              // One delivery per platform, not one per webhook. The shared
+              // envelope carries a single top-level `platform`, per-platform
+              // truncation is applied inside `buildDelivery`, and `delivery_id`
+              // is only meaningful for a single (post, platform) pair. This
+              // previously sent ONE payload per webhook listing every matched
+              // platform in a nested `platforms` array, with the event name
+              // `post.published` — a different contract from the cron path.
+              for (const platform of matchingPlatforms) {
+                const payload = buildDelivery({
+                  postId: post.id,
+                  platform,
                   title: generatedContent.title,
                   content: generatedContent.content,
                   excerpt: generatedContent.excerpt,
                   tags: generatedContent.tags,
+                  type: generatedContent.type,
                   coverImageUrl: finalImageUrl,
-                  platforms: matchingPlatforms,
-                  scheduledAt: scheduledAt,
-                },
-                timestamp: new Date().toISOString(),
-              };
+                  scheduledAt: scheduledAt ?? null,
+                });
+                // Sign the exact bytes sent, so the receiver can verify provenance.
+                const body = JSON.stringify(payload);
+                const whHeaders = await deliveryHeaders(
+                  body,
+                  payload.delivery_id,
+                  WEBHOOK_SIGNING_SECRET,
+                  (webhook.headers as Record<string, string>) || {},
+                );
 
-              const whHeaders: Record<string, string> = {
-                "Content-Type": "application/json",
-                ...(webhook.headers as Record<string, string> || {}),
-              };
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const whResp = await fetch(webhook.url, {
+                  method: "POST",
+                  headers: whHeaders,
+                  body,
+                  redirect: "error",
+                  signal: controller.signal,
+                });
+                clearTimeout(timeoutId);
 
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 5000);
-              const whResp = await fetch(webhook.url, {
-                method: "POST",
-                headers: whHeaders,
-                body: JSON.stringify(webhookPayload),
-                redirect: "error",
-                signal: controller.signal,
-              });
-              clearTimeout(timeoutId);
-
-              webhookResults.push({
-                webhook: webhook.name,
-                status: whResp.status,
-                success: whResp.ok,
-              });
+                webhookResults.push({
+                  webhook: webhook.name,
+                  platform,
+                  status: whResp.status,
+                  success: whResp.ok,
+                  signed: !!WEBHOOK_SIGNING_SECRET,
+                });
+              }
             } catch (whErr: any) {
               webhookResults.push({
                 webhook: webhook.name,

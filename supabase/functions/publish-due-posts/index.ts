@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildDelivery, deliveryHeaders, formatContentForPlatform, SIGNING_SECRET_ENV } from "../_shared/publishDelivery.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,18 +13,37 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const TWITTER_CLIENT_ID = Deno.env.get("TWITTER_CLIENT_ID") || "";
 const TWITTER_CLIENT_SECRET = Deno.env.get("TWITTER_CLIENT_SECRET") || "";
 
+// HMAC key for outbound webhook signatures. Unset means deliveries go out
+// unsigned — they still work, and the delivery result records `signed: false` so
+// the gap is visible rather than silent. See tools/webhook-receiver/.
+const WEBHOOK_SIGNING_SECRET = Deno.env.get(SIGNING_SECRET_ENV) || "";
+
 const DIRECT_PLATFORMS = new Set(["linkedin", "twitter"]);
 
 // Must match the `p_max_attempts` default in `claim_due_posts`.
 const MAX_PUBLISH_ATTEMPTS = 5;
 
+// Kept in step with the equivalent guard in `content-pipeline`. This one used to
+// be the weaker of the two: it missed 0.0.0.0/8, CGNAT (100.64.0.0/10) and every
+// IPv6 private range, all of which are unroutable in public DNS anyway, so
+// closing the gap cannot block a legitimate receiver.
 function isPrivateOrLocalHost(h: string): boolean {
   h = h.toLowerCase();
-  if (h === "localhost" || h === "::1") return true;
-  const m = h.match(/^(\d{1,3})\.(\d{1,3})\./);
+  if (h === "localhost" || h === "::1" || h.endsWith(".localhost") || h === "ip6-localhost") return true;
+  // IPv6 loopback / link-local / unique-local
+  if (h.startsWith("fe80:") || h.startsWith("fc") || h.startsWith("fd")) return true;
+
+  const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (!m) return false;
   const a = +m[1], b = +m[2];
-  return a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  if (a === 0) return true;
+  if (a === 10) return true;
+  if (a === 127) return true;
+  if (a === 169 && b === 254) return true; // link-local / cloud metadata
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+  return false;
 }
 function isSafeWebhookUrl(raw: string): boolean {
   try { const u = new URL(raw); return u.protocol === "https:" && !isPrivateOrLocalHost(u.hostname); } catch { return false; }
@@ -110,13 +130,27 @@ serve(async (req) => {
       });
     }
 
+    // `claim_due_posts` returns only the six columns the queue needs. The
+    // delivery payload also carries excerpt/tags/type/scheduled_at, so fetch
+    // those in one extra query rather than widening the RPC's RETURNS TABLE —
+    // that would need a DROP FUNCTION + CREATE (the signature cannot be replaced
+    // in place) and therefore another migration, for no behavioural gain.
+    const { data: fullRows } = await admin
+      .from("posts")
+      .select("id, excerpt, tags, type, scheduled_at")
+      .in("id", due.map((p: any) => p.id));
+    const fullById = new Map<string, any>((fullRows || []).map((r: any) => [r.id, r]));
+
     const results: any[] = [];
-    for (const post of due) {
+    for (const claimed of due) {
+      const post = { ...claimed, ...(fullById.get(claimed.id) || {}) };
       const text = [post.title, post.content].filter(Boolean).join("\n\n");
       const { data: rows } = await admin.from("post_platforms").select("*").eq("post_id", post.id);
       const perPlatform: any[] = [];
       let anySuccess = false;
       let anyFailure = false;
+      // Whether the webhook deliveries for this platform carried a signature.
+      let signed = false;
 
       // Load user's webhooks once
       const { data: webhooks } = await admin
@@ -124,6 +158,10 @@ serve(async (req) => {
 
       for (const pp of rows || []) {
         const platform = pp.platform;
+        // Truncate per platform before anything is sent. The same `text` used to
+        // go to every platform verbatim, so a long article failed LinkedIn and
+        // Instagram outright while being silently cut to 280 for X.
+        const platformText = formatContentForPlatform(platform, text);
         try {
           if (DIRECT_PLATFORMS.has(platform)) {
             const { data: token } = await admin
@@ -135,7 +173,9 @@ serve(async (req) => {
               const expSoon = token.expires_at && new Date(token.expires_at).getTime() - Date.now() < 60_000;
               if (expSoon) tk = await refreshTwitterToken(admin, token);
             }
-            const pid = platform === "linkedin" ? await publishLinkedIn(tk, text) : await publishTwitter(tk, text);
+            const pid = platform === "linkedin"
+              ? await publishLinkedIn(tk, platformText)
+              : await publishTwitter(tk, platformText);
             await admin.from("post_platforms").update({
               status: "published", published_at: new Date().toISOString(), platform_post_id: pid, error_message: null,
             }).eq("id", pp.id);
@@ -150,32 +190,47 @@ serve(async (req) => {
             if (matching.length === 0) throw new Error(`No active webhook configured for ${platform}`);
 
             for (const w of matching) {
+              // One envelope shape for every webhook delivery, shared with
+              // `content-pipeline`'s immediate path so a receiver cannot be
+              // written against one and silently mishandle the other.
+              const payload = buildDelivery({
+                postId: post.id,
+                platform,
+                title: post.title,
+                content: post.content,
+                excerpt: post.excerpt,
+                tags: post.tags,
+                type: post.type,
+                coverImageUrl: post.cover_image_url,
+                scheduledAt: post.scheduled_at,
+              });
+              // Sign the exact bytes that are sent, so the receiver can verify
+              // provenance instead of trusting whatever reaches its URL.
+              const body = JSON.stringify(payload);
+              const headers = await deliveryHeaders(
+                body,
+                payload.delivery_id,
+                WEBHOOK_SIGNING_SECRET,
+                (w.headers as Record<string, string>) || {},
+              );
+
               const ctrl = new AbortController();
               const t = setTimeout(() => ctrl.abort(), 8000);
               const r = await fetch(w.url, {
                 method: "POST",
                 redirect: "error",
                 signal: ctrl.signal,
-                headers: { "Content-Type": "application/json", ...(w.headers as Record<string, string> || {}) },
-                body: JSON.stringify({
-                  event: "post.publish",
-                  platform,
-                  post: {
-                    id: post.id,
-                    title: post.title,
-                    content: post.content,
-                    coverImageUrl: post.cover_image_url,
-                  },
-                  timestamp: new Date().toISOString(),
-                }),
+                headers,
+                body,
               });
               clearTimeout(t);
               if (!r.ok) throw new Error(`webhook ${w.name} ${r.status}`);
+              signed = !!WEBHOOK_SIGNING_SECRET;
             }
             await admin.from("post_platforms").update({
               status: "published", published_at: new Date().toISOString(), error_message: null,
             }).eq("id", pp.id);
-            perPlatform.push({ platform, success: true, via: "webhook" });
+            perPlatform.push({ platform, success: true, via: "webhook", signed });
             anySuccess = true;
           }
         } catch (e: any) {

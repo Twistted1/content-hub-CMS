@@ -19,8 +19,32 @@ import {
 } from "lucide-react";
 import { useContentPipeline, type PipelineRun, type WebhookConfig } from "@/hooks/useContentPipeline";
 import { localWallClockToUtcIso } from "@/utils/scheduleTime";
+import {
+  isSelectableScheduleMode,
+  type SelectableScheduleMode,
+} from "@/utils/scheduleMode";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
+
+/**
+ * Parse the "one `Key: Value` per line" headers box.
+ *
+ * Forgiving on purpose: blank lines and lines without a colon are ignored rather
+ * than erroring, because this is a convenience field — a typo here should not
+ * make the Save button silently do nothing. Only the first colon splits, so
+ * header values containing colons (a URL, a `Bearer` token) survive intact.
+ */
+function parseHeaderLines(text: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const line of text.split("\n")) {
+    const idx = line.indexOf(":");
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    const value = line.slice(idx + 1).trim();
+    if (key && value) out[key] = value;
+  }
+  return out;
+}
 
 const PLATFORM_OPTIONS = [
   { value: "twitter", label: "X (Twitter)" },
@@ -64,7 +88,7 @@ export default function ContentPipeline() {
 
   const [topic, setTopic] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["twitter"]);
-  const [scheduleMode, setScheduleMode] = useState<"immediate" | "scheduled" | "draft">("draft");
+  const [scheduleMode, setScheduleMode] = useState<SelectableScheduleMode>("draft");
   const [scheduledAt, setScheduledAt] = useState("");
   const [isRunning, setIsRunning] = useState(false);
 
@@ -73,6 +97,10 @@ export default function ContentPipeline() {
   const [whName, setWhName] = useState("");
   const [whUrl, setWhUrl] = useState("");
   const [whPlatforms, setWhPlatforms] = useState<string[]>([]);
+  // Free-text, one `Key: Value` per line. `webhook_configs.headers` always
+  // supported these, but nothing in the UI could set them, so a receiver needing
+  // an auth token (or a shared secret) required a direct database write.
+  const [whHeadersText, setWhHeadersText] = useState("");
 
   const handleRun = async () => {
     if (!topic.trim() || selectedPlatforms.length === 0) return;
@@ -106,11 +134,17 @@ export default function ContentPipeline() {
 
   const handleAddWebhook = () => {
     if (!whName.trim() || !whUrl.trim()) return;
-    addWebhook.mutate({ name: whName, url: whUrl, platforms: whPlatforms });
+    addWebhook.mutate({
+      name: whName,
+      url: whUrl,
+      platforms: whPlatforms,
+      headers: parseHeaderLines(whHeadersText),
+    });
     setWhDialogOpen(false);
     setWhName("");
     setWhUrl("");
     setWhPlatforms([]);
+    setWhHeadersText("");
   };
 
   const completedRuns = pipelineRuns.filter(r => r.status === "completed").length;
@@ -223,7 +257,13 @@ export default function ContentPipeline() {
                   {/* Schedule Mode */}
                   <div className="space-y-2">
                     <Label>{t("pipeline.afterGeneration")}</Label>
-                    <Select value={scheduleMode} onValueChange={(v: any) => setScheduleMode(v)} disabled={isRunning}>
+                    <Select
+                      value={scheduleMode}
+                      onValueChange={(v) => {
+                        if (isSelectableScheduleMode(v)) setScheduleMode(v);
+                      }}
+                      disabled={isRunning}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -373,6 +413,19 @@ export default function ContentPipeline() {
                           </Badge>
                         ))}
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t("pipeline.customHeaders")}</Label>
+                      <Textarea
+                        rows={3}
+                        className="font-mono text-xs"
+                        placeholder={"Authorization: Bearer <token>\nX-Custom: value"}
+                        value={whHeadersText}
+                        onChange={(e) => setWhHeadersText(e.target.value)}
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        {t("pipeline.customHeadersHint")}
+                      </p>
                     </div>
                   </div>
                   <DialogFooter>
