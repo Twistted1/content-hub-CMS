@@ -89,7 +89,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" asChild className="w-full sm:w-auto">
               <Link to="/auth?tab=signup">
-                {t('landing.startFreeTrial')}
+                {t('landing.startFree')}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -228,7 +228,7 @@ export default function Landing() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-primary" />
-              {t('landing.trial14day')}
+              {t('landing.freePlanAvailable')}
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-primary" />

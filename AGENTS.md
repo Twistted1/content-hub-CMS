@@ -160,8 +160,12 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
 - **Stripe price IDs are hardcoded in three files** (`create-checkout`,
   `check-subscription`, `stripe-webhook`) and `resolveTier` falls through to
   `"free"` for unrecognised prices — so a second deployment that updates two of
-  the three silently downgrades paying customers. The advertised **14-day trial
-  is not implemented** anywhere (`trial_period_days` does not exist).
+  the three silently downgrades paying customers.
+- **There is no free trial, and the landing page no longer claims one** (fixed
+  2026-10-16 — owner chose to drop the claim rather than implement it). The
+  product has a free tier instead. If you're adding trial-related UI copy,
+  don't — there's still no `trial_period_days` anywhere in the Stripe
+  checkout flow to back it up.
 - **Webhook deliveries are signed only if `WEBHOOK_SIGNING_SECRET` is set.** With
   it set, every delivery carries `X-Novus-Signature: sha256=<hex>` (HMAC over the
   exact raw body), plus `X-Novus-Delivery-Id` and `X-Novus-Timestamp`. **Unset,

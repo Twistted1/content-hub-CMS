@@ -160,17 +160,14 @@ tier is decoration, not an entitlement boundary. This must be fixed before any
 paid offering exists, and it is the single highest-value security fix on this
 list.
 
-### [V] A 14-day free trial is advertised but not implemented
+### [V] ~~A 14-day free trial is advertised but not implemented~~ RESOLVED 2026-10-16
 
-`src/i18n/locales/en.json:1992` ("14-day free trial"), `:1888` (FAQ: "After your
-14-day trial, you'll be moved to the Free plan…") and `src/pages/Landing.tsx:231`
-all promise a trial. A search of the whole repository finds **no
-`trial_period_days`** — `create-checkout/index.ts:98-109` sets no trial, and no
-trial state is tracked anywhere.
-
-This is a false-advertising and chargeback exposure, and it predates any
-commercial ambition. Either implement it or remove the claim before charging
-anyone.
+Owner chose to remove the claim rather than implement it. All trial-promising
+copy removed from both locales (`en.json`, `pt.json`) and `Landing.tsx` — the
+FAQ entry, the hero/CTA badges, and the Pro plan's button text, which now
+reflects the actual product (a free tier, not a time-limited trial).
+`create-checkout/index.ts` still sets no `trial_period_days`, which is now
+consistent with what's advertised rather than contradicting it.
 
 ### [V] Broad and inconsistent cost controls
 
@@ -338,11 +335,11 @@ mode.
 
 ## Missing standard files
 
-- [ ] **`LICENSE`** — absent, and **never present in git history**.
-  `package.json` is `"private": true` with no `license` field. Without a license
-  the code is legally all-rights-reserved: **nobody may self-host or contribute.**
-  Hardest blocker to an open-source release, and it is a *decision* more than
-  work.
+- [x] **`LICENSE`** — resolved 2026-10-16. Owner chose AGPL-3.0-or-later (over
+  open-core): added the full license text as `LICENSE` and set
+  `package.json`'s `license` field. `"private": true` is left as-is (npm
+  publish is irrelevant to this project; it is not a package meant for the
+  registry) and does not affect the license's validity.
 - [ ] `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md` (a real gap given
   this handles OAuth tokens and Stripe webhooks), `CHANGELOG.md`
 - [ ] `.github/ISSUE_TEMPLATE/*`, `.github/PULL_REQUEST_TEMPLATE.md`,
@@ -380,8 +377,8 @@ behaviour is [A] and worth reproducing before relying on it.
 
 | # | Item | Effort |
 |---|---|---|
-| 1 | **Choose and add `LICENSE`**; set `package.json` `license`; drop `"private": true`. Permissive (MIT/Apache-2.0) vs AGPL vs open-core — this decision gates the rest. | 2h + a business decision |
-| 2 | **Make migrations replayable** — add real `CREATE TABLE`s for `project_settings` and `subscribers`, resolve the EAV/wide-column contradiction, and **verify `supabase db push` onto a genuinely empty project**. | 2–3 days |
+| 1 | ~~Choose and add `LICENSE`; set `package.json` `license`~~ **Done 2026-10-16 — AGPL-3.0-or-later.** `"private": true` left as-is (not an npm-publish concern). | — |
+| 2 | **Make migrations replayable** — ~~add real `CREATE TABLE`s for `project_settings` and `subscribers`~~ **done 2026-10-16**, and separately for `articles`/`authors` (also done 2026-10-16, same day). Still open: the EAV/wide-column contradiction in two early cron-setup migrations (dead code, not currently harmful — see AGENTS.md), and **`supabase db push` has still not been verified onto a genuinely empty project** — only against the pre-existing E2E test project, which already has prod's schema. | 0.5–1 day |
 | 3 | **De-hardcode infrastructure** — cron URLs to Vault/config, templated CSP, unpin `project_id`, drop the Lovable fallback in `customer-portal`. | 1 day |
 | 4 | **Rewrite the README as a self-host guide** — project creation → migrations → secrets (incl. `GEMINI_API_KEY`) → deploy all 15 functions → OAuth redirect URIs → Stripe products + webhook → cron verification → Vercel. | 1–2 days |
 | 5 | `SECURITY.md`, `CONTRIBUTING.md`, CoC, issue/PR templates, changelog. | 1 day |
@@ -409,7 +406,7 @@ data-model rewrite, not packaging:
 | 2 | **Split global super-admin from per-org admin** — today's cross-tenant exposure | 1 week |
 | 3 | Server-side entitlement enforcement across all AI/publish functions | 3–5 days |
 | 4 | Per-org budgets; add the missing checks to `novee-chat` / `generate-strategy` | 2–3 days |
-| 5 | Per-org Stripe customers, seats; implement or remove the trial claim | 3–5 days |
+| 5 | Per-org Stripe customers, seats | 3–5 days |
 | 6 | Tenant-isolation test suite (the thing that proves #1 actually holds) | 1 week |
 | 7 | Per-tenant observability, backup/restore, DPA/privacy posture (the i18n privacy policy is boilerplate written for a single operator) | 1–2 weeks |
 

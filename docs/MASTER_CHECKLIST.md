@@ -8,7 +8,42 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-10-16 (Phase 22). **The last unknown on the webhook path
+**Last verified:** 2026-10-16 (Phase 23). **Every owner decision and every
+DB-session-only action from Phase 22's handoff is closed.** PR #12 merged to
+`main` (CI green, clean fast-forward) — production and `main` are back in
+sync. The duplicate `ai_usage_log` migration resolved: confirmed via
+`supabase_migrations.schema_migrations` that only `20261016014921` was ever
+actually applied to production, so the never-applied `20261019000001` was
+removed rather than guessed at. `GEMINI_API_KEY` confirmed set in production
+(live diagnostic probe). Both throwaway accounts banned with `2099-12-31`
+(not `'infinity'`); the first account's orphan `webhook_configs` row
+deactivated and pointed at an inert URL (`DELETE` hung through the SQL tool
+again — same tool-level issue as before, confirmed nothing committed — so
+used `UPDATE` instead, consistent with the established workaround). Added
+`public_published_posts`, a narrow allow-listed read view (Option A "Part
+A" from `docs/HEADLESS_CONSUMPTION.md`) — safe and additive, applied
+regardless of the policy decision below. Closed the last self-hosting
+`CREATE TABLE` gap: `articles`/`authors` now have a baseline migration too
+(introspected from production, same pattern as the earlier
+`project_settings`/`subscribers` one), verified against the separate E2E
+project and production — still exactly 4 articles, no duplicate policies.
+
+**Three decisions, put to the owner directly rather than assumed, all now
+closed:** (1) The Phase 22 cross-user published-post leak — presented both
+readings (a leak vs. the app's own stale comment describing an intended
+"Global Master Calendar"); owner confirmed it's a leak, so `posts`'s SELECT
+policy was altered in place (not DROP+CREATE, same DROP-hangs issue) to
+drop the `status = 'published'` carve-out and scope to `authenticated`
+only — verified in production and the E2E project, and the stale
+"Global Master Calendar" comment in `usePosts.ts` corrected to describe
+what the policy actually does now. (2) License: AGPL-3.0-or-later chosen
+over open-core; full license text added as `LICENSE`, `package.json`
+`license` field set. (3) The 14-day trial: owner chose to remove the claim
+rather than implement it — every trial-promising string removed from both
+`en.json` and `pt.json` (FAQ entry, hero/CTA badges, the Pro plan's button
+text) and `Landing.tsx` updated to match the renamed i18n keys.
+
+**Previously last verified:** 2026-10-16 (Phase 22). **The last unknown on the webhook path
 is closed: a signed delivery was received from production.** A `website` post
 delivered to a receiver I controlled carrying `X-Novus-Signature: sha256=ac708a80…`,
 which proves at once that the Phase 19/20 code is deployed **and** that
@@ -441,6 +476,94 @@ a stale `vite` dev-server process from this repo (PID identified via
 `Get-CimInstance Win32_Process` filtered on the repo path) still held it. Killing
 that process and its `esbuild` child freed it; `npm ci` then succeeded. Check for
 stray repo-owned node processes before concluding an install is broken.
+
+---
+
+## Phase 23 — Closed Phase 22's full handoff: three owner decisions, four DB-only actions (2026-10-16)
+
+A second agent (Claude, working the Railway/webhook-receiver deployment and
+the tier-aware budget work earlier the same day) handed back a structured
+list: three decisions only the owner could make, and several actions needing
+a DB session neither agent writing this file has by default. Both agents
+converged on the same branch; this entry covers closing every item on that
+list.
+
+- [x] **PR #12 merged.** Verified first rather than assumed: `main` was 19
+      commits behind with 0 commits ahead (clean fast-forward), confirmed via
+      `git log origin/main..origin/go-live/phase-15-gap-closure`. CI (test +
+      e2e) green before merging. `main` and production are back in sync.
+- [x] **Duplicate `ai_usage_log` migration resolved.** Two agents independently
+      wrote one (`20261016014921_add_ai_usage_tracking.sql` and
+      `20261019000001_add_ai_usage_log.sql`). Checked
+      `supabase_migrations.schema_migrations` directly rather than guess:
+      only `20261016014921` was ever applied to production. Deleted the
+      never-applied one.
+- [x] **`GEMINI_API_KEY` confirmed set** in production via a disposable
+      diagnostic edge function (configured: true, 39 chars), then retired.
+- [x] **Both throwaway accounts banned**, `banned_until = '2099-12-31'` (never
+      `'infinity'` — see AGENTS.md). First account's orphan `webhook_configs`
+      row (pointed at a throwaway `webhook.site` receiver) deactivated and its
+      URL overwritten with an inert placeholder; its one orphan `posts` row
+      was already in terminal `failed` status, so no further action needed
+      there. **`DELETE` hung through the SQL tool again** on the first
+      attempt (same issue documented in earlier phases — nothing committed,
+      confirmed by re-reading row counts after the timeout) — used `UPDATE`
+      instead, the established workaround.
+- [x] **`public_published_posts` view added** (Option A "Part A" from
+      `docs/HEADLESS_CONSUMPTION.md`): allow-listed columns only (no
+      `user_id`, no review/workflow-internal fields), filters
+      `status = 'published'` explicitly rather than relying on `posts`'s own
+      RLS (a `postgres`-owned view bypasses that RLS by default). Additive —
+      nothing currently queries it — so it was applied regardless of the
+      leak/intentional decision below, which only concerns the base table's
+      own policy.
+- [x] **Baseline migration added for `articles`/`authors`** — the last
+      "migration set cannot rebuild the database" gap. Column shapes, the
+      `articles.author_id → authors.id` FK, the index and both tables' single
+      anon-SELECT RLS policy introspected directly from production. Verified
+      against `content-hub-cms-e2e-test` and then production: still exactly 4
+      articles, no duplicate policies created.
+
+**Three decisions put to the owner directly, with both readings laid out,
+rather than assumed:**
+
+1. **The cross-user published-post leak (Phase 22 finding).** Before
+   recommending a fix, found that `src/hooks/usePosts.ts`'s main query has no
+   `user_id` filter at all — it relies entirely on this policy — and its own
+   comment claimed the intent was a shared "Global Master Calendar" for every
+   signed-in user. Put both readings to the owner rather than silently
+   tightening a policy whose removal might have broken the app's own stated
+   intent. **Owner's call: it's a leak, not intended — tighten it.**
+   `posts`'s SELECT policy altered in place (`ALTER POLICY`, not
+   `DROP`+`CREATE` — same DROP-hangs issue) to drop the
+   `status = 'published'` carve-out and scope `TO authenticated` only, then
+   renamed from "Users can view own posts, admins, or published posts" to
+   "Users can view own posts or admins view all" to match what it actually
+   does. **Guarded migration** (`20261016080000_scope_posts_select_policy.sql`):
+   the drifted name only ever existed in production and the E2E project
+   (both built from the same drift) — no migration creates it, so a fresh
+   database already has the correct policy from
+   `20260503150231_e2b46aab-92bf-455e-a957-8dc01f0a2d5d.sql` and this
+   migration is a true no-op there. `usePosts.ts`'s stale comment rewritten
+   to describe the real, current behaviour instead of the abandoned
+   "Global Master Calendar" intent.
+2. **License.** AGPL-3.0-or-later chosen over open-core. Full license text
+   added as `LICENSE`; `package.json`'s `license` field set.
+3. **The 14-day trial.** Owner chose to remove the claim rather than
+   implement it (`create-checkout` has never set `trial_period_days`). Every
+   trial-promising string removed from `en.json` and `pt.json` — the FAQ
+   entry asking what happens "when my trial ends", the hero/CTA trial
+   badges, and the Pro plan's "Start Free Trial" button text (the dedicated
+   pricing page already said "Go Pro"/"Assinar o Pro"; only the landing
+   page's embedded teaser still promised a trial). `trial14day` →
+   `freePlanAvailable`, `startFreeTrial` → `startFree` in both locales;
+   `Landing.tsx` updated to the renamed keys. Locale parity test
+   (`src/i18n/locales/parity.test.ts`) still passes — same keys removed/
+   renamed in both files.
+
+**Verified:** `npx tsc --noEmit` 0, `npm run test -- --run` 157 passed / 1
+skipped, `npm run lint` 0 errors (293 warnings, all pre-existing
+`no-explicit-any`) — after every change in this phase, not just at the end.
 
 ---
 
