@@ -1,0 +1,44 @@
+Peer-review the spend-limit work; close the schema gap that made it fragile
+
+A second agent pushed three commits on 2026-10-16. Reviewed rather than assumed,
+and rebased my work on top so nothing was overwritten.
+
+Their spend-limit implementation is sound and closes Phase 18's biggest finding:
+_shared/aiBudget.ts is now the single enforcement point for all three paid-API
+call sites, with BOTH an instance-wide ceiling and a per-user monthly cap, so one
+account can no longer drain the shared budget and the two previously unguarded
+call sites are covered. Their 8 tests pass. Correcting my own Phase 18 wording:
+"billing has zero server-side enforcement" is no longer true of spend; what
+remains true is that no edge function reads subscriptions, so the PLAN is still
+decorative.
+
+Verified their dependency exists in production instead of assuming it: the commit
+adds no migration, and ai_usage_log / per_user_monthly_budget appear in none
+either, so the enforcement could have been silently no-op-ing. Probes: ai_usage_log
+returns 42501 (an RLS error, so the table exists - a missing table gives 404
+PGRST205, confirmed by control); per_user_monthly_budget returns 200 [] like the
+known-good control (a missing column gives 42703, confirmed earlier). Both exist.
+Created in the dashboard.
+
+Then fixed the latent bug that check exposed: existing only in production means any
+fresh environment (self-host, E2E project, OSS clone) would run the code without
+the table, checkAiBudget would read no rows and therefore always allow, and the
+only spend protection in the product would silently disappear while every test
+still passed. New migration 20261019000001_add_ai_usage_log.sql creates the table
+(RLS on, own-row read, admin read via has_role((select auth.uid()), ...), no insert
+policy for anon/authenticated) and adds the column, guarded by an
+information_schema check because project_settings still has no CREATE TABLE here
+and an unguarded ALTER would abort the migration run on a fresh database.
+
+aiBudget.ts now checks errors on both reads and the insert, logs a message naming
+the failure and the migration to apply, and sets degraded:true when spend is
+unreadable. Still fails open deliberately (same reasoning as the HIBP check: a
+dependency blip must not become an outage, and this is a cost control not an
+authorisation boundary) - but never silently. 4 new tests.
+
+Their fix to my receiver was correct and my receiver had a real flaw: it bound
+127.0.0.1 unconditionally, unreachable behind a cloud proxy. They hit it on
+Railway. Now a HOST env var defaulting to loopback.
+
+Verified: tsc 0, eslint 0 errors (292 warnings), 151 passed / 1 skipped, build
+clean.

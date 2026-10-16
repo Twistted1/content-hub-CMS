@@ -8,7 +8,23 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-10-19 (Phase 20). **Webhook deliveries are now
+**Last verified:** 2026-10-19 (Phase 21). A second agent worked this branch on
+2026-10-16; I reviewed its three commits rather than assuming they were fine,
+rebased my work on top (nothing overwritten), and confirmed its most consequential
+change actually works: **AI spend limits are enforced on all three paid-API call
+sites**, with a per-user cap as well as the instance ceiling — which corrects
+Phase 18's "billing has zero server-side enforcement" for *spend* (plan/tier
+gating from `subscriptions` is still absent). I verified the table and column it
+depends on exist in production by probing them (a missing table gives `404
+PGRST205`, a missing column `42703`; neither appeared), then fixed the latent bug
+that check exposed: **both existed only in the dashboard and in no migration**, so
+any fresh environment would have silently lost the enforcement entirely. New
+migration `20261019000001_add_ai_usage_log.sql` plus loud error handling and a
+`degraded` flag in `aiBudget.ts`. Also recorded: their fix to my webhook receiver
+was correct and **my receiver had a real deployment flaw** (it bound `127.0.0.1`,
+unreachable behind a cloud proxy).
+
+**Previously last verified:** 2026-10-19 (Phase 20). **Webhook deliveries are now
 authenticated and there is a working reference receiver.**
 `supabase/functions/_shared/publishDelivery.ts` signs every delivery with
 HMAC-SHA256 (`X-Novus-Signature`, over the exact raw body) plus a stable
@@ -409,6 +425,84 @@ a stale `vite` dev-server process from this repo (PID identified via
 `Get-CimInstance Win32_Process` filtered on the repo path) still held it. Killing
 that process and its `esbuild` child freed it; `npm ci` then succeeded. Check for
 stray repo-owned node processes before concluding an install is broken.
+
+---
+
+## Phase 21 — Peer review of the spend-limit work, and closing its schema gap (2026-10-19)
+
+A second agent worked this branch on 2026-10-16 and pushed three commits:
+`969a0fb` (AI spend limits on all three paid-API call sites), `b490ecc` (a
+`package.json` so the receiver can deploy standalone), and `2785fdb` (**a fix to
+my receiver**). Rather than assume they were fine, I reviewed them and rebased my
+own work on top — nothing was overwritten.
+
+- [x] **Their spend-limit implementation is sound, and it closes the biggest
+      finding in Phase 18.** `supabase/functions/_shared/aiBudget.ts` is now the
+      single enforcement point, called before every paid call in
+      `content-pipeline`, `novee-chat` and `generate-strategy`, with
+      `recordAiUsage` after each. It applies **both** an instance-wide ceiling and
+      a **per-user monthly cap**, which fixes the "one heavy user 402s everyone"
+      flaw *and* the two call sites that previously had no check at all. The old
+      duplicate instance-global check in `content-pipeline` was removed rather
+      than left alongside it. Their 8 tests are picked up by vitest and pass.
+  - **Correcting my own Phase 18 wording:** it said "billing has zero server-side
+    enforcement — any authenticated free user can spend the owner's AI budget."
+    That is no longer true of *spend*. What remains true is that **no edge
+    function reads `subscriptions`**, so the *plan* is still decorative: a free
+    user can call these functions and will hit the per-user spend cap rather than
+    being refused by entitlement. `AGENTS.md` now says exactly that.
+- [x] **Verified their dependency exists in production rather than assuming.**
+      The commit adds no migration, and the code reads a table (`ai_usage_log`)
+      and a column (`per_user_monthly_budget`) that appear in no migration either
+      — so the whole enforcement could have been silently no-op'ing. Probed live:
+  - `GET /rest/v1/ai_usage_log?select=id` → **401 `42501 permission denied for
+    function has_role`** — an RLS-policy error, so the table exists. A missing
+    table returns `404 PGRST205`, confirmed by a control probe.
+  - `GET /rest/v1/project_settings?select=per_user_monthly_budget` → **200 `[]`**,
+    identical to the known-good `monthly_openai_budget` control. A missing column
+    returns `42703`, confirmed earlier against `articles.slug`.
+  - **Conclusion: both exist, so the enforcement is real, not a no-op.** Both were
+    created in the dashboard.
+- [x] **Fixed the latent bug that verification exposed.** Because those objects
+      exist *only* in production and in no migration, any fresh environment (a
+      self-host, the disposable E2E project, an OSS clone) would have the code and
+      not the table — and the failure mode is the dangerous kind: `checkAiBudget`
+      would read no rows and therefore **always allow**, `recordAiUsage`'s insert
+      would fail, and **the only spend protection in the product would silently
+      cease to exist while every test still passed.** New migration
+      `20261019000001_add_ai_usage_log.sql` creates the table (RLS on, own-row
+      read for users, admin read via `has_role((select auth.uid()), …)`, and **no
+      insert policy** for `anon`/`authenticated` since only the service role
+      writes) and adds `per_user_monthly_budget`, guarded by an
+      `information_schema` check — because `project_settings` still has no
+      `CREATE TABLE` here, and an unguarded `ALTER` would abort the whole
+      migration run on a fresh database.
+- [x] **Made the silent-failure paths loud.** `aiBudget.ts` now checks the error
+      on both reads and on the insert, logs a message naming the failure and the
+      migration to apply, and sets `degraded: true` on the result when spend could
+      not be read. It still **fails open** on a read error — deliberately, for the
+      same reason this project chose fail-open for the HaveIBeenPwned check: a
+      dependency blip must not become a product outage, and this is a cost control
+      rather than an authorisation boundary. What changed is that an unenforced
+      limit is now *visible* instead of silent. **4 new tests** cover it (that
+      file: 12).
+- [x] **Their fix to my receiver was correct, and I had shipped a real flaw.**
+      `server.mjs` bound `127.0.0.1` unconditionally — right for a local default,
+      but it makes the process unreachable behind a cloud platform's edge proxy.
+      They hit exactly that on Railway ("Application failed to respond" while the
+      process logged healthy) and added a `HOST` env var that still defaults to
+      loopback, so a cloud deploy opts in to `0.0.0.0` explicitly. That is the
+      right shape, and my receiver would not have worked deployed as written.
+      Recorded because it is the class of defect my own testing could not catch:
+      everything I ran was on localhost.
+
+**Verified:** `tsc --noEmit` clean, `eslint` 0 errors (**292** warnings),
+**151 passed / 1 skipped** (was 139 — their 8 plus my 4), `vite build` clean.
+
+**Open, unchanged by this phase:** no tier/plan gating from `subscriptions`; the
+two AI budget settings are still instance-wide with no tenant dimension; and
+`project_settings`' missing `CREATE TABLE` remains the top self-hosting blocker —
+the new migration routes around it but does not fix it.
 
 ---
 

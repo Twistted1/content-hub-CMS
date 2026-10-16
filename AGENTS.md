@@ -100,11 +100,25 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   bridge is planned but **`articles` has no status column, so any insert is live
   on the public site immediately** — it must be an explicit human action, never
   an automatic sync. See `docs/HEADLESS_CONSUMPTION.md`.
-- **Billing is not enforced anywhere on the server.** No edge function ever
-  *reads* `subscriptions` — only writes. The only tier gate is cosmetic and
-  client-side (`Sidebar.tsx:140`). Any authenticated free user can call
-  `content-pipeline` / `novee-chat` / `generate-strategy` directly and spend the
-  owner's AI budget. Do not describe the app as having working plan gating.
+- **AI *spend* is now enforced; plan/tier gating still is not.** Corrected
+  2026-10-19 — this bullet used to say enforcement was entirely absent.
+  - **Enforced:** `supabase/functions/_shared/aiBudget.ts`, called before every
+    paid call in `content-pipeline`, `novee-chat` and `generate-strategy`. It
+    applies an instance-wide monthly ceiling (`project_settings.monthly_openai_budget`,
+    default 50) **and a per-user monthly cap**
+    (`project_settings.per_user_monthly_budget`, default 5), reading spend from
+    `ai_usage_log`. So one account can no longer drain the shared budget.
+  - **Not enforced:** no edge function reads `subscriptions`, so the *plan* is
+    still decorative — the only tier gate is client-side
+    (`Sidebar.tsx:140`). A free user can call these functions; they will hit the
+    per-user spend cap rather than being refused by entitlement.
+  - **`ai_usage_log` and `per_user_monthly_budget` were created in the dashboard,
+    not by a migration** — the same drift as `articles`/`authors`. Migration
+    `20261019000001_add_ai_usage_log.sql` now creates both, because on a fresh
+    environment their absence made the check silently always pass. `aiBudget.ts`
+    also logs read/write failures loudly and flags `degraded: true` on the result
+    rather than swallowing them (fail-open deliberately, like the HIBP check —
+    but never silently).
 - **The migration set cannot rebuild the database.** `project_settings` and
   `subscribers` are policy'd and altered but never `CREATE TABLE`d, and
   `project_settings` is queried as key/value in one migration and as wide columns
@@ -113,10 +127,10 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   `invitations` 404s live despite a migration creating it — migrations are
   **not** a faithful mirror of production either way.
 - **`project_settings` is one global row** (`.select('*').single()`), so all
-  config and the AI budget are instance-wide. The budget check
-  (`content-pipeline:110-115`) sums `cost_estimate` across **all** users with no
-  `user_id` filter: one heavy user 402s everyone. `novee-chat` and
-  `generate-strategy` have no budget check at all.
+  config is instance-wide. The AI budget check now applies **both** an
+  instance-wide ceiling and a per-user cap (see the enforcement bullet below), so
+  a single heavy user can no longer 402 everyone — but the *settings themselves*
+  are still global, with no tenant dimension.
 - **`admin` is a global super-admin, not a tenant admin.** `has_role()` reads a
   global `user_roles` table with no tenant column, and ~30 tables use
   `auth.uid() = user_id OR has_role(auth.uid(),'admin')`. There is **no tenant /

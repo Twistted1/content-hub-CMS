@@ -103,6 +103,70 @@ describe("recordAiUsage", () => {
       cost_estimate: 0.01,
     });
   });
+
+  it("reports failure instead of silently discarding the insert error", async () => {
+    // The original version awaited this insert and threw the result away, so a
+    // missing `ai_usage_log` produced no signal anywhere: every budget read then
+    // saw zero spend and the limits silently stopped applying. Whatever else
+    // changes, this must not go back to being invisible.
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const admin = mockAdmin();
+    admin._insert.mockResolvedValue({ data: null, error: { message: "relation does not exist" } });
+    const ok = await recordAiUsage(admin, "user-a", "content-pipeline", 0.05);
+    expect(ok).toBe(false);
+    expect(spy).toHaveBeenCalled();
+    expect(String(spy.mock.calls[0].join(" "))).toMatch(/FAILED TO RECORD/i);
+    spy.mockRestore();
+  });
+});
+
+describe("degraded enforcement (the silent-no-op failure mode)", () => {
+  function failingUsageAdmin() {
+    const from = vi.fn((table: string) => {
+      if (table === "project_settings") {
+        return {
+          select: () => ({
+            single: async () => ({ data: { monthly_openai_budget: 50, per_user_monthly_budget: 5 }, error: null }),
+          }),
+        };
+      }
+      if (table === "ai_usage_log") {
+        return {
+          select: () => ({
+            gte: async () => ({ data: null, error: { message: "permission denied for table ai_usage_log" } }),
+          }),
+          insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+        };
+      }
+      throw new Error(`unexpected table: ${table}`);
+    });
+    return { from };
+  }
+
+  it("flags the check as degraded so an unenforced limit is visible, not silent", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const check = await checkAiBudget(failingUsageAdmin(), "user-a");
+    // Fail-open on a read failure is deliberate (a cost control must not become a
+    // product outage), but it must say so.
+    expect(check.allowed).toBe(true);
+    expect(check.degraded).toBe(true);
+    expect(String(spy.mock.calls[0].join(" "))).toMatch(/NOT BEING ENFORCED/i);
+    spy.mockRestore();
+  });
+
+  it("is not degraded on a healthy read", async () => {
+    const check = await checkAiBudget(mockAdmin(), "user-a");
+    expect(check.degraded).toBeUndefined();
+  });
+
+  it("still enforces the cap when the read succeeds", async () => {
+    const check = await checkAiBudget(
+      mockAdmin({ usageRows: [{ user_id: "user-a", cost_estimate: 5 }] }),
+      "user-a",
+    );
+    expect(check.allowed).toBe(false);
+    expect(check.degraded).toBeUndefined();
+  });
 });
 
 describe("budgetExceededResponse", () => {
