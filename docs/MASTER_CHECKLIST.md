@@ -8,7 +8,21 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-10-16 (Phase 22). **The last unknown on the webhook path
+**Last verified:** 2026-10-16 (Phase 23). The two remaining open items — the
+`articles`/`authors` replayability gap and the cross-user published-read finding
+— are now **prepared as verified artifacts rather than left as questions**, in
+`tools/sql-options/` and deliberately outside `supabase/migrations/` so neither
+can be applied by a routine `db push` before it is verified or chosen. Probing
+the live API settled the column question that three conflicting sources
+disagreed on: **`articles.date` exists** (types.ts omits it), `word_count` /
+`featured` / `subtitle` do **not**, and `articles.id` is **`integer`** — so the
+site's own handoff doc was wrong on two counts. The published-post view is
+additive and safe; the removal of the blanket `posts` read policy is commented out
+and waits on your decision. **Still open and needing you:** that decision, the
+licence, and running the two files. **Merge drift is resolved** — PR #12 is
+merged, so `main` and the deployed edge functions agree again.
+
+**Previously last verified:** 2026-10-16 (Phase 22). **The last unknown on the webhook path
 is closed: a signed delivery was received from production.** A `website` post
 delivered to a receiver I controlled carrying `X-Novus-Signature: sha256=ac708a80…`,
 which proves at once that the Phase 19/20 code is deployed **and** that
@@ -441,6 +455,84 @@ a stale `vite` dev-server process from this repo (PID identified via
 `Get-CimInstance Win32_Process` filtered on the repo path) still held it. Killing
 that process and its `esbuild` child freed it; `npm ci` then succeeded. Check for
 stray repo-owned node processes before concluding an install is broken.
+
+---
+
+## Phase 23 — `articles`/`authors` baseline draft + published-read options (2026-10-16)
+
+The two open items that needed either verification or a decision, prepared as
+artifacts rather than applied. Both live in `tools/sql-options/`, deliberately
+**outside** `supabase/migrations/` so nothing here can be applied by a routine
+`supabase db push` before it has been verified or chosen.
+
+- [x] **Probed the live `articles`/`authors` shape instead of guessing it.** The
+      available sources disagree with each other *and* with production, so none
+      could be trusted:
+  - **[V] `articles.date` EXISTS** — `types.ts` omits it (stale, exactly as it
+    omitted `per_user_monthly_budget`). The website writes it alongside
+    `publish_date` with the same value.
+  - **[V] `word_count`, `featured` and `subtitle` do NOT exist**, and there is no
+    `author` JSONB column — the site's own `HANDOFF_DOCUMENTATION.md:223-237`
+    lists all four as if there were.
+  - **[V] `articles.id` is `integer`** — probed via `?id=eq.notauuid` →
+    `22P02 invalid input syntax for type integer`. So `types.ts` (`number`) was
+    right and the handoff doc's `BIGINT PRIMARY KEY` was wrong.
+  - **[V] `authors.id` is text** — probed via `?id=eq.<random-uuid>` returning
+    `200 []` rather than a type error, matching the live value `marcio-novus`.
+  - **[V] `authors` has exactly `id, name, bio, avatar_url`** — no
+    `created_at`/`updated_at`/`role`.
+  - Method: a missing column returns `42703` and a missing table `404 PGRST205`;
+    both were used as controls. Column **existence and type family** are
+    therefore verified. **Nullability and defaults are not** — PostgREST cannot
+    express them — so the draft says so rather than implying certainty.
+- [x] **`tools/sql-options/01-baseline-articles-authors.sql`** — the DDL to close
+      the last two replayability gaps, with the filename to move it to
+      (`20260122999999_…`, sorting before both existing baselines).
+  - **The trap it documents:** the `project_settings`/`subscribers` baseline
+    could create its tables with RLS on and **no policies**, because later
+    migrations add those by name. `articles`/`authors` have **no later
+    migrations** — nothing in the repository references them — so a table-only
+    baseline yields a fresh database with RLS on and **deny-all**, and
+    novusexchange.com renders empty. The two
+    `FOR SELECT TO anon, authenticated USING (true)` policies are therefore
+    mandatory, and they match production (anon reads `/rest/v1/articles` → `200`
+    today).
+  - Also records: create `authors` **before** `articles` (FK order), and do
+    **not** copy the handoff doc's `FOR ALL USING (true) WITH CHECK (true)`,
+    which combined with the anon key hardcoded at `articleService.ts:34` would
+    make the table world-writable.
+- [x] **`tools/sql-options/02-published-post-read.sql`** — the Phase 22 finding,
+      split so the safe half can ship now and the destructive half stays gated.
+  - **Part A (safe, additive):** a `public.public_published_posts` view exposing
+    only `id, title, excerpt, content, category, cover_image_url, tags, type,
+    published_at` — explicitly **not** `user_id`, `cost_estimate`,
+    `publish_error`, `publish_attempts`, `workflow_*`, `review_*` or
+    `is_ai_generated`. It exists because "just add an anon policy" is *not
+    available*: the policies on `posts` call `has_role()`, whose EXECUTE is
+    revoked from `anon`, so anon gets a hard `401` and cannot evaluate them at
+    all. The view is owned by the migration role, which bypasses RLS — **so its
+    `WHERE status = 'published'` IS the security boundary**, documented as such,
+    with `security_barrier = true` so a caller-supplied predicate cannot be
+    pushed below the filter and reveal excluded rows.
+  - **Part B (decision required, commented out):** a **name-agnostic** removal
+    that drops any `SELECT` policy on `posts` whose qual mentions `published`,
+    rather than guessing a policy name. Gated because it removes a live
+    capability, and because if the cross-user read is intentional the right answer
+    is to record the decision and do nothing. Noted: it does **not** affect
+    novusexchange.com either way, since the site reads `articles` and never
+    queries `posts` (verified in its source).
+- [x] **Corrected a stale reference left by the parallel work:** `AGENTS.md`
+      still named `20261019000001_add_ai_usage_log.sql` as the migration creating
+      `ai_usage_log`, but that file was deleted as a duplicate (confirmed never
+      applied). It now names `20261016014921_add_ai_usage_tracking.sql`.
+
+**Verified:** doc and SQL-only changes; no application source touched.
+`tsc --noEmit` clean, `eslint` 0 errors, `vitest` 151 passed / 1 skipped,
+`vite build` clean.
+
+**⚠️ None of this changes production until it is run.** Part A of file 2 is safe
+at any time; the baseline needs the `information_schema` confirmation first; Part
+B needs the decision on the cross-user read.
 
 ---
 

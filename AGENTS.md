@@ -67,6 +67,11 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   dry-run by default). Run its self-test with
   `node tools/webhook-receiver/selftest.mjs`. Adapt `toArticleRow` for your own
   endpoint, or swap it for a Meta Graph API call.
+- `tools/sql-options/` — SQL that is deliberately **not** in
+  `supabase/migrations/` because it needs verification or a decision first: the
+  `articles`/`authors` baseline (the last two tables no migration creates), and
+  the public-published-posts view plus the decision-gated removal of the blanket
+  `posts` read policy. Read its README before applying anything.
 - `src/utils/scheduleMode.ts`, `src/utils/reviewTransitions.ts` — pure logic
   extracted so it can be tested; read the doc comments before changing them.
 
@@ -120,13 +125,16 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
     just eventually rate-limited by a cap that didn't know about tiers.
   - `ai_usage_log` and `per_user_monthly_budget` were created in the
     dashboard, not by a migration — the same drift as `articles`/`authors`.
-    Migration `20261019000001_add_ai_usage_log.sql` creates both, because on a
-    fresh environment their absence made the check silently always pass.
-    `aiBudget.ts` logs read/write failures loudly and flags `degraded: true`
-    on the result rather than swallowing them (fail-open deliberately, like
-    the HIBP check — but never silently). The `per_user_monthly_budget`
-    column itself is no longer read for enforcement (superseded by the tier
-    map above) but is left in the schema rather than dropped.
+    Migration `20261016014921_add_ai_usage_tracking.sql` creates both, because on
+    a fresh environment their absence made the check silently always pass.
+    (An earlier parallel fix, `20261019000001_add_ai_usage_log.sql`, was deleted
+    as a duplicate — confirmed never applied to production via
+    `supabase_migrations.schema_migrations`.) `aiBudget.ts` logs read/write
+    failures loudly and flags `degraded: true` on the result rather than
+    swallowing them (fail-open deliberately, like the HIBP check — but never
+    silently). The `per_user_monthly_budget` column itself is no longer read for
+    enforcement (superseded by the tier map above) but is left in the schema
+    rather than dropped.
 - **The migration set could not rebuild the database — the direct cause is now
   fixed, but this is not fully re-proven end to end.** `project_settings` and
   `subscribers` were policy'd and altered but never `CREATE TABLE`d, which is
