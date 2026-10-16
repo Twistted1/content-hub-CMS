@@ -1,23 +1,18 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { getStripePriceTable } from "../_shared/stripePrices.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Price IDs for subscription plans (Starter $10, Pro $20; yearly ~20% off)
-const PRICE_IDS: Record<string, Record<string, string>> = {
-  starter: {
-    monthly: "price_1TUbGi99SwZHUFarbpocgTj2",
-    yearly: "price_1TUbHN99SwZHUFarK9uTjwbD",
-  },
-  pro: {
-    monthly: "price_1TUbI699SwZHUFar0ur6blfp",
-    yearly: "price_1TUbIu99SwZHUFarlyuyIqnp",
-  },
-};
+// The price IDs live in `_shared/stripePrices.ts` — one source shared with
+// `check-subscription` and `stripe-webhook`, env-overridable. They used to be
+// hardcoded independently in all three, which meant updating two of them left
+// the third resolving a real price to "free" and silently downgrading a paying
+// customer. See that file for the full reasoning.
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -53,7 +48,8 @@ serve(async (req) => {
 
     // Parse request body for plan + billing interval
     const { plan, billing = "monthly" } = await req.json();
-    const planPrices = PRICE_IDS[plan as string];
+    const { prices } = getStripePriceTable();
+    const planPrices = prices[plan as string];
     if (!planPrices) throw new Error(`Invalid plan: ${plan}`);
     const priceId = planPrices[billing as string];
     if (!priceId) throw new Error(`Invalid billing interval: ${billing}`);

@@ -8,7 +8,26 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-10-16 (Phase 23). **Every owner decision and every
+**Last verified:** 2026-10-16 (Phase 24). Two pieces of hardening after Phase 23
+closed the handoff, and one review finding. The **tier-aware AI budget was
+reviewed rather than assumed** — it is correct, and its coverage is good,
+including the case that matters most (a `pro` subscription whose `end_date` has
+passed resolving to `free`, so a cancellation Stripe has not yet reported cannot
+keep granting a paid allowance). The review found a real bug: three log messages
+told an operator to apply a migration that **had been deleted** as a duplicate,
+so anyone hitting "AI SPEND IS NOT BEING ENFORCED" would have hunted for a file
+that does not exist. Fixed. The four **Stripe price IDs, previously duplicated
+across three functions, now come from one shared table** — the literal values were
+never the bug, the three copies were, and their disagreement downgraded paying
+customers silently. One unrecognised price is now logged with its ID instead of
+just guessed at, and the env-overridable table makes a second deployment a matter
+of four secrets rather than code edits. **🔴 One item needs a query only the owner
+can run**: a *missing* `subscriptions` row resolves to `free` → $1/month, and the
+automated pipeline runs as its owner, so an owner without a subscription row would
+have generation stop after about a dollar — see B1 in `docs/OPEN_DECISIONS.md`,
+which is now the short list of everything still outstanding.
+
+**Previously last verified:** 2026-10-16 (Phase 23). **Every owner decision and every
 DB-session-only action from Phase 22's handoff is closed.** PR #12 merged to
 `main` (CI green, clean fast-forward) — production and `main` are back in
 sync. The duplicate `ai_usage_log` migration resolved: confirmed via
@@ -657,6 +676,85 @@ gap list, and the warning that `types.ts` is **stale** — it has no
 `per_user_monthly_budget` even though the column exists in production (proved by
 probe: a missing column returns `42703`, and this returned `200`). See
 `docs/READINESS_GAP_ANALYSIS.md`.
+
+---
+
+## Phase 24 — Tier-cap review, and one Stripe price table instead of three (2026-10-16)
+
+Two pieces of hardening, plus a review of the tier-aware budget work that found a
+real bug in it.
+
+**Numbering note:** this is Phase 24 because PR #13 adds Phase 23. It is inserted
+here rather than directly above Phase 22 purely so the two open PRs cannot
+conflict on the same lines; the document's phase order is already not strictly
+monotonic. Cosmetic — renumber if you care.
+
+- [x] **Reviewed the tier-aware AI cap** (`_shared/aiBudget.ts`) rather than
+      assuming it was fine, since it now decides whether a paying customer gets
+      what they paid for. The logic is sound and the test coverage is genuinely
+      good — including the case that matters most, a `pro` subscription whose
+      `end_date` has already passed resolving to `free` (the cancellation webhook
+      not having caught up yet). A missing row, a read error, and an expired
+      `end_date` all fail in the conservative direction. No behavioural change
+      made.
+- [x] **Fixed a real bug the review found:** three log messages told an operator
+      to apply migration `20261019000001_add_ai_usage_log.sql` — **a file that was
+      deleted** as a duplicate and never applied. Anyone hitting "AI SPEND IS NOT
+      BEING ENFORCED" would have gone looking for a migration that does not exist,
+      at exactly the moment they needed a correct instruction. It now points at
+      `20261016014921_add_ai_usage_tracking.sql`. Same class as the stale reference
+      fixed in Phase 23, but in the one place where it actively misleads during an
+      incident.
+- [x] **Consolidated the four Stripe price IDs from three independent copies into
+      one shared table** (`_shared/stripePrices.ts`), read by `create-checkout`,
+      `check-subscription` and `stripe-webhook`. **The literals were not the bug —
+      the three copies were.** Updating two of the three left the third
+      disagreeing, and the failure was silent: `create-checkout` would take the
+      customer's money, then `stripe-webhook`'s `resolveTier` would resolve the
+      now-unrecognised price to `"free"` and downgrade a paying customer with no
+      error anywhere. One derived table makes that drift impossible rather than
+      merely unlikely: the reverse map is built from the forward map, so a plan
+      cannot exist in one and not the other.
+  - **Env-overridable, and safe by default.** `STRIPE_PRICE_STARTER_MONTHLY`,
+    `STRIPE_PRICE_STARTER_YEARLY`, `STRIPE_PRICE_PRO_MONTHLY`,
+    `STRIPE_PRICE_PRO_YEARLY` (documented in `.env.example`). With none set the
+    built-in values are used, so behaviour is unchanged until someone opts in, and
+    a second deployment sets four secrets instead of editing code.
+  - **Deliberately not memoised.** The table rebuilds per call, costing
+    microseconds, because this project has already been bitten by a warm edge
+    function holding a stale secret (the `STRIPE_WEBHOOK_SECRET` incident) and a
+    cached price table would reintroduce exactly that failure mode.
+  - **The silent half is now loud.** An unrecognised price still resolves to
+    `"free"` — the safe direction — but now logs the `priceId` and `productId` and
+    names the likely cause. A duplicate mapping (two plan/interval combos pointing
+    at one price) is reported rather than silently keeping whichever won the
+    iteration order.
+- [x] **8 new tests** pin the properties that make the consolidation worth having:
+      the reverse map matches the forward map, each plan/interval maps to a
+      distinct price, an override is followed by *both* maps, overrides are
+      trimmed (a secret pasted with a trailing newline is a real and very
+      confusing failure), an empty override counts as unset, duplicates are
+      reported, and the legacy product IDs are not accidentally emptied — doing so
+      would downgrade live customers. `buildStripePriceTable` takes the env lookup
+      as a parameter, so it is a pure function and testable without a Deno
+      runtime.
+
+**Verified:** `tsc --noEmit` clean, `eslint` 0 errors (293 warnings), **165 passed
+/ 1 skipped** (was 157; +8), `vite build` clean. No leftover references to the old
+inline maps in any edge function.
+
+**⚠️ Requires redeploying `create-checkout`, `check-subscription` and
+`stripe-webhook`** to take effect. Behaviour is identical until the
+`STRIPE_PRICE_*` secrets are set, so redeploying on its own is safe.
+
+**🔴 Flagged, and it needs a query only you can run:** the AI budget check is
+tier-aware, and a **missing** `subscriptions` row resolves to `free` →
+**$1/month**. `schedule-from-templates` invokes `content-pipeline` as the
+*automation owner*, so the cron is subject to its owner's cap. **If your own
+account has no `subscriptions` row, or one whose `end_date` has passed, automated
+content generation stops after roughly a dollar of spend.** Confirm with
+`select tier, end_date from public.subscriptions where user_id = '<your uid>';`
+before relying on the pipeline. Recorded as B1 in `docs/OPEN_DECISIONS.md`.
 
 ---
 

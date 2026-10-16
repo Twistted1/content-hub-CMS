@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { getStripePriceTable, LEGACY_PRO_PRODUCTS } from "../_shared/stripePrices.ts";
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
@@ -110,22 +111,26 @@ serve(async (req) => {
     }
   };
 
-  // Price ID → tier mapping (matches check-subscription function's PRICE_TO_TIER)
-  const PRICE_TO_TIER: Record<string, "starter" | "pro"> = {
-    price_1TUbGi99SwZHUFarbpocgTj2: "starter",
-    price_1TUbHN99SwZHUFarK9uTjwbD: "starter",
-    price_1TUbI699SwZHUFar0ur6blfp: "pro",
-    price_1TUbIu99SwZHUFarlyuyIqnp: "pro",
-  };
-  // Legacy product IDs (old $29 pro / $99 enterprise) — fold into "pro" for back-compat
-  const LEGACY_PRO_PRODUCTS = new Set(["prod_Tu23n9E83kU6SH", "prod_Tu24enzVGb9KJl"]);
+  // price ID → tier comes from `_shared/stripePrices.ts` — the same table
+  // `create-checkout` writes from and `check-subscription` reads. See that file
+  // for why three independent copies was the actual bug.
+  const { priceToTier } = getStripePriceTable();
 
   const resolveTier = (subscription: Stripe.Subscription): "free" | "starter" | "pro" => {
     const item = subscription.items.data[0];
     const priceId = item?.price?.id;
     const productId = item?.price?.product as string;
-    if (priceId && PRICE_TO_TIER[priceId]) return PRICE_TO_TIER[priceId];
+    const mapped = priceId ? priceToTier[priceId] : undefined;
+    if (mapped) return mapped.tier;
     if (productId && LEGACY_PRO_PRODUCTS.has(productId)) return "pro";
+    // An unrecognised price resolves to "free", which is the safe direction — but
+    // it is also how a paying customer gets silently downgraded, so say so. A
+    // misconfigured STRIPE_PRICE_* override or a price created in Stripe but not
+    // added here looks exactly like this.
+    logStep("UNRECOGNISED price — resolving to free tier; check STRIPE_PRICE_* overrides", {
+      priceId: priceId ?? null,
+      productId: productId ?? null,
+    });
     return "free";
   };
 

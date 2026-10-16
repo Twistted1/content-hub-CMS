@@ -1,22 +1,16 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { getStripePriceTable, LEGACY_PRO_PRODUCTS } from "../_shared/stripePrices.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Map Stripe price IDs → tier + billing interval (Starter / Pro, monthly + yearly)
-const PRICE_TO_TIER: Record<string, { tier: "starter" | "pro"; interval: "monthly" | "yearly" }> = {
-  price_1TUbGi99SwZHUFarbpocgTj2: { tier: "starter", interval: "monthly" },
-  price_1TUbHN99SwZHUFarK9uTjwbD: { tier: "starter", interval: "yearly" },
-  price_1TUbI699SwZHUFar0ur6blfp: { tier: "pro", interval: "monthly" },
-  price_1TUbIu99SwZHUFarlyuyIqnp: { tier: "pro", interval: "yearly" },
-};
-
-// Legacy product IDs (old $29 pro / $99 enterprise) — fold into "pro" for back-compat
-const LEGACY_PRO_PRODUCTS = new Set(["prod_Tu23n9E83kU6SH", "prod_Tu24enzVGb9KJl"]);
+// price ID → tier + interval now comes from `_shared/stripePrices.ts`, the same
+// table `create-checkout` writes from and `stripe-webhook` resolves against. The
+// three used to hold independent copies; see that file for why that mattered.
 
 // Stripe moved current_period_end/current_period_start off the top-level Subscription
 // object onto each subscription item as part of flexible billing intervals -- reading
@@ -121,7 +115,8 @@ serve(async (req) => {
       const item = subscription.items.data[0];
       const priceId = item.price.id;
       const productId = item.price.product as string;
-      const mapped = PRICE_TO_TIER[priceId];
+      const { priceToTier } = getStripePriceTable();
+      const mapped = priceToTier[priceId];
       if (mapped) {
         tier = mapped.tier;
         billingInterval = mapped.interval;
