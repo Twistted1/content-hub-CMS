@@ -61,9 +61,14 @@ export function usePosts() {
           media (*)
         `);
       
-      // If NOT admin, we would filter by user_id, 
-      // but for this CMS we want a Global Master Calendar for all admins.
-      // We will order by scheduled_at to ensure a consistent timeline.
+      // No .eq("user_id", ...) here deliberately: RLS on `posts` already scopes
+      // this to the caller's own rows, or every row for an admin (policy
+      // "Users can view own posts or admins view all"). That policy used to
+      // also expose every OTHER user's published posts to any authenticated
+      // caller - a cross-user leak, not the shared team calendar a stale
+      // comment here once described wanting. Fixed 2026-10-16: a non-admin now
+      // sees only their own posts, any status; an admin still sees everything.
+      // Ordering by scheduled_at keeps the calendar a consistent timeline.
       const { data, error } = await query.order("scheduled_at", { ascending: true });
 
       if (error) throw error;
