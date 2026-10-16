@@ -44,6 +44,10 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
 - `docs/MASTER_CHECKLIST.md` — the single source of truth for completion
   status. `docs/AUDIT.md`, `PHASE_0_TESTING.md` and `PHASE_3_READINESS_REPORT.md`
   are historical; do not treat them as current.
+- `docs/OPEN_DECISIONS.md` — **the short list of what is still outstanding**: the
+  decisions only the owner can make, the actions needing access an agent does not
+  have, and optional engineering. Read this for the current to-do;
+  `MASTER_CHECKLIST.md` is the full history behind it.
 - `docs/READINESS_GAP_ANALYSIS.md` — open-source and commercialization gap
   analysis (blockers, missing files, self-hosting hazards, multi-tenancy, two
   commercial paths with effort estimates).
@@ -120,13 +124,16 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
     just eventually rate-limited by a cap that didn't know about tiers.
   - `ai_usage_log` and `per_user_monthly_budget` were created in the
     dashboard, not by a migration — the same drift as `articles`/`authors`.
-    Migration `20261019000001_add_ai_usage_log.sql` creates both, because on a
-    fresh environment their absence made the check silently always pass.
-    `aiBudget.ts` logs read/write failures loudly and flags `degraded: true`
-    on the result rather than swallowing them (fail-open deliberately, like
-    the HIBP check — but never silently). The `per_user_monthly_budget`
-    column itself is no longer read for enforcement (superseded by the tier
-    map above) but is left in the schema rather than dropped.
+    Migration `20261016014921_add_ai_usage_tracking.sql` creates both, because on
+    a fresh environment their absence made the check silently always pass.
+    (An earlier parallel fix, `20261019000001_add_ai_usage_log.sql`, was deleted
+    as a duplicate — confirmed never applied to production via
+    `supabase_migrations.schema_migrations`.) `aiBudget.ts` logs read/write
+    failures loudly and flags `degraded: true` on the result rather than
+    swallowing them (fail-open deliberately, like the HIBP check — but never
+    silently). The `per_user_monthly_budget` column itself is no longer read for
+    enforcement (superseded by the tier map above) but is left in the schema
+    rather than dropped.
 - **The migration set could not rebuild the database — the direct cause is now
   fixed, but this is not fully re-proven end to end.** `project_settings` and
   `subscribers` were policy'd and altered but never `CREATE TABLE`d, which is
@@ -157,10 +164,21 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   organization / workspace concept anywhere** — the app is single-tenant. Any
   customer granted `admin` can read and edit every other user's content, roles
   and billing. Multi-customer SaaS requires splitting the two.
-- **Stripe price IDs are hardcoded in three files** (`create-checkout`,
-  `check-subscription`, `stripe-webhook`) and `resolveTier` falls through to
-  `"free"` for unrecognised prices — so a second deployment that updates two of
-  the three silently downgrades paying customers.
+- **Stripe price IDs live in ONE table, `supabase/functions/_shared/stripePrices.ts`**
+  (corrected 2026-10-16 — this bullet used to say they were hardcoded in three
+  files, and that *was* the bug). `create-checkout`, `check-subscription` and
+  `stripe-webhook` all derive from it, so the three can no longer disagree.
+  Previously updating two of the three left the third resolving a real price as
+  unrecognised → `"free"`, silently downgrading a paying customer after taking
+  their money. Overridable via `STRIPE_PRICE_STARTER_MONTHLY`,
+  `STRIPE_PRICE_STARTER_YEARLY`, `STRIPE_PRICE_PRO_MONTHLY`,
+  `STRIPE_PRICE_PRO_YEARLY`; unset means the built-in values, so behaviour is
+  unchanged until someone opts in. Deliberately **not** memoised — a warm edge
+  function caching a stale secret is a failure this project has already had. An
+  unrecognised price is now logged with its `priceId`, and a duplicate mapping is
+  reported. The UI's display prices in `Pricing.tsx`/`Landing.tsx` are still
+  hardcoded separately from Stripe, so they can drift from what is actually
+  charged.
 - **There is no free trial, and the landing page no longer claims one** (fixed
   2026-10-16 — owner chose to drop the claim rather than implement it). The
   product has a free tier instead. If you're adding trial-related UI copy,

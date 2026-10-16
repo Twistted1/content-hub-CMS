@@ -109,7 +109,7 @@ function startOfMonthIso(): string {
  * an authorisation boundary. What must never happen is failing *silently* —
  * `ai_usage_log` going missing used to mean every check passed with no signal
  * anywhere, so the failure is now logged loudly and flagged on the result. The
- * table itself is created by `20261019000001_add_ai_usage_log.sql`.
+ * table itself is created by `20261016014921_add_ai_usage_tracking.sql`.
  */
 export async function checkAiBudget(admin: any, userId: string): Promise<BudgetCheck> {
   const since = startOfMonthIso();
@@ -139,7 +139,7 @@ export async function checkAiBudget(admin: any, userId: string): Promise<BudgetC
   if (usageError) {
     console.error(
       "[aiBudget] AI SPEND IS NOT BEING ENFORCED: could not read ai_usage_log. " +
-        "If the table is missing, apply migration 20261019000001_add_ai_usage_log.sql.",
+        "If the table is missing, apply migration 20261016014921_add_ai_usage_tracking.sql.",
       usageError.message ?? usageError,
     );
     return {
@@ -193,7 +193,7 @@ export async function recordAiUsage(
     console.error(
       `[aiBudget] FAILED TO RECORD ${costEstimate} of AI spend for ${source}; ` +
         "the monthly limits will under-count until this is fixed. " +
-        "If the table is missing, apply migration 20261019000001_add_ai_usage_log.sql.",
+        "If the table is missing, apply migration 20261016014921_add_ai_usage_tracking.sql.",
       error.message ?? error,
     );
     return false;
