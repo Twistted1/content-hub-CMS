@@ -8,7 +8,23 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-10-19 (Phase 21). A second agent worked this branch on
+**Last verified:** 2026-10-16 (Phase 22). **The last unknown on the webhook path
+is closed: a signed delivery was received from production.** A `website` post
+delivered to a receiver I controlled carrying `X-Novus-Signature: sha256=ac708a80…`,
+which proves at once that the Phase 19/20 code is deployed **and** that
+`WEBHOOK_SIGNING_SECRET` is set — nothing observable before authentication could
+establish either. The body also carried the new `delivery_id`, `type: "article"`,
+`excerpt`, `tags` and `scheduledAt`, so the unified contract is live and the
+fields Instagram needs do flow through. My proof rows were deleted and verified
+gone. **New finding while cleaning up: any authenticated user can read every
+`published` post across all users** — status-specific (drafts/scheduled/review all
+return 0 rows), not privilege escalation, and **no migration in the repo creates
+that policy**, so it was added out-of-band like `articles`. Harmless for one
+tenant; a **cross-tenant content leak needing no admin rights** on the SaaS path,
+so it is a decision as much as a bug. Two throwaway accounts need banning and one
+account's orphan rows need deleting (SQL in Phase 22).
+
+**Previously last verified:** 2026-10-19 (Phase 21). A second agent worked this branch on
 2026-10-16; I reviewed its three commits rather than assuming they were fine,
 rebased my work on top (nothing overwritten), and confirmed its most consequential
 change actually works: **AI spend limits are enforced on all three paid-API call
@@ -425,6 +441,99 @@ a stale `vite` dev-server process from this repo (PID identified via
 `Get-CimInstance Win32_Process` filtered on the repo path) still held it. Killing
 that process and its `esbuild` child freed it; `npm ci` then succeeded. Check for
 stray repo-owned node processes before concluding an install is broken.
+
+---
+
+## Phase 22 — Signed delivery PROVEN in production, plus a live RLS finding (2026-10-16)
+
+The owner took items 1 (tier gating) and 2 (`project_settings` replayability) and
+asked me to close item 3 — the last unknown on the webhook path: whether the
+*new* code was actually live, which nothing observable before authentication could
+settle.
+
+- [x] **PROVEN: a signed delivery reached a real receiver from production.**
+      Method: a throwaway account, an active `webhook_configs` row pointing at a
+      receiver I controlled, and a due `website` post, then read the receiver's
+      log. The delivery arrived carrying:
+  - **`X-Novus-Signature: sha256=ac708a80…`** — this single header closes **both**
+    remaining unknowns at once: the *new* code is deployed (the pre-Phase-19
+    version emitted no signature) **and** `WEBHOOK_SIGNING_SECRET` is set.
+  - `X-Novus-Delivery-Id: c5958772-…:website`, matching the body's `delivery_id` —
+    the unified contract and the de-duplication key are live.
+  - `"type": "article"` propagated from the row, plus `excerpt`, `tags` and
+    `scheduledAt` — so the new envelope fields really do flow through, which
+    Instagram specifically needs.
+  - `X-Harness: signed-proof` — my merge of operator headers still works and did
+    not clobber the signature.
+  - **Limit, stated plainly:** I cannot verify the signature's *value* without the
+    secret, which I deliberately did not request. Presence + correct `sha256=<64
+    hex>` shape + an algorithm already cross-checked against `node:crypto` in
+    unit tests and end-to-end (including a rejected tampered body) in the receiver
+    self-test is the honest ceiling.
+- [x] **Cleaned up after myself.** The `webhook_configs`, `posts` and
+      `post_platforms` rows were deleted with the same session (HTTP 204 each),
+      verified by re-reading: 0, 0 and 1 remaining respectively — the 1 leftover
+      `posts` row is not mine (see below). Creating the account's credentials were
+      saved this time, precisely so cleanup was possible: a first attempt died
+      mid-script having saved nothing, which is why there is an orphan to clear
+      (below).
+- 🔴 **New finding — any authenticated user can read every `published` post,
+      across all users.** While verifying cleanup I noticed my brand-new
+      throwaway token could read 2 posts it did not own. Investigated rather than
+      assumed:
+  - Not privilege escalation: `user_roles` returned exactly one row for my own
+    user with role `user`; `subscriptions` one own row; the admin-only
+    `project_settings` returned `[]`. RLS scoping is correct everywhere else.
+  - The exposure is **status-specific**: `draft`, `awaiting_review`, `scheduled`,
+    `failed` and `rejected` all return **0 rows**, while `published` returns the
+    other users' rows. So there is a permissive
+    `posts` SELECT policy keyed on `status = 'published'`.
+  - **Neither migration in the repository creates it.** Both the original
+    (`20260126144110:56-58`) and the Phase-12 rewrite (`20260503150231:8-10`)
+    grant owner-or-admin only, and the rewrite never dropped the original — but
+    neither mentions `published`. So it was added out-of-band in the dashboard,
+    the same drift pattern as `articles`/`ai_usage_log`.
+  - **Impact depends entirely on the tenancy plan, so this is a decision, not
+    just a bug.** With one operator and one tenant it is nearly harmless. On the
+    multi-tenant SaaS path it is a **cross-tenant content leak that needs no admin
+    rights** — broader than the global-super-admin issue already recorded. And if
+    it was added to let the website read published content, a blanket policy on
+    `posts` is the wrong shape: it exposes the whole row (including `user_id` and
+    review metadata) to every signed-in user, where a dedicated view or read-only
+    endpoint would expose only the fields the site needs — which is Option A
+    already recommended in `docs/HEADLESS_CONSUMPTION.md`.
+  - **Confirm the mechanism with:**
+    `select polname, cmd, roles, qual from pg_policies where schemaname='public' and tablename='posts';`
+    I could not read `pg_policies` from here, so the *behaviour* is verified and
+    the *policy text* is inferred.
+
+**Verified:** the production delivery above; `tsc`/`eslint`/tests/build unchanged
+from Phase 21 (no source changes this phase).
+
+**Needs you (small, and all of it is cleanup from my verification):**
+
+```sql
+-- 1. Remove the rows left by the FIRST throwaway account. Its password was never
+--    saved (my script died before writing it), so I could not delete these
+--    myself. One webhook_configs row points at a throwaway webhook.site receiver.
+delete from public.post_platforms
+ where post_id in (select id from public.posts where user_id = '3be9e900-c219-4057-88bd-9f489228459d');
+delete from public.posts          where user_id = '3be9e900-c219-4057-88bd-9f489228459d';
+delete from public.webhook_configs where user_id = '3be9e900-c219-4057-88bd-9f489228459d';
+
+-- 2. The second account is already clean (all three tables verified 0 rows).
+```
+
+Then **ban both** throwaways, as before, using `2099-12-31` rather than
+`'infinity'`: `golive-sign-8325@example.com`
+(`3be9e900-c219-4057-88bd-9f489228459d`) and `golive-sign2-62084@example.com`
+(`34489d0c-2402-46b1-87ad-1a5555ed22bb`).
+
+**Also handed to item 2 (from the same investigation):** the exact replayability
+gap list, and the warning that `types.ts` is **stale** — it has no
+`per_user_monthly_budget` even though the column exists in production (proved by
+probe: a missing column returns `42703`, and this returned `200`). See
+`docs/READINESS_GAP_ANALYSIS.md`.
 
 ---
 
