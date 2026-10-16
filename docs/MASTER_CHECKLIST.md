@@ -8,7 +8,26 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-10-16 (Phase 23). **Every owner decision and every
+**Last verified:** 2026-10-16 (Phase 24). Two pieces of hardening after Phase 23
+closed the handoff, and one review finding. The **tier-aware AI budget was
+reviewed rather than assumed** — it is correct, and its coverage is good,
+including the case that matters most (a `pro` subscription whose `end_date` has
+passed resolving to `free`, so a cancellation Stripe has not yet reported cannot
+keep granting a paid allowance). The review found a real bug: three log messages
+told an operator to apply a migration that **had been deleted** as a duplicate,
+so anyone hitting "AI SPEND IS NOT BEING ENFORCED" would have hunted for a file
+that does not exist. Fixed. The four **Stripe price IDs, previously duplicated
+across three functions, now come from one shared table** — the literal values were
+never the bug, the three copies were, and their disagreement downgraded paying
+customers silently. One unrecognised price is now logged with its ID instead of
+just guessed at, and the env-overridable table makes a second deployment a matter
+of four secrets rather than code edits. **🔴 One item needs a query only the owner
+can run**: a *missing* `subscriptions` row resolves to `free` → $1/month, and the
+automated pipeline runs as its owner, so an owner without a subscription row would
+have generation stop after about a dollar — see B1 in `docs/OPEN_DECISIONS.md`,
+which is now the short list of everything still outstanding.
+
+**Previously last verified:** 2026-10-16 (Phase 23). **Every owner decision and every
 DB-session-only action from Phase 22's handoff is closed.** PR #12 merged to
 `main` (CI green, clean fast-forward) — production and `main` are back in
 sync. The duplicate `ai_usage_log` migration resolved: confirmed via
