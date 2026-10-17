@@ -12,8 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useDocumentMeta } from '@/hooks/useDocumentMeta';
-
-type PlanKey = 'free' | 'starter' | 'pro';
+import { PLAN_PRICING_USD, type PlanKey } from '@/data/pricing';
 
 interface PlanDef {
   key: PlanKey;
@@ -24,9 +23,9 @@ interface PlanDef {
 }
 
 const plans: PlanDef[] = [
-  { key: 'free', monthly: 0, yearly: 0, icon: Rocket, popular: false },
-  { key: 'starter', monthly: 10, yearly: 96, icon: Zap, popular: false },
-  { key: 'pro', monthly: 20, yearly: 192, icon: Sparkles, popular: true },
+  { key: 'free', ...PLAN_PRICING_USD.free, icon: Rocket, popular: false },
+  { key: 'starter', ...PLAN_PRICING_USD.starter, icon: Zap, popular: false },
+  { key: 'pro', ...PLAN_PRICING_USD.pro, icon: Sparkles, popular: true },
 ];
 
 interface PlanTranslation {

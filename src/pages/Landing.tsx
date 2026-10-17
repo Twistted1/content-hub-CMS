@@ -19,6 +19,7 @@ import {
 
 import { Footer } from '@/components/layout/Footer';
 import { useTranslation } from 'react-i18next';
+import { PLAN_PRICING_USD } from '@/data/pricing';
 
 const featureIcons = [Zap, BarChart3, Calendar, Users, Bot, Shield];
 const planIcons = { free: Rocket, starter: Building2, pro: Zap } as const;
@@ -40,7 +41,11 @@ interface PlanTranslation {
 export default function Landing() {
   const { t } = useTranslation();
   const features = t('landing.features', { returnObjects: true }) as FeatureTranslation[];
-  const planPrices: Record<(typeof planKeys)[number], string> = { free: '$0', starter: '$10', pro: '$20' };
+  const planPrices: Record<(typeof planKeys)[number], string> = {
+    free: `$${PLAN_PRICING_USD.free.monthly}`,
+    starter: `$${PLAN_PRICING_USD.starter.monthly}`,
+    pro: `$${PLAN_PRICING_USD.pro.monthly}`,
+  };
 
   return (
     <div className="min-h-screen bg-background">

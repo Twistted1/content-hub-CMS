@@ -42,7 +42,6 @@ Improvements, not blockers. Nothing in section A or B depends on them.
 |---|---|---|
 | C2 | **Per-webhook signing secret.** Signing is one deployment-wide `WEBHOOK_SIGNING_SECRET`, so every receiver shares a key and rotating one touches all. | Independent rotation per receiver. |
 | C3 | **Update and unpublish events.** Only `post.publish` is ever fired, so editing or deleting a post cannot be propagated to a receiver. | Any real integration needs it; a website bridge certainly will. |
-| C5 | **UI display prices are hardcoded** ($10/$96/$20 in `Pricing.tsx`/`Landing.tsx`), independent of the Stripe price IDs. | They can silently disagree with what is charged. |
 | C7 | **Website display order is `id` ascending**, so a new article renders last regardless of its date. | A site-side sort by date fixes it. |
 
 ---
@@ -100,4 +99,15 @@ migrations were already unscheduled by `20260601130235` and never run. Left
 the two old migration files' SQL untouched (editing applied migrations is
 unsafe) and added a non-functional header comment to each pointing at the
 superseding migration, so the dead code no longer reads as live when someone
-scans the migration list in order.
+scans the migration list in order; **C5 closed** — confirmed all four display
+prices ($10/$96/$20/$192) against the live Stripe price objects (test-mode
+sandbox) and they matched exactly, so there was no existing drift. Fixed the
+*structural* risk anyway: `Pricing.tsx` and `Landing.tsx` were two
+independently hardcoded copies, not one — now both read from a new
+`src/data/pricing.ts`, and `src/utils/pricingParity.test.ts` pins that single
+source against a `DISPLAY_AMOUNTS_USD` table added to
+`_shared/stripePrices.ts` (documentation-only, confirmed against Stripe, not
+fetched live) so the build fails if the UI and the Stripe-ID table are ever
+updated one without the other. Updating a real Stripe price still means
+updating `PLAN_PRICING_USD` by hand to match — there is no live fetch — but it
+can no longer happen in only one of the two pages.

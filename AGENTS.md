@@ -181,9 +181,16 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   unchanged until someone opts in. Deliberately **not** memoised — a warm edge
   function caching a stale secret is a failure this project has already had. An
   unrecognised price is now logged with its `priceId`, and a duplicate mapping is
-  reported. The UI's display prices in `Pricing.tsx`/`Landing.tsx` are still
-  hardcoded separately from Stripe, so they can drift from what is actually
-  charged.
+  reported. The UI's display prices now come from one place,
+  `src/data/pricing.ts` (`Pricing.tsx` and `Landing.tsx` both import it —
+  fixed 2026-10-17, they used to hardcode the same numbers twice
+  independently), pinned against a `DISPLAY_AMOUNTS_USD` table in
+  `_shared/stripePrices.ts` by `src/utils/pricingParity.test.ts`. Confirmed
+  against live Stripe price objects on 2026-10-17: $10/$96/$20/$192 all
+  matched, so this closed a structural risk rather than an active bug. There
+  is still no live fetch from Stripe — a real price change means updating
+  `PLAN_PRICING_USD` and `DISPLAY_AMOUNTS_USD` by hand, together, or the test
+  fails.
 - **There is no free trial, and the landing page no longer claims one** (fixed
   2026-10-16 — owner chose to drop the claim rather than implement it). The
   product has a free tier instead. If you're adding trial-related UI copy,

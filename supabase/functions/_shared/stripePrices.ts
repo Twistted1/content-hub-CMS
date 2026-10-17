@@ -43,6 +43,23 @@ export const DEFAULT_PRICE_IDS: Record<PaidTier, Record<BillingInterval, string>
   },
 };
 
+/**
+ * The dollar amount each default price ID actually charges, in whole USD —
+ * confirmed directly against the Stripe price objects on 2026-10-17, not
+ * derived from anything. Documentation only; nothing here reads it at
+ * runtime (Stripe is the only source of truth for what gets charged). It
+ * exists so `src/utils/pricingParity.test.ts` can pin it against
+ * `src/data/pricing.ts`'s `PLAN_PRICING_USD`, which is what `Pricing.tsx` and
+ * `Landing.tsx` actually render — catching the two from silently disagreeing,
+ * which is the specific failure mode this project's UI display prices have
+ * been flagged for. If a real Stripe price changes, update both this and
+ * `PLAN_PRICING_USD` together; there is no live fetch (see the file header).
+ */
+export const DISPLAY_AMOUNTS_USD: Record<PaidTier, Record<BillingInterval, number>> = {
+  starter: { monthly: 10, yearly: 96 },
+  pro: { monthly: 20, yearly: 192 },
+};
+
 /** The opt-in override names, documented in `.env.example`. */
 export const PRICE_ENV_NAMES: Record<PaidTier, Record<BillingInterval, string>> = {
   starter: {
