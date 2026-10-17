@@ -21,15 +21,19 @@ const TWITTER_CLIENT_SECRET = Deno.env.get("TWITTER_CLIENT_SECRET") || "";
 // regular user token does.
 const META_SYSTEM_USER_TOKEN = Deno.env.get("META_SYSTEM_USER_TOKEN") || "";
 const META_PAGE_ID = Deno.env.get("META_PAGE_ID") || "";
+// The Page's connected Instagram professional account. Needed only for
+// Instagram; Facebook posts with just the two vars above.
+const META_IG_USER_ID = Deno.env.get("META_IG_USER_ID") || "";
 
 // HMAC key for outbound webhook signatures. Unset means deliveries go out
 // unsigned — they still work, and the delivery result records `signed: false` so
 // the gap is visible rather than silent. See tools/webhook-receiver/.
 const WEBHOOK_SIGNING_SECRET = Deno.env.get(SIGNING_SECRET_ENV) || "";
 
-// "facebook" is also direct-publish (see publishFacebook below) but is
-// dispatched on its own branch before this set is checked, since it uses a
-// deployment-wide token rather than a per-user platform_oauth_tokens row.
+// "facebook" and "instagram" are also direct-publish (see publishFacebook /
+// publishInstagram below) but are dispatched on their own branches before
+// this set is checked, since both use a deployment-wide token rather than a
+// per-user platform_oauth_tokens row.
 const DIRECT_PLATFORMS = new Set(["linkedin", "twitter"]);
 
 // Must match the `p_max_attempts` default in `claim_due_posts`.
@@ -110,26 +114,80 @@ async function publishTwitter(token: any, content: string) {
 }
 
 /**
+ * Exchange the System User token for the Page's own access token.
+ *
+ * Having `pages_manage_posts`/`pages_read_engagement` scoped on the System
+ * User token is necessary but not sufficient — Graph API also requires the
+ * System User to be posting *as the Page*, which means using the Page's own
+ * token rather than the System User token directly (error `(#200)` is what
+ * Facebook returns otherwise, even with the System User correctly assigned
+ * as a Page asset in Business Settings). Never log the returned token — only
+ * ever the `error` field of a failed response.
+ */
+async function getPageAccessToken(): Promise<string> {
+  if (!META_SYSTEM_USER_TOKEN || !META_PAGE_ID) {
+    throw new Error("Facebook/Instagram publishing not configured: set META_SYSTEM_USER_TOKEN and META_PAGE_ID");
+  }
+  const resp = await fetch(
+    `https://graph.facebook.com/v21.0/${META_PAGE_ID}?fields=access_token&access_token=${META_SYSTEM_USER_TOKEN}`,
+  );
+  const data = await resp.json();
+  if (!resp.ok || !data.access_token) {
+    throw new Error(`facebook page-token exchange ${resp.status}: ${JSON.stringify({ error: data.error })}`);
+  }
+  return data.access_token;
+}
+
+/**
  * Facebook can post text-only (unlike Instagram), so a cover image switches
  * the endpoint to `/photos` (which takes the image by URL, no upload/container
  * step) rather than being required. Graph API takes the token as a form field,
  * not an Authorization header.
  */
 async function publishFacebook(content: string, imageUrl?: string | null) {
-  if (!META_SYSTEM_USER_TOKEN || !META_PAGE_ID) {
-    throw new Error("Facebook publishing not configured: set META_SYSTEM_USER_TOKEN and META_PAGE_ID");
-  }
+  const pageToken = await getPageAccessToken();
   const endpoint = imageUrl
     ? `https://graph.facebook.com/v21.0/${META_PAGE_ID}/photos`
     : `https://graph.facebook.com/v21.0/${META_PAGE_ID}/feed`;
   const body = new URLSearchParams({
-    access_token: META_SYSTEM_USER_TOKEN,
+    access_token: pageToken,
     ...(imageUrl ? { url: imageUrl, caption: content } : { message: content }),
   });
   const resp = await fetch(endpoint, { method: "POST", body });
   const data = await resp.json();
-  if (!resp.ok) throw new Error(`facebook ${resp.status}: ${JSON.stringify(data)}`);
+  if (!resp.ok) throw new Error(`facebook ${resp.status}: ${JSON.stringify({ error: data.error })}`);
   return data.post_id || data.id || null;
+}
+
+/**
+ * Instagram cannot publish text-only, and publishing is always two calls: create
+ * a media container, then publish it by `creation_id`. Uses the Page's access
+ * token (same exchange as Facebook) — the IG professional account authenticates
+ * through its connected Page, not its own token.
+ */
+async function publishInstagram(content: string, imageUrl?: string | null) {
+  if (!META_IG_USER_ID) {
+    throw new Error("Instagram publishing not configured: set META_IG_USER_ID (and META_SYSTEM_USER_TOKEN/META_PAGE_ID)");
+  }
+  if (!imageUrl) {
+    throw new Error("Instagram cannot publish text-only — this post has no cover image");
+  }
+  const pageToken = await getPageAccessToken();
+  const createResp = await fetch(`https://graph.facebook.com/v21.0/${META_IG_USER_ID}/media`, {
+    method: "POST",
+    body: new URLSearchParams({ access_token: pageToken, image_url: imageUrl, caption: content }),
+  });
+  const createData = await createResp.json();
+  if (!createResp.ok || !createData.id) {
+    throw new Error(`instagram media-create ${createResp.status}: ${JSON.stringify({ error: createData.error })}`);
+  }
+  const publishResp = await fetch(`https://graph.facebook.com/v21.0/${META_IG_USER_ID}/media_publish`, {
+    method: "POST",
+    body: new URLSearchParams({ access_token: pageToken, creation_id: createData.id }),
+  });
+  const publishData = await publishResp.json();
+  if (!publishResp.ok) throw new Error(`instagram media-publish ${publishResp.status}: ${JSON.stringify({ error: publishData.error })}`);
+  return publishData.id || null;
 }
 
 async function authorize(req: Request, admin: any): Promise<boolean> {
@@ -199,10 +257,12 @@ serve(async (req) => {
         // Instagram outright while being silently cut to 280 for X.
         const platformText = formatContentForPlatform(platform, text);
         try {
-          if (platform === "facebook") {
+          if (platform === "facebook" || platform === "instagram") {
             // Deployment-wide System User token, not a per-user OAuth row —
             // see the META_SYSTEM_USER_TOKEN/META_PAGE_ID comment above.
-            const pid = await publishFacebook(platformText, post.cover_image_url);
+            const pid = platform === "facebook"
+              ? await publishFacebook(platformText, post.cover_image_url)
+              : await publishInstagram(platformText, post.cover_image_url);
             await admin.from("post_platforms").update({
               status: "published", published_at: new Date().toISOString(), platform_post_id: pid, error_message: null,
             }).eq("id", pp.id);
@@ -227,7 +287,7 @@ serve(async (req) => {
             perPlatform.push({ platform, success: true, platformPostId: pid });
             anySuccess = true;
           } else {
-            // Webhook for IG / TikTok / YouTube / Rumble / Podcast / Website
+            // Webhook for TikTok / YouTube / Rumble / Podcast / Website
             const matching = (webhooks || []).filter((w: any) =>
               !w.platforms?.length || w.platforms.includes(platform)
             ).filter((w: any) => isSafeWebhookUrl(w.url));

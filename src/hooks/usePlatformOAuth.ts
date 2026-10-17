@@ -6,12 +6,13 @@ import { toast } from "sonner";
 
 /**
  * Platforms `publish-post` can publish directly. Wider than
- * `OAUTH_CONNECTABLE_PLATFORMS` below: Facebook publishes directly too, but
- * with a deployment-wide Business Manager token (`META_SYSTEM_USER_TOKEN` /
- * `META_PAGE_ID` in the edge functions), not a per-user OAuth connection, so
- * it has no "Connect" button and never appears in `platform_oauth_tokens`.
+ * `OAUTH_CONNECTABLE_PLATFORMS` below: Facebook and Instagram publish
+ * directly too, but with a deployment-wide Business Manager token
+ * (`META_SYSTEM_USER_TOKEN` / `META_PAGE_ID` / `META_IG_USER_ID` in the edge
+ * functions), not a per-user OAuth connection, so neither has a "Connect"
+ * button and neither appears in `platform_oauth_tokens`.
  */
-export type DirectPlatform = "linkedin" | "twitter" | "facebook";
+export type DirectPlatform = "linkedin" | "twitter" | "facebook" | "instagram";
 
 /**
  * How a platform actually receives content.
@@ -21,8 +22,9 @@ export type DirectPlatform = "linkedin" | "twitter" | "facebook";
  *    per-platform OAuth handshake for these.
  *
  * This governs the Platforms page's Connect-button UI specifically, which is
- * why Facebook is deliberately NOT here even though it is a `DirectPlatform`
- * for `publish-post` — `oauth-init` has no Facebook flow to connect to.
+ * why Facebook/Instagram are deliberately NOT here even though both are a
+ * `DirectPlatform` for `publish-post` — `oauth-init` has no Meta flow to
+ * connect to.
  */
 export type ConnectionMode = "direct" | "webhook";
 

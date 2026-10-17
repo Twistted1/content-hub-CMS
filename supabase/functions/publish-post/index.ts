@@ -12,11 +12,13 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const TWITTER_CLIENT_ID = Deno.env.get("TWITTER_CLIENT_ID")!;
 const TWITTER_CLIENT_SECRET = Deno.env.get("TWITTER_CLIENT_SECRET")!;
 
-// Facebook publishes with a Business Manager System User token (deployment-
-// wide, one Page) rather than a per-user OAuth row — see the matching comment
-// in publish-due-posts/index.ts, which this mirrors.
+// Facebook/Instagram publish with a Business Manager System User token
+// (deployment-wide, one Page/one IG account) rather than a per-user OAuth
+// row — see the matching comment in publish-due-posts/index.ts, which this
+// mirrors.
 const META_SYSTEM_USER_TOKEN = Deno.env.get("META_SYSTEM_USER_TOKEN") || "";
 const META_PAGE_ID = Deno.env.get("META_PAGE_ID") || "";
+const META_IG_USER_ID = Deno.env.get("META_IG_USER_ID") || "";
 
 async function refreshTwitterToken(admin: any, tokenRow: any) {
   if (!tokenRow.refresh_token) return tokenRow;
@@ -103,26 +105,76 @@ async function publishToTwitter(token: any, content: string) {
 }
 
 /**
+ * Exchange the System User token for the Page's own access token — necessary
+ * because Graph API requires posting *as the Page* (error `(#200)`
+ * otherwise), even though the System User token itself carries
+ * pages_manage_posts/pages_read_engagement. Never log the returned token —
+ * only ever the `error` field of a failed response.
+ */
+async function getPageAccessToken(): Promise<string> {
+  if (!META_SYSTEM_USER_TOKEN || !META_PAGE_ID) {
+    throw new Error("Facebook/Instagram publishing not configured: set META_SYSTEM_USER_TOKEN and META_PAGE_ID");
+  }
+  const resp = await fetch(
+    `https://graph.facebook.com/v21.0/${META_PAGE_ID}?fields=access_token&access_token=${META_SYSTEM_USER_TOKEN}`,
+  );
+  const data = await resp.json();
+  if (!resp.ok || !data.access_token) {
+    throw new Error(`Facebook page-token exchange failed [${resp.status}]: ${JSON.stringify({ error: data.error })}`);
+  }
+  return data.access_token;
+}
+
+/**
  * Facebook can post text-only (unlike Instagram), so a cover image switches
  * the endpoint to `/photos` (image by URL, no upload/container step) rather
  * than being required. Graph API takes the token as a form field, not an
  * Authorization header.
  */
 async function publishToFacebook(content: string, imageUrl?: string | null) {
-  if (!META_SYSTEM_USER_TOKEN || !META_PAGE_ID) {
-    throw new Error("Facebook publishing not configured: set META_SYSTEM_USER_TOKEN and META_PAGE_ID");
-  }
+  const pageToken = await getPageAccessToken();
   const endpoint = imageUrl
     ? `https://graph.facebook.com/v21.0/${META_PAGE_ID}/photos`
     : `https://graph.facebook.com/v21.0/${META_PAGE_ID}/feed`;
   const body = new URLSearchParams({
-    access_token: META_SYSTEM_USER_TOKEN,
+    access_token: pageToken,
     ...(imageUrl ? { url: imageUrl, caption: content } : { message: content }),
   });
   const resp = await fetch(endpoint, { method: "POST", body });
   const data = await resp.json();
-  if (!resp.ok) throw new Error(`Facebook publish failed [${resp.status}]: ${JSON.stringify(data)}`);
+  if (!resp.ok) throw new Error(`Facebook publish failed [${resp.status}]: ${JSON.stringify({ error: data.error })}`);
   return { platformPostId: data.post_id || data.id };
+}
+
+/**
+ * Instagram cannot publish text-only, and publishing is always two calls:
+ * create a media container, then publish it by `creation_id`. Uses the
+ * Page's access token (same exchange as Facebook) — the IG professional
+ * account authenticates through its connected Page, not its own token.
+ */
+async function publishToInstagram(content: string, imageUrl?: string | null) {
+  if (!META_IG_USER_ID) {
+    throw new Error("Instagram publishing not configured: set META_IG_USER_ID (and META_SYSTEM_USER_TOKEN/META_PAGE_ID)");
+  }
+  if (!imageUrl) {
+    throw new Error("Instagram cannot publish text-only — this post has no cover image");
+  }
+  const pageToken = await getPageAccessToken();
+  const createResp = await fetch(`https://graph.facebook.com/v21.0/${META_IG_USER_ID}/media`, {
+    method: "POST",
+    body: new URLSearchParams({ access_token: pageToken, image_url: imageUrl, caption: content }),
+  });
+  const createData = await createResp.json();
+  if (!createResp.ok || !createData.id) {
+    throw new Error(`Instagram media-create failed [${createResp.status}]: ${JSON.stringify({ error: createData.error })}`);
+  }
+  const publishResp = await fetch(`https://graph.facebook.com/v21.0/${META_IG_USER_ID}/media_publish`, {
+    method: "POST",
+    body: new URLSearchParams({ access_token: pageToken, creation_id: createData.id }),
+  });
+  const publishData = await publishResp.json();
+  if (!publishResp.ok) throw new Error(`Instagram media-publish failed [${publishResp.status}]: ${JSON.stringify({ error: publishData.error })}`);
+  return { platformPostId: publishData.id };
 }
 
 serve(async (req) => {
@@ -165,9 +217,11 @@ serve(async (req) => {
     for (const platform of platforms) {
       try {
         let r: any;
-        if (platform === "facebook") {
+        if (platform === "facebook" || platform === "instagram") {
           // Deployment-wide System User token, not a per-user OAuth row.
-          r = await publishToFacebook(content, post.cover_image_url);
+          r = platform === "facebook"
+            ? await publishToFacebook(content, post.cover_image_url)
+            : await publishToInstagram(content, post.cover_image_url);
         } else {
           const token = await getValidToken(admin, userId, platform);
           if (platform === "linkedin") r = await publishToLinkedIn(token, content);
