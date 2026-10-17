@@ -13,11 +13,23 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const TWITTER_CLIENT_ID = Deno.env.get("TWITTER_CLIENT_ID") || "";
 const TWITTER_CLIENT_SECRET = Deno.env.get("TWITTER_CLIENT_SECRET") || "";
 
+// Facebook publishes with a Business Manager System User token, not a
+// per-user OAuth token like LinkedIn/Twitter — one token posts to one Page on
+// behalf of the whole deployment, so it lives in env vars rather than a
+// `platform_oauth_tokens` row. A System User token derived from Business
+// Manager with Page-scoped permissions does not expire on its own the way a
+// regular user token does.
+const META_SYSTEM_USER_TOKEN = Deno.env.get("META_SYSTEM_USER_TOKEN") || "";
+const META_PAGE_ID = Deno.env.get("META_PAGE_ID") || "";
+
 // HMAC key for outbound webhook signatures. Unset means deliveries go out
 // unsigned — they still work, and the delivery result records `signed: false` so
 // the gap is visible rather than silent. See tools/webhook-receiver/.
 const WEBHOOK_SIGNING_SECRET = Deno.env.get(SIGNING_SECRET_ENV) || "";
 
+// "facebook" is also direct-publish (see publishFacebook below) but is
+// dispatched on its own branch before this set is checked, since it uses a
+// deployment-wide token rather than a per-user platform_oauth_tokens row.
 const DIRECT_PLATFORMS = new Set(["linkedin", "twitter"]);
 
 // Must match the `p_max_attempts` default in `claim_due_posts`.
@@ -97,6 +109,29 @@ async function publishTwitter(token: any, content: string) {
   return data.data?.id || null;
 }
 
+/**
+ * Facebook can post text-only (unlike Instagram), so a cover image switches
+ * the endpoint to `/photos` (which takes the image by URL, no upload/container
+ * step) rather than being required. Graph API takes the token as a form field,
+ * not an Authorization header.
+ */
+async function publishFacebook(content: string, imageUrl?: string | null) {
+  if (!META_SYSTEM_USER_TOKEN || !META_PAGE_ID) {
+    throw new Error("Facebook publishing not configured: set META_SYSTEM_USER_TOKEN and META_PAGE_ID");
+  }
+  const endpoint = imageUrl
+    ? `https://graph.facebook.com/v21.0/${META_PAGE_ID}/photos`
+    : `https://graph.facebook.com/v21.0/${META_PAGE_ID}/feed`;
+  const body = new URLSearchParams({
+    access_token: META_SYSTEM_USER_TOKEN,
+    ...(imageUrl ? { url: imageUrl, caption: content } : { message: content }),
+  });
+  const resp = await fetch(endpoint, { method: "POST", body });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(`facebook ${resp.status}: ${JSON.stringify(data)}`);
+  return data.post_id || data.id || null;
+}
+
 async function authorize(req: Request, admin: any): Promise<boolean> {
   const cron = req.headers.get("x-cron-secret");
   if (cron) {
@@ -164,7 +199,16 @@ serve(async (req) => {
         // Instagram outright while being silently cut to 280 for X.
         const platformText = formatContentForPlatform(platform, text);
         try {
-          if (DIRECT_PLATFORMS.has(platform)) {
+          if (platform === "facebook") {
+            // Deployment-wide System User token, not a per-user OAuth row —
+            // see the META_SYSTEM_USER_TOKEN/META_PAGE_ID comment above.
+            const pid = await publishFacebook(platformText, post.cover_image_url);
+            await admin.from("post_platforms").update({
+              status: "published", published_at: new Date().toISOString(), platform_post_id: pid, error_message: null,
+            }).eq("id", pp.id);
+            perPlatform.push({ platform, success: true, platformPostId: pid });
+            anySuccess = true;
+          } else if (DIRECT_PLATFORMS.has(platform)) {
             const { data: token } = await admin
               .from("platform_oauth_tokens").select("*")
               .eq("user_id", post.user_id).eq("platform", platform).maybeSingle();
@@ -183,7 +227,7 @@ serve(async (req) => {
             perPlatform.push({ platform, success: true, platformPostId: pid });
             anySuccess = true;
           } else {
-            // Webhook for IG / FB / TikTok / YouTube / Rumble / Podcast / Website
+            // Webhook for IG / TikTok / YouTube / Rumble / Podcast / Website
             const matching = (webhooks || []).filter((w: any) =>
               !w.platforms?.length || w.platforms.includes(platform)
             ).filter((w: any) => isSafeWebhookUrl(w.url));

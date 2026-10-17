@@ -219,8 +219,12 @@ export default function Platforms() {
     const post = posts.find((p) => p.id === id);
     const targetPlatforms = ((post?.platforms || []) as any[])
       .map((p) => (typeof p === "string" ? p : p.platform))
-      .filter((p): p is DirectPlatform => p === "linkedin" || p === "twitter");
-    const directPlatforms = targetPlatforms.filter((p) => isConnected(p));
+      .filter((p): p is DirectPlatform => p === "linkedin" || p === "twitter" || p === "facebook");
+    // Facebook has no per-user OAuth connection to check — it's a
+    // deployment-wide token (see usePlatformOAuth.ts), so it's always a
+    // candidate here; publish-post itself reports clearly if the two secrets
+    // (META_SYSTEM_USER_TOKEN / META_PAGE_ID) aren't configured.
+    const directPlatforms = targetPlatforms.filter((p) => p === "facebook" || isConnected(p));
 
     if (directPlatforms.length > 0) {
       try {

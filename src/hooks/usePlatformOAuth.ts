@@ -4,7 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
-export type DirectPlatform = "linkedin" | "twitter";
+/**
+ * Platforms `publish-post` can publish directly. Wider than
+ * `OAUTH_CONNECTABLE_PLATFORMS` below: Facebook publishes directly too, but
+ * with a deployment-wide Business Manager token (`META_SYSTEM_USER_TOKEN` /
+ * `META_PAGE_ID` in the edge functions), not a per-user OAuth connection, so
+ * it has no "Connect" button and never appears in `platform_oauth_tokens`.
+ */
+export type DirectPlatform = "linkedin" | "twitter" | "facebook";
 
 /**
  * How a platform actually receives content.
@@ -12,17 +19,22 @@ export type DirectPlatform = "linkedin" | "twitter";
  *  - `webhook`: delivered by `publish-due-posts` to a user-configured webhook
  *    in `webhook_configs` (Content Pipeline > Webhooks). There is no
  *    per-platform OAuth handshake for these.
+ *
+ * This governs the Platforms page's Connect-button UI specifically, which is
+ * why Facebook is deliberately NOT here even though it is a `DirectPlatform`
+ * for `publish-post` — `oauth-init` has no Facebook flow to connect to.
  */
 export type ConnectionMode = "direct" | "webhook";
 
-const DIRECT_PLATFORMS = new Set<string>(["linkedin", "twitter"]);
+const OAUTH_CONNECTABLE_PLATFORMS = new Set<string>(["linkedin", "twitter"]);
 
 export function getConnectionMode(platformId: string): ConnectionMode {
-  return DIRECT_PLATFORMS.has(platformId.toLowerCase()) ? "direct" : "webhook";
+  return OAUTH_CONNECTABLE_PLATFORMS.has(platformId.toLowerCase()) ? "direct" : "webhook";
 }
 
-export function isDirectPlatform(platformId: string): platformId is DirectPlatform {
-  return DIRECT_PLATFORMS.has(platformId.toLowerCase());
+/** OAuth-connectable only (drives the Connect-button UI) — see the comment on `ConnectionMode`. */
+export function isDirectPlatform(platformId: string): platformId is "linkedin" | "twitter" {
+  return OAUTH_CONNECTABLE_PLATFORMS.has(platformId.toLowerCase());
 }
 
 export interface ConnectedAccount {

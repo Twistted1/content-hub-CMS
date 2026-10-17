@@ -12,6 +12,12 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const TWITTER_CLIENT_ID = Deno.env.get("TWITTER_CLIENT_ID")!;
 const TWITTER_CLIENT_SECRET = Deno.env.get("TWITTER_CLIENT_SECRET")!;
 
+// Facebook publishes with a Business Manager System User token (deployment-
+// wide, one Page) rather than a per-user OAuth row — see the matching comment
+// in publish-due-posts/index.ts, which this mirrors.
+const META_SYSTEM_USER_TOKEN = Deno.env.get("META_SYSTEM_USER_TOKEN") || "";
+const META_PAGE_ID = Deno.env.get("META_PAGE_ID") || "";
+
 async function refreshTwitterToken(admin: any, tokenRow: any) {
   if (!tokenRow.refresh_token) return tokenRow;
   const basicAuth = btoa(`${TWITTER_CLIENT_ID}:${TWITTER_CLIENT_SECRET}`);
@@ -96,6 +102,29 @@ async function publishToTwitter(token: any, content: string) {
   return { platformPostId: data.data?.id };
 }
 
+/**
+ * Facebook can post text-only (unlike Instagram), so a cover image switches
+ * the endpoint to `/photos` (image by URL, no upload/container step) rather
+ * than being required. Graph API takes the token as a form field, not an
+ * Authorization header.
+ */
+async function publishToFacebook(content: string, imageUrl?: string | null) {
+  if (!META_SYSTEM_USER_TOKEN || !META_PAGE_ID) {
+    throw new Error("Facebook publishing not configured: set META_SYSTEM_USER_TOKEN and META_PAGE_ID");
+  }
+  const endpoint = imageUrl
+    ? `https://graph.facebook.com/v21.0/${META_PAGE_ID}/photos`
+    : `https://graph.facebook.com/v21.0/${META_PAGE_ID}/feed`;
+  const body = new URLSearchParams({
+    access_token: META_SYSTEM_USER_TOKEN,
+    ...(imageUrl ? { url: imageUrl, caption: content } : { message: content }),
+  });
+  const resp = await fetch(endpoint, { method: "POST", body });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(`Facebook publish failed [${resp.status}]: ${JSON.stringify(data)}`);
+  return { platformPostId: data.post_id || data.id };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -135,11 +164,16 @@ serve(async (req) => {
 
     for (const platform of platforms) {
       try {
-        const token = await getValidToken(admin, userId, platform);
         let r: any;
-        if (platform === "linkedin") r = await publishToLinkedIn(token, content);
-        else if (platform === "twitter") r = await publishToTwitter(token, content);
-        else throw new Error(`Direct publishing not supported for ${platform}`);
+        if (platform === "facebook") {
+          // Deployment-wide System User token, not a per-user OAuth row.
+          r = await publishToFacebook(content, post.cover_image_url);
+        } else {
+          const token = await getValidToken(admin, userId, platform);
+          if (platform === "linkedin") r = await publishToLinkedIn(token, content);
+          else if (platform === "twitter") r = await publishToTwitter(token, content);
+          else throw new Error(`Direct publishing not supported for ${platform}`);
+        }
 
         await admin.from("post_platforms").upsert({
           post_id: postId,

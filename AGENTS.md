@@ -223,9 +223,23 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   `src/utils/publishPayloadParity.test.ts` imports it directly and pins the
   envelope, the limits (against `src/utils/platformLimits.ts`) and the truncation
   behaviour.
-- **Only LinkedIn and X publish directly.** `publish-due-posts/index.ts:15`
-  defines `DIRECT_PLATFORMS = {linkedin, twitter}`. Every other platform needs
-  a matching active row in `webhook_configs` or the post fails with
+- **LinkedIn, X, and now Facebook publish directly; everything else needs a
+  webhook.** `publish-due-posts`/`publish-post` dispatch `facebook` on its own
+  branch (checked before `DIRECT_PLATFORMS = {linkedin, twitter}`), added
+  2026-10-17. Facebook is structurally different from LinkedIn/Twitter: it
+  uses one **deployment-wide** Business Manager System User token
+  (`META_SYSTEM_USER_TOKEN` + `META_PAGE_ID` edge function secrets), not a
+  per-user row in `platform_oauth_tokens` — there is no "Connect Facebook"
+  OAuth flow, and `isDirectPlatform()` in `usePlatformOAuth.ts` deliberately
+  excludes it from that Connect-button UI while `DirectPlatform` (the type
+  `publish-post` accepts) includes it. Both secrets unset is a configured,
+  caught failure (`"Facebook publishing not configured"`), not a crash.
+  Facebook posts text-only via `/{page}/feed`; a `cover_image_url` switches to
+  `/{page}/photos` (by URL, no container/upload step — simpler than
+  Instagram's two-call media flow). **Not yet exercised in production** — the
+  two secrets are not yet set; see `docs/OPEN_DECISIONS.md`. Every platform
+  besides linkedin/twitter/facebook still needs a matching active row in
+  `webhook_configs` or the post fails with
   `No active webhook configured for {platform}`. A full-looking calendar does
   not mean deliverable content.
 - **Proven-deliverable in production, as of 2026-10-14 — keep these two paths
