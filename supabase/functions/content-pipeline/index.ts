@@ -82,7 +82,12 @@ serve(async (req) => {
     if (!openaiKey) throw new Error("OPENAI_API_KEY not configured");
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
-    const { topic, platforms, scheduleMode, scheduledAt, user_id } = await req.json();
+    // `category` is optional and caller-supplied (schedule-from-templates passes
+    // the day's WEBSITE_CATEGORY_BY_DAY value for website posts). Nothing used
+    // to populate posts.category at all, so it was always null and every
+    // delivery's category was silently dropped before it ever reached a
+    // receiver — see _shared/publishDelivery.ts's DeliveryInput.category.
+    const { topic, platforms, scheduleMode, scheduledAt, user_id, category } = await req.json();
     // Resolve once, so the stored value, the gate below and any future consumer
     // all agree on what this request asked for.
     const mode = normalizeScheduleMode(scheduleMode);
@@ -274,7 +279,8 @@ Return ONLY JSON.`;
         cover_image_url: finalImageUrl,
         is_ai_generated: true,
         cost_estimate: estimatedCost,
-        workflow_step: 'Review'
+        workflow_step: 'Review',
+        category: category || null,
       })
       .select()
       .single();
@@ -344,6 +350,7 @@ Return ONLY JSON.`;
                   type: generatedContent.type,
                   coverImageUrl: finalImageUrl,
                   scheduledAt: scheduledAt ?? null,
+                  category: category || null,
                 });
                 // Sign the exact bytes sent, so the receiver can verify provenance.
                 const body = JSON.stringify(payload);

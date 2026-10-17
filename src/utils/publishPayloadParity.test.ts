@@ -157,6 +157,16 @@ describe("buildDelivery — the unified envelope", () => {
     expect(d.excerpt).toBeNull();
     expect(d.coverImageUrl).toBeNull();
     expect(d.scheduledAt).toBeNull();
+    expect(d.category).toBeNull();
+  });
+
+  it("carries category through when supplied", () => {
+    // Previously dropped entirely: nothing populated this field on the
+    // envelope, so a receiver mapping onto a site's category list had no real
+    // data to map from and silently fell back to one hardcoded value on
+    // every delivery, regardless of the post's actual category.
+    const d = buildDelivery({ ...input, category: "Technology" }).post;
+    expect(d.category).toBe("Technology");
   });
 
   it("joins title and content, and truncates to the platform limit", () => {

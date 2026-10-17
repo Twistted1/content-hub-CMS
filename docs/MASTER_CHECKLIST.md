@@ -8,7 +8,32 @@ next to it, `[ ]` means still open, with a comment on what's blocking it and
 what I'd do about it. No item stays vague — either it's checked with
 evidence, or it's open with a next action.
 
-**Last verified:** 2026-10-16 (Phase 24). Two pieces of hardening after Phase 23
+**Last verified:** 2026-10-17 (Phase 25). The owner answered all three `A`
+decisions from `docs/OPEN_DECISIONS.md`: A1 (tier caps) is "I don't know" — left
+unchanged, still open. A2 (multi-tenancy) is "not for now" — closed, recorded as
+out of scope. A3 (CMS→website bridge) is "ideally yes" — which surfaced a real
+gap the mechanism alone couldn't fix: **no code path anywhere ever set
+`posts.category`.** Not `content-pipeline`'s insert, not
+`schedule-from-templates` (it only folded the day's category into the AI
+*prompt text*, never stored it as a field) — so `post.category` was always
+null, and the receiver's `category: post.category ?? "Geopolitics"` was dead
+code that silently discarded the real value on every single delivery, website
+included. Fixed end to end: `schedule-from-templates` now passes `category`
+explicitly; `content-pipeline` stores it on the post and forwards it;
+`_shared/publishDelivery.ts`'s `DeliveryInput`/`DeliveryPayload` carry it;
+`publish-due-posts` selects and forwards it; the receiver maps the CMS's 7
+categories onto the site's fixed 8-item list via a new, explicitly-flagged-as-
+provisional `SITE_CATEGORY_BY_CMS_CATEGORY` table. Also found and fixed, while
+checking the owner's own account against B1's warning: a stale test-mode
+`subscriptions` row claiming `tier: pro` with an `end_date` five weeks past —
+confirmed against live Stripe directly (zero subscriptions at any status for
+that customer) before touching it, then reset to `free`/`null`. Merged and
+deployed PRs #14 and #16 (receiver runbook + Dockerfile + health-check fixes;
+Stripe price consolidation + tier-cap peer review), applied the
+`security_barrier` hardening, and redeployed all three billing functions plus
+`content-pipeline`/`publish-due-posts`/`schedule-from-templates`.
+
+**Previously last verified:** 2026-10-16 (Phase 24). Two pieces of hardening after Phase 23
 closed the handoff, and one review finding. The **tier-aware AI budget was
 reviewed rather than assumed** — it is correct, and its coverage is good,
 including the case that matters most (a `pro` subscription whose `end_date` has
@@ -495,6 +520,109 @@ a stale `vite` dev-server process from this repo (PID identified via
 `Get-CimInstance Win32_Process` filtered on the repo path) still held it. Killing
 that process and its `esbuild` child freed it; `npm ci` then succeeded. Check for
 stray repo-owned node processes before concluding an install is broken.
+
+---
+
+## Phase 25 — All three A-decisions answered; the category-plumbing gap A3 exposed (2026-10-17)
+
+The owner answered every open `A` decision from `docs/OPEN_DECISIONS.md`.
+
+- [x] **A1 (tier caps):** "I don't know." Left unchanged — still open, not
+      blocking anything.
+- [x] **A2 (multi-tenancy):** "not for now." Closed — recorded in
+      `docs/OPEN_DECISIONS.md` section D so it is not re-flagged as a pending
+      decision later.
+- [x] **A3 (CMS→website bridge):** "ideally yes." Before building anything,
+      checked what was actually missing rather than assuming the receiver
+      alone was sufficient — and it wasn't. **No code path anywhere ever set
+      `posts.category`:**
+  - `content-pipeline`'s `posts` insert never included a `category` field.
+  - `schedule-from-templates` has its own `WEBSITE_CATEGORY_BY_DAY` map, but
+    only used it to build the AI *prompt text* (`"Geopolitics: International
+    power dynamics"`) — never passed it as structured data, so nothing
+    downstream could read it back out.
+  - The receiver's own mapping line, `category: post.category ?? "Geopolitics"`,
+    was therefore dead code: `post.category` never existed on the delivery
+    envelope at all (`_shared/publishDelivery.ts`'s `DeliveryPayload.post` had
+    no such field), so every single delivery silently fell back to the one
+    hardcoded default, regardless of the post's real category.
+  - **Fixed end to end**, each piece verified rather than assumed correct in
+    isolation:
+    1. `_shared/publishDelivery.ts`: `category` added to `DeliveryInput` and
+       `DeliveryPayload.post`, threaded through `buildDelivery`. New test in
+       `publishPayloadParity.test.ts` pins that it's carried through.
+    2. `schedule-from-templates`: now passes `category` explicitly in the
+       `content-pipeline` request body for website posts (the day's
+       `WEBSITE_CATEGORY_BY_DAY` value), alongside the existing prompt-text use.
+    3. `content-pipeline`: accepts `category` from the request, stores it on
+       the `posts` insert, forwards it into `buildDelivery` for the immediate
+       webhook path.
+    4. `publish-due-posts`: added `category` to the extra `posts` select
+       (alongside the existing excerpt/tags/type/scheduled_at fetch) and
+       forwards it into `buildDelivery` for the cron path.
+    5. `tools/webhook-receiver/server.mjs`: replaced the dead
+       `post.category ?? "Geopolitics"` with `SITE_CATEGORY_BY_CMS_CATEGORY`, a
+       mapping table from the CMS's 7 categories onto the site's fixed 8-item
+       filter list. Only Geopolitics and Economics overlap exactly; Technology
+       and Climate get a reasonably direct mapping (Tech-AI, Green-Tech); Media
+       and Security have no real equivalent and fold into Geopolitics. **This
+       mapping is explicitly flagged in its own comment as a defensible guess,
+       not a confirmed site-taxonomy decision** — recorded as still-open in
+       `docs/OPEN_DECISIONS.md` A3, not silently treated as settled.
+  - **Not touched:** `author_id`. The delivery envelope carries no author
+    signal at all, so every delivery still resolves to the hardcoded
+    `"novus-ai"` default. Left as-is deliberately — correct enough for a
+    single-operator CMS (consistent with the A2 answer), and adding a real
+    per-user author mapping is speculative work for a multi-author future that
+    was just explicitly deprioritised.
+- [x] **Found and fixed while checking the owner's own account against B1's
+      standing warning** (a missing/expired `subscriptions` row silently caps
+      automated generation at $1/month): the owner's real account
+      (`putheworkin@gmail.com`) had a `subscriptions` row claiming `tier: pro`
+      with an `end_date` five weeks in the past. Did not assume this was either
+      "a real subscription that lapsed" or "harmless test data" — checked Stripe
+      directly instead. Found the matching customer
+      (`metadata.supabase_user_id` matched exactly) and listed its subscriptions
+      at `status: "all"`: **zero**, at any status. So this was leftover test-mode
+      debris from an earlier Stripe e2e proof-run (PR #12's checkout test),
+      never a real subscription. Reset to `tier: 'free', end_date: null` to
+      match reality. (Functionally harmless either way — `resolveTier`'s expired-
+      `end_date` fallback already treated it as free — but the row itself was
+      misleading for any future debugging.)
+- [x] **Merged and deployed two PRs the owner hadn't yet seen:**
+  - PR #16 (`hardening/tier-review-and-stripe-prices`): reviewed rather than
+    rubber-stamped — read every file in the diff. Consolidates the four Stripe
+    price IDs (previously hardcoded independently in three edge functions) into
+    one shared, env-overridable, un-memoised table
+    (`_shared/stripePrices.ts`); fixes three stale log messages that pointed at
+    the deleted duplicate migration (`20261019000001_add_ai_usage_log.sql`,
+    removed in Phase 23) instead of the one actually applied
+    (`20261016014921_add_ai_usage_tracking.sql`); adds `docs/OPEN_DECISIONS.md`.
+    8 new tests. CI green, merged, then **redeployed all three billing
+    functions** (`create-checkout`, `check-subscription`, `stripe-webhook`) so
+    the consolidation actually took effect in production — merging alone does
+    not deploy edge functions in this project.
+  - PR #14 (`tools/receiver-deploy-runbook`): `DEPLOY.md`, a `Dockerfile`
+    baking in `HOST=0.0.0.0`, and two receiver fixes — health check now answers
+    on `GET /` as well as `/health` (cloud platforms default their probe to
+    `/`), and the health response no longer reports whether signing is
+    configured (`signed: false` is exactly the misconfiguration an attacker
+    would want to know about). CI green, merged.
+  - Applied the `security_barrier` hardening migration
+    (`20261016090000_harden_public_published_posts_view.sql`, from PR #16's
+    companion work) directly to production and verified via `pg_class.reloptions`.
+- [x] **Flagged for the owner:** Railway is still tracking
+      `go-live/phase-15-gap-closure`, not `main` — the receiver fixes from PR #14
+      (and now the category-mapping fix above) won't auto-deploy there until the
+      tracked branch is updated or a manual redeploy is triggered. Recorded as
+      B6 in `docs/OPEN_DECISIONS.md`; no access to Railway's dashboard to fix it
+      directly.
+
+**Verified:** `npx tsc --noEmit` 0, `npm run test -- --run` 166 passed / 1
+skipped (was 165 after PR #16; +1 for the new category-parity test),
+`npm run lint` 0 errors (293 warnings, all pre-existing `no-explicit-any`),
+`npm run build` clean, receiver self-test 10/10 — all re-run after the category
+changes, not assumed still-passing from an earlier phase.
 
 ---
 

@@ -120,6 +120,32 @@ const AUTHOR_BY_SIGNATURE = {
   guest: "guest",
 };
 
+/**
+ * CMS category -> site category. The CMS's own vocabulary
+ * (`WEBSITE_CATEGORY_BY_DAY` in `src/utils/scheduling.ts`: Geopolitics,
+ * Economics, Media, Technology, Security, Climate, "Corporate Social
+ * Responsibility") does not match the site's fixed filter list (All,
+ * Illustrated Features, Brazil, Geopolitics, Economics, Tech-AI, Green-Tech,
+ * CSR) — only Geopolitics and Economics overlap exactly. This fills the rest
+ * with a defensible editorial guess, NOT a confirmed site-taxonomy decision:
+ * Technology -> Tech-AI and Climate -> Green-Tech are reasonably direct;
+ * Media and Security have no real equivalent, so both fold into Geopolitics
+ * (narrative control and intelligence/defense both read as geopolitical) —
+ * review this mapping before relying on it for real editorial categorisation.
+ * `Illustrated Features` and `Brazil` are intentionally never produced; they
+ * appear to be the site's own standing sections, not something the CMS feeds.
+ */
+const SITE_CATEGORY_BY_CMS_CATEGORY = {
+  Geopolitics: "Geopolitics",
+  Economics: "Economics",
+  Technology: "Tech-AI",
+  Climate: "Green-Tech",
+  Media: "Geopolitics",
+  Security: "Geopolitics",
+  "Corporate Social Responsibility": "CSR",
+};
+const DEFAULT_SITE_CATEGORY = "Geopolitics";
+
 const MONTHS = [
   "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
   "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER",
@@ -147,11 +173,12 @@ export function toArticleRow(delivery, { now = new Date() } = {}) {
     excerpt: post.excerpt ?? "",
     content,
     image_url: post.coverImageUrl ?? null,
-    // The site's filter bar offers: Illustrated Features, Brazil, Geopolitics,
-    // Economics, Tech-AI, Green-Tech, CSR. The CMS's own category vocabulary
-    // does NOT match it, so unmapped values are surfaced rather than silently
-    // landing in a filter that does not exist. See docs/HEADLESS_CONSUMPTION.md.
-    category: post.category ?? "Geopolitics",
+    // See SITE_CATEGORY_BY_CMS_CATEGORY above for why this is not a direct
+    // pass-through. `post.category` was dropped entirely before this field
+    // was added to the delivery envelope (_shared/publishDelivery.ts), so a
+    // delivery from before that change has no category to map and falls
+    // back to the default, same as before.
+    category: SITE_CATEGORY_BY_CMS_CATEGORY[post.category] ?? DEFAULT_SITE_CATEGORY,
     author_id: authorId,
     read_time: estimateReadTime(content),
     publish_date: formatPublishDate(now),

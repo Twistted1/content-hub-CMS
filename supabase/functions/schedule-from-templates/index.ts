@@ -248,6 +248,13 @@ serve(async (req) => {
                   scheduleMode: CRON_SCHEDULE_MODE,
                   scheduledAt: iso,
                   user_id: userId,
+                  // Previously only folded into the AI prompt text above, never
+                  // stored on the post itself — so posts.category was always
+                  // null and a website delivery's category was silently
+                  // dropped before it ever reached a receiver.
+                  category: platform === "website"
+                    ? WEBSITE_CATEGORY_BY_DAY[DAY_NAMES[slot.getUTCDay()]].category
+                    : null,
                 }),
               });
               if (resp.ok) created++;
