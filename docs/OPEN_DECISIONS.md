@@ -7,10 +7,10 @@ and evidence, this holds only what is still outstanding.
 Last updated 2026-10-17 (after Phase 25).
 
 **The honest headline: nothing here blocks launching.** The product works — auth,
-review, scheduling, publishing proven on two independent paths, billing verified
-through to the database write, tiered spend caps enforced. What remains is one
-operational step, two account-only actions, and a handful of optional
-improvements.
+review, scheduling, publishing proven on three independent paths (LinkedIn,
+Website, and now Facebook), billing verified through to the database write,
+tiered spend caps enforced. What remains is one operational step, a few
+account-only actions, and a handful of optional improvements.
 
 ---
 
@@ -27,11 +27,11 @@ improvements.
 
 | # | Action | Why it needs you |
 |---|---|---|
-| B2 | **Point a real `/pipeline` webhook row at the receiver.** Follow `tools/webhook-receiver/DEPLOY.md`. The receiver itself is already deployed and verified end-to-end (signed delivery, correct field mapping) — this is just adding the row. **This is the last go-live gap for the webhook platforms** — today Instagram, TikTok, YouTube and Website all fail with `No active webhook configured` (Facebook moved off this path — see B7). Before flipping `ARTICLES_COMMIT=1` for real: review the category mapping in A3 above, and redeploy the receiver (Railway is tracking a stale branch — see B6). | Hosting account + CMS login. |
-| B4 | **Start Meta App Review** (`instagram_content_publish`, `pages_manage_posts`), if you have not. Days-to-weeks lead time, zero code dependency, and the most likely thing to blow a deadline. Note Instagram **cannot post text-only** — image, Reel, carousel or story only. This is for Instagram specifically — the Facebook direct-publish path (B7) uses a Business Manager System User token and may not need App Review at all if you're the only one ever connecting a Page through it (Meta apps in Development Mode can use any permission for accounts added as the app's Admin/Developer/Tester, with no review). | Your Meta business account. |
+| B2 | **Point a real `/pipeline` webhook row at the receiver.** Follow `tools/webhook-receiver/DEPLOY.md`. The receiver itself is already deployed and verified end-to-end (signed delivery, correct field mapping) — this is just adding the row. **This is the last go-live gap for the webhook platforms** — today TikTok, YouTube and Website all fail with `No active webhook configured` (Facebook and Instagram are off this path entirely now — see D below and B8). Before flipping `ARTICLES_COMMIT=1` for real: review the category mapping in A3 above, and redeploy the receiver (Railway is tracking a stale branch — see B6). | Hosting account + CMS login. |
+| B4 | **Start Meta App Review for Instagram** (`instagram_content_publish`), if you have not. Days-to-weeks lead time. Note Instagram **cannot post text-only** — image, Reel, carousel or story only. Facebook needed no review at all: confirmed 2026-10-17 by a real post going through on the System User token with no App Review done — Meta apps in Development Mode can use any permission for accounts added as the app's Admin/Developer/Tester, which is sufficient for a single-operator CMS. Whether that same Development-Mode path covers Instagram too is untested (see B8) — don't assume it until proven, since Instagram's permissions get more scrutiny than Facebook's. | Your Meta business account. |
 | B5 | **Move the committed E2E password to a GitHub secret**, then placeholder `.env.e2e.example:20`. Not done here deliberately: placeholder-ing it **breaks CI's E2E job** until the secret exists, so it must be a coordinated two-step. | GitHub repo settings. |
 | B6 | **Railway is tracking `go-live/phase-15-gap-closure`, not `main`.** The receiver's latest fixes (health check on `/`, hiding `signed` status, and now the category-mapping fix in Phase 25) landed on `main` via separate PRs and won't auto-deploy until Railway's branch is updated or a manual redeploy is triggered. | Railway dashboard. |
-| B7 | **Facebook direct publishing is built but not live.** `publish-due-posts` and `publish-post` can now post straight to a Facebook Page via a Business Manager System User token (no webhook, no per-user OAuth) — see AGENTS.md's Facebook bullet. Two things remain: (1) set the `META_SYSTEM_USER_TOKEN` and `META_PAGE_ID` edge function secrets (Dashboard → Edge Functions → Secrets, or `supabase secrets set ... --project-ref jvbucspwcjahqpoxskvr`), and (2) deploy `publish-due-posts` and `publish-post` — "merged ≠ deployed" applies here too. Until both are done, Facebook posts will still fail (now with the clear `"Facebook publishing not configured"` error instead of a webhook one). Not yet exercised in production. | A Business Manager System User token + the target Page ID, and a deploy. |
+| B8 | **Instagram direct publishing is built but not configured.** Same System User token as Facebook (it already carries `instagram_content_publish`), same Page-token exchange, then a real two-call media flow (`/media` → `/media_publish`) — see AGENTS.md's Facebook/Instagram bullet. Needs the `META_IG_USER_ID` edge function secret (the Page's connected IG professional account) and an image URL on the test post, since Instagram can't post text-only. Not yet exercised in production. | The Page's connected Instagram professional account's user ID. |
 
 ---
 
@@ -111,4 +111,15 @@ source against a `DISPLAY_AMOUNTS_USD` table added to
 fetched live) so the build fails if the UI and the Stripe-ID table are ever
 updated one without the other. Updating a real Stripe price still means
 updating `PLAN_PRICING_USD` by hand to match — there is no live fetch — but it
-can no longer happen in only one of the two pages.
+can no longer happen in only one of the two pages; **Facebook direct
+publishing, end to end** — `publish-due-posts`/`publish-post` post straight to
+a Facebook Page via a Business Manager System User token, no webhook and no
+per-user OAuth. First attempt failed with Graph error `(#200)`: the System
+User token's scopes alone aren't enough, Graph API requires posting *as the
+Page*, fixed by exchanging the System User token for the Page's own token
+first (`GET /{page}?fields=access_token`) and using that for the actual
+publish call. Proven live 2026-10-17 on the real cron path, not a one-off
+script — `platform_post_id 2186942548227417_1713287750800286`. Instagram
+direct publishing was added on the same mechanism while fixing this
+(`publishInstagram`/`publishToInstagram`, the real two-call media-container
+flow) but is not yet configured or tested — see B8.

@@ -224,10 +224,11 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   envelope, the limits (against `src/utils/platformLimits.ts`) and the truncation
   behaviour.
 - **LinkedIn, X, and now Facebook publish directly; everything else needs a
-  webhook.** `publish-due-posts`/`publish-post` dispatch `facebook` on its own
-  branch (checked before `DIRECT_PLATFORMS = {linkedin, twitter}`), added
-  2026-10-17. Facebook is structurally different from LinkedIn/Twitter: it
-  uses one **deployment-wide** Business Manager System User token
+  webhook.** `publish-due-posts`/`publish-post` dispatch `facebook` (and
+  `instagram` — see below) on their own branch (checked before
+  `DIRECT_PLATFORMS = {linkedin, twitter}`), added 2026-10-17. Facebook is
+  structurally different from LinkedIn/Twitter: it uses one
+  **deployment-wide** Business Manager System User token
   (`META_SYSTEM_USER_TOKEN` + `META_PAGE_ID` edge function secrets), not a
   per-user row in `platform_oauth_tokens` — there is no "Connect Facebook"
   OAuth flow, and `isDirectPlatform()` in `usePlatformOAuth.ts` deliberately
@@ -236,21 +237,37 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   caught failure (`"Facebook publishing not configured"`), not a crash.
   Facebook posts text-only via `/{page}/feed`; a `cover_image_url` switches to
   `/{page}/photos` (by URL, no container/upload step — simpler than
-  Instagram's two-call media flow). **Not yet exercised in production** — the
-  two secrets are not yet set; see `docs/OPEN_DECISIONS.md`. Every platform
-  besides linkedin/twitter/facebook still needs a matching active row in
+  Instagram's two-call media flow). **The System User token alone cannot
+  post** — scope on the token is necessary but not sufficient; Graph API
+  requires posting *as the Page*, so both functions first exchange it for the
+  Page's own token via `GET /{page}?fields=access_token` (`getPageAccessToken`)
+  and use that for the actual publish call, or every attempt fails with
+  `(#200)` even with the System User correctly assigned as a Page asset.
+  **Proven live in production 2026-10-17** — see below.
+  `instagram` reuses the same Page-token exchange (the IG professional account
+  authenticates through its connected Page) plus `META_IG_USER_ID`, and is a
+  real two-call flow (`/media` then `/media_publish`) since Instagram cannot
+  post text-only. **Instagram code exists but is untested** —
+  `META_IG_USER_ID` is not yet set. Every platform besides
+  linkedin/twitter/facebook/instagram still needs a matching active row in
   `webhook_configs` or the post fails with
   `No active webhook configured for {platform}`. A full-looking calendar does
   not mean deliverable content.
-- **Proven-deliverable in production, as of 2026-10-14 — keep these two paths
-  distinct, because they fail independently:**
-  - **LinkedIn (direct/OAuth path).** A real post was published to the owner's
-    feed. This exercises `platform_oauth_tokens` + the LinkedIn publish call. It
-    says nothing about the webhook platforms.
-  - **Website (webhook path).** A real delivery was received and logged. The
-    mechanism is proven for every webhook platform because they share one code
-    path — but only `website` has been exercised.
-  - **Still never exercised in production:** `instagram`, `facebook`, `tiktok`,
+- **Proven-deliverable in production — keep these paths distinct, because
+  they fail independently:**
+  - **LinkedIn (direct/OAuth path), as of 2026-10-14.** A real post was
+    published to the owner's feed. This exercises `platform_oauth_tokens` +
+    the LinkedIn publish call. It says nothing about the webhook platforms.
+  - **Website (webhook path), as of 2026-10-14.** A real delivery was
+    received and logged. The mechanism is proven for every webhook platform
+    because they share one code path — but only `website` has been
+    exercised.
+  - **Facebook (direct/System-User-token path), as of 2026-10-17.** A real
+    post was published to the owner's Page via `publish-due-posts` on the
+    real cron path (not a one-off script) — `platform_post_id`
+    `2186942548227417_1713287750800286`. Exercises
+    `META_SYSTEM_USER_TOKEN`/`META_PAGE_ID` and the Page-token exchange above.
+  - **Still never exercised in production:** `instagram`, `tiktok`,
     `youtube`. Do not claim these work.
 - **As of 2026-10-14 there is no active `webhook_configs` row at all**, so no
   webhook platform currently delivers in production — the row used for the proof
