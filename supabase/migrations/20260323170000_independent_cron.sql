@@ -1,5 +1,12 @@
 -- Migration to remove hardcoded Lovable infrastructure and set up a portable cron job.
 -- This replaces the original migration 20260323155000_b1a79fb4-bc9c-4958-a6f7-585795902f66.sql
+--
+-- SUPERSEDED by 20260601130235_3886e818-a9ab-4e65-84a5-e2fc8aff223c.sql, which
+-- unschedules the 'run-scheduled-pipelines' job below and replaces it with
+-- vault-secret-authenticated jobs. Left unedited (a historical record, already
+-- applied) even though the key/value `project_settings` shape it queries never
+-- matched the real table — see AGENTS.md's "project_settings cron dead code"
+-- note. Confirmed via `cron.job` in production: this job does not exist.
 
 -- 1. Remove the hardcoded cron job if it exists
 SELECT cron.unschedule('run-scheduled-pipelines');

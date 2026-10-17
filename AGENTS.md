@@ -147,10 +147,15 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   verified by a full `supabase db push` from a truly empty project through the
   entire migration chain, so treat that as fixed-but-unconfirmed rather than
   closed. Two early cron-setup migrations (`20260323170000`, `20260429071001`)
-  still query `project_settings` with a key/value shape and a wide-column shape
-  respectively, neither of which matches the real table — harmless at migration
-  *apply* time (the SQL is cron-job text, not parsed until pg_cron fires it),
-  but the cron bodies themselves are latent dead code. Also note `invitations`
+  query `project_settings` with a key/value shape and a wide-column shape
+  respectively, neither of which matches the real table — but both jobs
+  (`run-scheduled-pipelines`, `run-scheduled-automations`) were unscheduled by
+  `20260601130235_3886e818-a9ab-4e65-84a5-e2fc8aff223c.sql`, confirmed via live
+  `cron.job` on 2026-10-17: only `publish-due-posts` and `schedule-content` are
+  active, both vault-secret-authenticated and neither touching
+  `project_settings`. The two old files are annotated (header comment only, SQL
+  untouched — editing an applied migration is unsafe) rather than edited, since
+  they're a historical record that already ran. Also note `invitations`
   404s live despite a migration creating it — migrations are **not** a
   faithful mirror of production either way.
 - **`project_settings` is one global row** (`.select('*').single()`), so all

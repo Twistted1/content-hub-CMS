@@ -42,7 +42,6 @@ Improvements, not blockers. Nothing in section A or B depends on them.
 |---|---|---|
 | C2 | **Per-webhook signing secret.** Signing is one deployment-wide `WEBHOOK_SIGNING_SECRET`, so every receiver shares a key and rotating one touches all. | Independent rotation per receiver. |
 | C3 | **Update and unpublish events.** Only `post.publish` is ever fired, so editing or deleting a post cannot be propagated to a receiver. | Any real integration needs it; a website bridge certainly will. |
-| C4 | **The `project_settings` cron dead code.** Two early migrations build `pg_cron` bodies querying it with a key/value shape and a wide-column shape, neither matching the real table. Harmless — the jobs were superseded and the SQL is only text until pg_cron fires it. | Historical confusion only. |
 | C5 | **UI display prices are hardcoded** ($10/$96/$20 in `Pricing.tsx`/`Landing.tsx`), independent of the Stripe price IDs. | They can silently disagree with what is charged. |
 | C7 | **Website display order is `id` ascending**, so a new article renders last regardless of its date. | A site-side sort by date fixes it. |
 
@@ -93,4 +92,12 @@ platform whitelist filter, so an automation or a manual pipeline run can now
 target them — note `rumble` still needs an active `webhook_configs` row to
 actually deliver (same as every non-direct platform; see B2), and `podcast`
 has no entry in `src/data/platforms/*.json` so it is reachable only via
-direct/manual runs, not the templated weekly schedule.
+direct/manual runs, not the templated weekly schedule; **C4 closed** —
+confirmed live via `cron.job` in production that only `publish-due-posts` and
+`schedule-content` are scheduled (both vault-secret-authenticated, neither
+touching `project_settings`), so the two dead-shape jobs from the early
+migrations were already unscheduled by `20260601130235` and never run. Left
+the two old migration files' SQL untouched (editing applied migrations is
+unsafe) and added a non-functional header comment to each pointing at the
+superseding migration, so the dead code no longer reads as live when someone
+scans the migration list in order.
