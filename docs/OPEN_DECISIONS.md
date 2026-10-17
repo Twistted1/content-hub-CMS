@@ -44,9 +44,7 @@ Improvements, not blockers. Nothing in section A or B depends on them.
 | C3 | **Update and unpublish events.** Only `post.publish` is ever fired, so editing or deleting a post cannot be propagated to a receiver. | Any real integration needs it; a website bridge certainly will. |
 | C4 | **The `project_settings` cron dead code.** Two early migrations build `pg_cron` bodies querying it with a key/value shape and a wide-column shape, neither matching the real table. Harmless — the jobs were superseded and the SQL is only text until pg_cron fires it. | Historical confusion only. |
 | C5 | **UI display prices are hardcoded** ($10/$96/$20 in `Pricing.tsx`/`Landing.tsx`), independent of the Stripe price IDs. | They can silently disagree with what is charged. |
-| C6 | **`rumble` and `podcast` are unreachable** from both UI platform pickers. | Scheduling aims at platforms that cannot deliver. |
 | C7 | **Website display order is `id` ascending**, so a new article renders last regardless of its date. | A site-side sort by date fixes it. |
-| C8 | **`articles`/`authors` nullability is unverified.** Their baseline migration was introspected from production, but nullability and defaults cannot be read over PostgREST — only from `information_schema.columns`. | A fresh install could differ subtly from production. |
 
 ---
 
@@ -84,4 +82,15 @@ deleted-migration reference in `aiBudget.ts`'s error paths; **`posts.category`
 now actually gets populated and carried through the whole delivery chain**
 (`schedule-from-templates` → `content-pipeline` → `_shared/publishDelivery.ts`
 → `publish-due-posts` → the receiver's category mapping), closing a gap where
-it was silently dropped at every stage.
+it was silently dropped at every stage; `articles`/`authors` nullability and
+defaults confirmed column-by-column against production via
+`information_schema.columns` (type, nullable, and default all match the
+baseline migration exactly, including `articles.id`'s `serial` sequence
+default and `created_at`'s `now()` default); `rumble` and `podcast` added to
+`ContentPipeline.tsx`'s `PLATFORM_OPTIONS` (both the target-platforms picker
+and the webhook-platforms picker share that list) and to `Automation.tsx`'s
+platform whitelist filter, so an automation or a manual pipeline run can now
+target them — note `rumble` still needs an active `webhook_configs` row to
+actually deliver (same as every non-direct platform; see B2), and `podcast`
+has no entry in `src/data/platforms/*.json` so it is reachable only via
+direct/manual runs, not the templated weekly schedule.

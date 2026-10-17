@@ -233,9 +233,14 @@ and `VERIFY_PASSWORD` in the environment. See `tools/publish-e2e/README.md`.
   webhook platforms is a dashboard action, not a code change.
 - **Webhooks are authored on `/pipeline`** (`src/pages/ContentPipeline.tsx`).
   Settings → Integrations only *lists* them.
-- **`rumble` and `podcast` cannot be reached from the UI at all** — they are
-  missing from both `ContentPipeline.tsx`'s `PLATFORM_OPTIONS` and
-  `Automation.tsx`'s platform filter. Don't assume a schedule entry for them
+- **`rumble` and `podcast` are now reachable from the UI** (fixed 2026-10-17 —
+  added to `ContentPipeline.tsx`'s `PLATFORM_OPTIONS` and `Automation.tsx`'s
+  platform whitelist). Reachable is not the same as deliverable: `rumble` still
+  needs an active `webhook_configs` row like every other non-direct platform
+  (none exists in production as of this writing — see `docs/OPEN_DECISIONS.md`
+  B2), and `podcast` has no `src/data/platforms/*.json` entry, so it never
+  appears in the templated weekly schedule — only direct/manual pipeline runs
+  or automations can target it. Don't assume a schedule entry for either one
   means anything is deliverable.
 - **A webhook with an empty `platforms` array matches every platform.** Leaving
   all the badges unselected is not "no platforms" — it is "all of them".

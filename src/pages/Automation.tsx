@@ -412,7 +412,7 @@ const AutomationPage = () => {
 
       const platforms = automation.platforms
         .map((p) => p.toLowerCase().replace("x", "twitter"))
-        .filter((p) => ["twitter", "instagram", "facebook", "linkedin", "tiktok", "youtube", "website"].includes(p));
+        .filter((p) => ["twitter", "instagram", "facebook", "linkedin", "tiktok", "youtube", "website", "rumble", "podcast"].includes(p));
       if (platforms.length === 0) throw new Error(t("automation.chooseAtLeastOnePlatform"));
       const scheduledAt = computeNextRun(automation.triggerConfig.schedule || "daily") || new Date().toISOString();
       const { data: pipeline, error: pipelineErr } = await supabase.functions.invoke("content-pipeline", {

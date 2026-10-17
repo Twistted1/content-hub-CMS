@@ -54,6 +54,8 @@ const PLATFORM_OPTIONS = [
   { value: "facebook", label: "Facebook" },
   { value: "linkedin", label: "LinkedIn" },
   { value: "website", label: "Website" },
+  { value: "rumble", label: "Rumble" },
+  { value: "podcast", label: "Podcast" },
 ];
 
 const getStatusIcon = (status: string) => {
