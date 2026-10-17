@@ -131,13 +131,14 @@ serve(async (req) => {
     }
 
     // `claim_due_posts` returns only the six columns the queue needs. The
-    // delivery payload also carries excerpt/tags/type/scheduled_at, so fetch
-    // those in one extra query rather than widening the RPC's RETURNS TABLE —
-    // that would need a DROP FUNCTION + CREATE (the signature cannot be replaced
-    // in place) and therefore another migration, for no behavioural gain.
+    // delivery payload also carries excerpt/tags/type/scheduled_at/category, so
+    // fetch those in one extra query rather than widening the RPC's RETURNS
+    // TABLE — that would need a DROP FUNCTION + CREATE (the signature cannot be
+    // replaced in place) and therefore another migration, for no behavioural
+    // gain.
     const { data: fullRows } = await admin
       .from("posts")
-      .select("id, excerpt, tags, type, scheduled_at")
+      .select("id, excerpt, tags, type, scheduled_at, category")
       .in("id", due.map((p: any) => p.id));
     const fullById = new Map<string, any>((fullRows || []).map((r: any) => [r.id, r]));
 
@@ -203,6 +204,7 @@ serve(async (req) => {
                 type: post.type,
                 coverImageUrl: post.cover_image_url,
                 scheduledAt: post.scheduled_at,
+                category: post.category,
               });
               // Sign the exact bytes that are sent, so the receiver can verify
               // provenance instead of trusting whatever reaches its URL.

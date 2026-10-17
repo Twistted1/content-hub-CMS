@@ -86,6 +86,15 @@ export interface DeliveryInput {
   type?: string | null;
   coverImageUrl?: string | null;
   scheduledAt?: string | null;
+  /**
+   * The CMS's own category (free text — see `WEBSITE_CATEGORY_BY_DAY` in
+   * `src/utils/scheduling.ts`), not a site's display taxonomy. Added because it
+   * used to be silently dropped: nothing populated `post.category` on the
+   * envelope at all, so a receiver mapping onto a site's fixed category list
+   * (see `tools/webhook-receiver/server.mjs`) had no real data to map from and
+   * fell back to one hardcoded value on every delivery.
+   */
+  category?: string | null;
 }
 
 /** The exact JSON body POSTed to a `webhook_configs.url`. */
@@ -102,6 +111,7 @@ export interface DeliveryPayload {
     type: string;
     coverImageUrl: string | null;
     scheduledAt: string | null;
+    category: string | null;
   };
   timestamp: string;
 }
@@ -128,6 +138,7 @@ export function buildDelivery(input: DeliveryInput): DeliveryPayload {
       type: input.type || "text",
       coverImageUrl: input.coverImageUrl ?? null,
       scheduledAt: input.scheduledAt ?? null,
+      category: input.category ?? null,
     },
     timestamp: new Date().toISOString(),
   };
